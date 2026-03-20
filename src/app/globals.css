@@ -1,26 +1,421 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: #0a0b0f;
+  --color-foreground: #e8e8ec;
+  --color-surface: #12131a;
+  --color-surface-2: #1a1b24;
+  --color-surface-3: #22232e;
+  --color-border: #2a2b38;
+  --color-border-glow: #3d5afe33;
+  --color-primary: #3d5afe;
+  --color-primary-light: #6979ff;
+  --color-accent: #00e5a0;
+  --color-accent-dim: #00e5a044;
+  --color-warning: #ff9100;
+  --color-danger: #ff3d3d;
+  --color-muted: #6b6d7b;
+  --color-bio-green: #39ff7f;
+  --color-bio-purple: #b26eff;
+  --color-bio-cyan: #00f0ff;
+  --color-bio-red: #ff4466;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+/* ------------------------------------------------------------------ */
+/* Glow utilities                                                     */
+/* ------------------------------------------------------------------ */
+
+.glow-green {
+  text-shadow:
+    0 0 6px #39ff7f88,
+    0 0 20px #39ff7f44,
+    0 0 40px #39ff7f22;
+}
+
+.glow-cyan {
+  text-shadow:
+    0 0 6px #00f0ff88,
+    0 0 20px #00f0ff44,
+    0 0 40px #00f0ff22;
+}
+
+.glow-purple {
+  text-shadow:
+    0 0 6px #b26eff88,
+    0 0 20px #b26eff44,
+    0 0 40px #b26eff22;
+}
+
+.glow-red {
+  text-shadow:
+    0 0 6px #ff446688,
+    0 0 20px #ff446644,
+    0 0 40px #ff446622;
+}
+
+.glow-orange {
+  text-shadow:
+    0 0 6px #ff910088,
+    0 0 20px #ff910044,
+    0 0 40px #ff910022;
+}
+
+.box-glow-green {
+  box-shadow:
+    0 0 8px #39ff7f44,
+    0 0 24px #39ff7f22,
+    inset 0 0 12px #39ff7f11;
+}
+
+.box-glow-cyan {
+  box-shadow:
+    0 0 8px #00f0ff44,
+    0 0 24px #00f0ff22,
+    inset 0 0 12px #00f0ff11;
+}
+
+.box-glow-purple {
+  box-shadow:
+    0 0 8px #b26eff44,
+    0 0 24px #b26eff22,
+    inset 0 0 12px #b26eff11;
+}
+
+.box-glow-red {
+  box-shadow:
+    0 0 8px #ff446644,
+    0 0 24px #ff446622,
+    inset 0 0 12px #ff446611;
+}
+
+/* ------------------------------------------------------------------ */
+/* Keyframe animations                                                */
+/* ------------------------------------------------------------------ */
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.06);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    opacity: 1;
+  }
+  96% {
+    opacity: 0;
+  }
+}
+
+@keyframes hero-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(12px, -8px) scale(1.04);
+  }
+  66% {
+    transform: translate(-8px, 6px) scale(0.97);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Creature animations — veins, pupils, particles, synergies          */
+/* ------------------------------------------------------------------ */
+
+@keyframes vein-flow {
+  0% {
+    stroke-dashoffset: 10;
+  }
+  100% {
+    stroke-dashoffset: -10;
+  }
+}
+
+@keyframes pupil-pulse {
+  0%,
+  100% {
+    transform: scale(0.92);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes particle-float-1 {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-8px) translateX(3px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-14px) translateX(-2px);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateY(-6px) translateX(4px);
+    opacity: 0.55;
+  }
+}
+
+@keyframes particle-float-2 {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.25;
+  }
+  33% {
+    transform: translateY(-10px) translateX(-4px);
+    opacity: 0.5;
+  }
+  66% {
+    transform: translateY(-5px) translateX(5px);
+    opacity: 0.35;
+  }
+}
+
+@keyframes particle-float-3 {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.35;
+  }
+  20% {
+    transform: translateY(-6px) translateX(2px);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(-12px) translateX(-3px);
+    opacity: 0.3;
+  }
+  80% {
+    transform: translateY(-4px) translateX(5px);
+    opacity: 0.6;
+  }
+}
+
+@keyframes tail-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(3deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+}
+
+@keyframes membrane-pulse {
+  0%,
+  100% {
+    filter: url(#membrane-tex);
+  }
+  50% {
+    filter: url(#membrane-tex) brightness(1.05);
+  }
+}
+
+@keyframes drip {
+  0% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  70% {
+    transform: translateY(40px);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(55px);
+    opacity: 0;
+  }
+}
+
+@keyframes spark {
+  0% {
+    opacity: 0.8;
+    stroke-width: 1;
+  }
+  50% {
+    opacity: 0;
+    stroke-width: 0.2;
+  }
+  100% {
+    opacity: 0.7;
+    stroke-width: 1.2;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2px, 1px);
+  }
+  50% {
+    transform: translate(1px, -1px);
+  }
+  75% {
+    transform: translate(2px, 1px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes mutation-morph {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    transform: scale(1.04) rotate(1deg);
+    filter: hue-rotate(30deg);
+  }
+  50% {
+    transform: scale(0.97) rotate(-1deg);
+    filter: hue-rotate(-20deg);
+  }
+  75% {
+    transform: scale(1.02) rotate(0.5deg);
+    filter: hue-rotate(15deg);
+  }
+}
+
+@keyframes mutation-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes helix-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes helix-particle-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    r: 1.5;
+  }
+  50% {
+    opacity: 0.8;
+    r: 2.5;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Creature utility classes                                            */
+/* ------------------------------------------------------------------ */
+
+.creature-mutating {
+  animation: mutation-morph 1.5s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/* Scrollbar                                                          */
+/* ------------------------------------------------------------------ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0b0f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2b38;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3d5afe66;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2b38 #0a0b0f;
+}
+
+/* ------------------------------------------------------------------ */
+/* Selection                                                          */
+/* ------------------------------------------------------------------ */
+
+::selection {
+  background: #3d5afe55;
+  color: #e8e8ec;
+}
+
+/* ------------------------------------------------------------------ */
+/* Focus ring                                                         */
+/* ------------------------------------------------------------------ */
+
+.focus-ring:focus-visible {
+  outline: 2px solid #3d5afe;
+  outline-offset: 2px;
 }
