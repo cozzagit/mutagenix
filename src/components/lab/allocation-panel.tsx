@@ -238,7 +238,7 @@ export function AllocationPanel({
 
           {/* Vials: horizontal row, scrollable on mobile */}
           <div
-            className="flex gap-2 overflow-x-auto pb-2 md:justify-center md:gap-3 md:overflow-x-visible"
+            className="flex justify-center gap-1 pb-2 sm:gap-1.5 md:gap-3"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             {ELEMENTS.map((el) => {
@@ -269,12 +269,8 @@ export function AllocationPanel({
                   {/* Vial */}
                   <div
                     ref={setVialRef(el)}
-                    className="relative cursor-pointer select-none"
-                    style={{
-                      width: 48,
-                      height: 140,
-                      touchAction: 'none',
-                    }}
+                    className="relative cursor-pointer select-none w-[30px] h-[120px] sm:w-[36px] sm:h-[130px] md:w-[48px] md:h-[140px]"
+                    style={{ touchAction: 'none' }}
                     onPointerDown={(e) => handlePointerDown(el, e)}
                     onPointerMove={(e) => handlePointerMove(el, e)}
                     onPointerUp={(e) => handlePointerUp(el, e)}
@@ -382,8 +378,7 @@ export function AllocationPanel({
           {/* Desktop: wider vials */}
           <style>{`
             @media (min-width: 768px) {
-              .vial-strip > div > div[style*="width: 48"] {
-                width: 56px !important;
+              .vial-strip > div > div {
                 height: 180px !important;
               }
             }
