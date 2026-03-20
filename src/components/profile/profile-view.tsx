@@ -26,6 +26,8 @@ interface ProfileViewProps {
   creature: ProfileCreature | null;
 }
 
+type ArchiveMode = null | 'reset' | 'failed';
+
 function formatDate(iso: string): string {
   const date = new Date(iso);
   return date.toLocaleDateString('it-IT', {
@@ -58,9 +60,22 @@ function StatCard({
   );
 }
 
+const CONFIRM_TEXT: Record<'reset' | 'failed', { title: string; body: string; button: string }> = {
+  reset: {
+    title: 'Nuova Partita',
+    body: 'Vuoi archiviare questa creatura e ricominciare? La creatura verra conservata nella tua bacheca.',
+    button: 'Conferma Nuova Partita',
+  },
+  failed: {
+    title: 'Esperimento Fallito',
+    body: 'Vuoi dichiarare questo esperimento fallito? La creatura verra archiviata come fallita.',
+    button: 'Dichiara Fallito',
+  },
+};
+
 export function ProfileView({ user, creature }: ProfileViewProps) {
   const router = useRouter();
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [archiveMode, setArchiveMode] = useState<ArchiveMode>(null);
   const [resetting, setResetting] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -69,12 +84,16 @@ export function ProfileView({ user, creature }: ProfileViewProps) {
     await signOut({ callbackUrl: '/login' });
   }
 
-  async function handleReset() {
+  async function handleArchive(reason: 'reset' | 'failed') {
     setResetting(true);
     try {
-      const res = await fetch('/api/creature/reset', { method: 'POST' });
+      const res = await fetch('/api/creature/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
       if (res.ok) {
-        setShowConfirm(false);
+        setArchiveMode(null);
         router.push('/lab');
         router.refresh();
       }
@@ -135,7 +154,7 @@ export function ProfileView({ user, creature }: ProfileViewProps) {
             <StatCard label="Giorno" value={creature.ageDays} />
             <StatCard label="Gen." value={creature.generation} />
             <StatCard
-              label="Stabilità"
+              label="Stabilita"
               value={`${stabilityPercent}%`}
               accent={stabilityColor}
             />
@@ -144,7 +163,7 @@ export function ProfileView({ user, creature }: ProfileViewProps) {
       )}
 
       {/* Quick links */}
-      <div className="mb-4">
+      <div className="mb-4 space-y-2">
         <Link
           href="/guida"
           className="focus-ring flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-surface-2"
@@ -159,38 +178,70 @@ export function ProfileView({ user, creature }: ProfileViewProps) {
             <p className="text-[10px] text-muted">Scopri come funziona il laboratorio</p>
           </div>
         </Link>
+
+        <Link
+          href="/bacheca"
+          className="focus-ring flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-surface-2"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-4.5A3.375 3.375 0 0 0 13.125 10.875h-2.25A3.375 3.375 0 0 0 7.5 14.25v4.5m9-9V6a2.25 2.25 0 0 0-2.25-2.25h-6.5A2.25 2.25 0 0 0 7.5 6v3.75" />
+            </svg>
+          </span>
+          <div>
+            <p className="text-xs font-semibold">Bacheca degli Esperimenti</p>
+            <p className="text-[10px] text-muted">Tutti i tuoi esperimenti passati e presenti</p>
+          </div>
+        </Link>
       </div>
 
       {/* Actions */}
       <div className="space-y-3">
-        {/* New game */}
-        {!showConfirm ? (
-          <Button
-            variant="secondary"
-            fullWidth
-            onClick={() => setShowConfirm(true)}
-          >
-            Nuova Partita
-          </Button>
+        {/* Archive actions */}
+        {archiveMode === null ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => setArchiveMode('reset')}
+            >
+              Nuova Partita
+            </Button>
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => setArchiveMode('failed')}
+            >
+              Esperimento Fallito
+            </Button>
+          </div>
         ) : (
-          <div className="rounded-xl border border-danger/30 bg-danger/10 p-4">
-            <p className="mb-3 text-xs text-foreground">
-              Sei sicuro? Questa azione cancellerà la tua creatura e tutti
-              i dati di evoluzione. Non può essere annullata.
+          <div
+            className={`rounded-xl border p-4 ${
+              archiveMode === 'failed'
+                ? 'border-danger/30 bg-danger/10'
+                : 'border-warning/30 bg-warning/10'
+            }`}
+          >
+            <p className="mb-1 text-xs font-bold text-foreground">
+              {CONFIRM_TEXT[archiveMode].title}
+            </p>
+            <p className="mb-3 text-xs text-foreground/80">
+              {CONFIRM_TEXT[archiveMode].body}
             </p>
             <div className="flex gap-2">
               <Button
-                variant="danger"
+                variant={archiveMode === 'failed' ? 'danger' : 'secondary'}
                 size="sm"
-                onClick={handleReset}
+                onClick={() => handleArchive(archiveMode)}
                 loading={resetting}
               >
-                Conferma Reset
+                {CONFIRM_TEXT[archiveMode].button}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowConfirm(false)}
+                onClick={() => setArchiveMode(null)}
                 disabled={resetting}
               >
                 Annulla

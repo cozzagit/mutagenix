@@ -1,7 +1,7 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
 import { creatures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { LabDashboard } from '@/components/lab/lab-dashboard';
 import { interpolateCreatureState } from '@/lib/game-engine/interpolation';
@@ -21,7 +21,7 @@ export default async function LabPage() {
   let [creature] = await db
     .select()
     .from(creatures)
-    .where(eq(creatures.userId, session.userId));
+    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   if (!creature) redirect('/login');
 

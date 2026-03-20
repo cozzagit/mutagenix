@@ -1,7 +1,7 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
 import { users, creatures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { ProfileView } from '@/components/profile/profile-view';
 
@@ -25,7 +25,7 @@ export default async function ProfilePage() {
   const [creature] = await db
     .select()
     .from(creatures)
-    .where(eq(creatures.userId, session.userId));
+    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   return (
     <ProfileView

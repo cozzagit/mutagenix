@@ -5,6 +5,7 @@ import {
   integer,
   real,
   jsonb,
+  boolean,
   timestamp,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
@@ -56,7 +57,6 @@ export const creatures = pgTable('creatures', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')
     .notNull()
-    .unique()
     .references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull().default('Specimen-001'),
   generation: integer('generation').default(1),
@@ -80,6 +80,11 @@ export const creatures = pgTable('creatures', {
   targetVisualParams: jsonb('target_visual_params').$type<VisualParams>(),
   mutationStartedAt: timestamp('mutation_started_at', { withTimezone: true }),
   mutationEndsAt: timestamp('mutation_ends_at', { withTimezone: true }),
+
+  // Archive fields
+  isArchived: boolean('is_archived').default(false).notNull(),
+  archivedAt: timestamp('archived_at', { withTimezone: true }),
+  archiveReason: text('archive_reason'), // 'reset' | 'failed' | null
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

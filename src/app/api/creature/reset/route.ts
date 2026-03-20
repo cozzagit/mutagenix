@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getRequiredSession, unauthorizedResponse } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, allocations, dailySnapshots, mutationLog } from '@/lib/db/schema';
+import { creatures } from '@/lib/db/schema';
 import { DEFAULT_ELEMENT_LEVELS, DEFAULT_TRAIT_VALUES } from '@/lib/db/schema/creatures';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   let session;
   try {
     session = await getRequiredSession();
@@ -13,29 +13,56 @@ export async function POST() {
     return unauthorizedResponse();
   }
 
+  // Parse optional body for archive reason
+  let reason: 'reset' | 'failed' = 'reset';
+  try {
+    const body = await request.json();
+    if (body?.reason === 'failed') {
+      reason = 'failed';
+    }
+  } catch {
+    // No body or invalid JSON — default to 'reset'
+  }
+
+  // Find the current active (non-archived) creature
   const [creature] = await db
     .select()
     .from(creatures)
-    .where(eq(creatures.userId, session.userId));
+    .where(
+      and(
+        eq(creatures.userId, session.userId),
+        eq(creatures.isArchived, false),
+      ),
+    );
 
   if (!creature) {
     return NextResponse.json(
-      { error: { code: 'NOT_FOUND', message: 'Nessuna creatura trovata' } },
+      { error: { code: 'NOT_FOUND', message: 'Nessuna creatura attiva trovata' } },
       { status: 404 },
     );
   }
 
-  // Delete all related data
-  await db.delete(mutationLog).where(eq(mutationLog.creatureId, creature.id));
-  await db.delete(dailySnapshots).where(eq(dailySnapshots.creatureId, creature.id));
-  await db.delete(allocations).where(eq(allocations.creatureId, creature.id));
+  const now = new Date();
+  const newGeneration = (creature.generation ?? 1) + 1;
 
-  // Reset creature to initial state
+  // 1. Archive the current creature (keep all data intact)
   await db
     .update(creatures)
     .set({
-      name: 'Specimen-001',
-      generation: (creature.generation ?? 1) + 1,
+      isArchived: true,
+      archivedAt: now,
+      archiveReason: reason,
+      updatedAt: now,
+    })
+    .where(eq(creatures.id, creature.id));
+
+  // 2. Create a NEW fresh creature for the user
+  const [newCreature] = await db
+    .insert(creatures)
+    .values({
+      userId: session.userId,
+      name: `Specimen-${String(newGeneration).padStart(3, '0')}`,
+      generation: newGeneration,
       ageDays: 0,
       stability: 0.5,
       elementLevels: DEFAULT_ELEMENT_LEVELS,
@@ -46,11 +73,17 @@ export async function POST() {
       targetVisualParams: null,
       mutationStartedAt: null,
       mutationEndsAt: null,
-      updatedAt: new Date(),
+      isArchived: false,
     })
-    .where(eq(creatures.id, creature.id));
+    .returning();
 
   return NextResponse.json({
-    data: { success: true, generation: (creature.generation ?? 1) + 1 },
+    data: {
+      success: true,
+      generation: newGeneration,
+      creatureId: newCreature.id,
+      archivedCreatureId: creature.id,
+      archiveReason: reason,
+    },
   });
 }

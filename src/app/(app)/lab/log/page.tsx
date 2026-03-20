@@ -18,7 +18,7 @@ export default async function EvolutionLogPage() {
   const [creature] = await db
     .select()
     .from(creatures)
-    .where(eq(creatures.userId, session.userId));
+    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   if (!creature) redirect('/login');
 

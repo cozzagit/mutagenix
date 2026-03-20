@@ -38,24 +38,16 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    href: "/gallery",
-    label: "Evoluzione",
+    href: "/bacheca",
+    label: "Bacheca",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-        {/* DNA double-helix / evolution path icon */}
+        {/* Trophy / archive icon */}
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M6 3c0 4 6 5 6 9s-6 5-6 9"
+          d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.996.178-1.768.63-2.166 1.242a3.02 3.02 0 0 0-.084 2.697c.407.862 1.275 1.5 2.373 1.759M18.75 4.236c.996.178 1.768.63 2.166 1.242a3.02 3.02 0 0 1 .084 2.697c-.407.862-1.275 1.5-2.373 1.759m-13.25.002a7.5 7.5 0 0 0 14.998 0M5.378 9.936a7.5 7.5 0 0 1-.002-5.7M18.624 9.936a7.5 7.5 0 0 0 0-5.7"
         />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M18 3c0 4-6 5-6 9s6 5 6 9"
-        />
-        <line x1="8" y1="6" x2="16" y2="6" strokeLinecap="round" />
-        <line x1="8" y1="12" x2="16" y2="12" strokeLinecap="round" />
-        <line x1="8" y1="18" x2="16" y2="18" strokeLinecap="round" />
       </svg>
     ),
   },

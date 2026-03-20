@@ -5,7 +5,7 @@ import {
 } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
 import { creatures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { interpolateCreatureState } from '@/lib/game-engine/interpolation';
 import { finalizeIfExpired } from '@/lib/game-engine/auto-finalize';
 import { TIME_CONFIG } from '@/lib/game-engine/time-config';
@@ -21,7 +21,7 @@ export async function GET() {
   let [creature] = await db
     .select()
     .from(creatures)
-    .where(eq(creatures.userId, session.userId));
+    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   if (!creature) {
     return NextResponse.json(

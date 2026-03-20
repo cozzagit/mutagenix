@@ -113,6 +113,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (creature.isArchived) {
+    return NextResponse.json(
+      { error: { code: 'CONFLICT', message: 'Questa creatura e archiviata' } },
+      { status: 409 },
+    );
+  }
+
   // Auto-finalize any expired mutation
   creature = await finalizeIfExpired(creature);
 

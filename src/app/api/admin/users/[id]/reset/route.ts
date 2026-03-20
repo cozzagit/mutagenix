@@ -14,7 +14,7 @@ import {
   DEFAULT_ELEMENT_LEVELS,
   DEFAULT_TRAIT_VALUES,
 } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export async function POST(
   _req: NextRequest,
@@ -33,11 +33,11 @@ export async function POST(
 
   const { id } = await ctx.params;
 
-  // Find the creature for this user
+  // Find the active creature for this user
   const [creature] = await db
     .select()
     .from(creatures)
-    .where(eq(creatures.userId, id));
+    .where(and(eq(creatures.userId, id), eq(creatures.isArchived, false)));
 
   if (!creature) {
     return NextResponse.json(
