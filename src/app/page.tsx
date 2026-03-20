@@ -44,23 +44,55 @@ const CREATURE_VENOMAW: VisualParams = {
   eyeIrisColor: "hsl(90, 80%, 50%)", activeSynergyVisuals: ["toxic_green"],
 };
 
+// Titanex: compact armored tank — small, squat, heavily plated, NO tall posture
 const CREATURE_TITANEX: VisualParams = {
   ...DEFAULT_VISUAL_PARAMS,
-  bodyWidth: 200, bodyHeight: 180, bodyBlobiness: 0.15, bodyHue: 35, bodySaturation: 50, bodyLightness: 28, bodyOpacity: 1,
-  headSize: 0.4, eyeCount: 2, eyeSize: 12, eyeGlow: 0.15, pupilShape: 0.5,
-  limbCount: 4, limbLength: 70, limbThickness: 8, clawSize: 6,
-  spineCount: 5, spineLength: 15, tailLength: 30, furDensity: 0.05, skinRoughness: 0.8,
-  postureAngle: 42, glowIntensity: 0.15, glowHue: 40,
-  aggressionLevel: 0.4, luminosityLevel: 0, toxicityLevel: 0, intelligenceLevel: 0.2, armoringLevel: 0.95,
-  spineColor: "hsl(40, 40%, 50%)", clawColor: "hsl(30, 30%, 60%)",
-  eyeIrisColor: "hsl(35, 60%, 45%)", activeSynergyVisuals: ["skeletal"],
+  bodyWidth: 170, bodyHeight: 100, bodyBlobiness: 0.1, bodyHue: 200, bodySaturation: 30, bodyLightness: 18, bodyOpacity: 1,
+  headSize: 0.3, eyeCount: 2, eyeSize: 8, eyeGlow: 0.1, pupilShape: 0.7,
+  limbCount: 4, limbLength: 35, limbThickness: 9, clawSize: 4,
+  spineCount: 3, spineLength: 10, tailLength: 15, furDensity: 0, skinRoughness: 0.9,
+  postureAngle: 10, glowIntensity: 0.08, glowHue: 200,
+  aggressionLevel: 0.2, luminosityLevel: 0, toxicityLevel: 0, intelligenceLevel: 0.1, armoringLevel: 0.95,
+  spineColor: "hsl(200, 20%, 40%)", clawColor: "hsl(210, 15%, 55%)",
+  eyeIrisColor: "hsl(200, 50%, 40%)", activeSynergyVisuals: ["skeletal"],
+  furColor: "hsl(200, 10%, 30%)", bodySecondaryHue: 210, bodySecondaryLightness: 25,
+};
+
+// Serpix: serpentine — very tall and narrow, no arms, long tail, slit pupils
+const CREATURE_SERPIX: VisualParams = {
+  ...DEFAULT_VISUAL_PARAMS,
+  bodyWidth: 80, bodyHeight: 180, bodyBlobiness: 0.4, bodyHue: 160, bodySaturation: 55, bodyLightness: 18, bodyOpacity: 0.9,
+  headSize: 0.35, eyeCount: 2, eyeSize: 12, eyeGlow: 0.5, pupilShape: 1.0,
+  limbCount: 0, limbLength: 0, limbThickness: 3, clawSize: 0,
+  spineCount: 12, spineLength: 12, tailLength: 60, tailCurve: 0.8, furDensity: 0, skinRoughness: 0.4,
+  postureAngle: 38, glowIntensity: 0.35, glowHue: 160,
+  aggressionLevel: 0.3, luminosityLevel: 0.4, toxicityLevel: 0.5, intelligenceLevel: 0.3, armoringLevel: 0.1,
+  furColor: "hsl(160, 30%, 35%)", spineColor: "hsl(140, 50%, 30%)", clawColor: "hsl(160, 40%, 50%)",
+  eyeIrisColor: "hsl(50, 90%, 55%)", activeSynergyVisuals: ["toxic_green"],
+  bodySecondaryHue: 140, bodySecondaryLightness: 22,
+};
+
+// Florath: furry symbiotic creature — covered in dense organic fur, peaceful, balanced
+const CREATURE_FLORATH: VisualParams = {
+  ...DEFAULT_VISUAL_PARAMS,
+  bodyWidth: 130, bodyHeight: 140, bodyBlobiness: 0.7, bodyHue: 30, bodySaturation: 45, bodyLightness: 30, bodyOpacity: 0.85,
+  headSize: 0.5, eyeCount: 2, eyeSize: 13, eyeGlow: 0.25, pupilShape: 0,
+  limbCount: 4, limbLength: 45, limbThickness: 5, clawSize: 2,
+  spineCount: 0, spineLength: 0, tailLength: 35, tailCurve: 0.7, furDensity: 0.85, skinRoughness: 0.2,
+  postureAngle: 30, glowIntensity: 0.2, glowHue: 40,
+  aggressionLevel: 0.05, luminosityLevel: 0.15, toxicityLevel: 0, intelligenceLevel: 0.4, armoringLevel: 0.1,
+  furColor: "hsl(45, 60%, 55%)", spineColor: "hsl(30, 40%, 40%)", clawColor: "hsl(35, 30%, 60%)",
+  eyeIrisColor: "hsl(30, 70%, 50%)", activeSynergyVisuals: ["organic_harmony"],
+  bodySecondaryHue: 35, bodySecondaryLightness: 38,
 };
 
 const SHOWCASE_CREATURES = [
-  { params: CREATURE_KRAXON, name: "Kraxon", desc: "Una bestia aggressiva forgiata nel sangue e nel ferro." },
-  { params: CREATURE_LUMIVEX, name: "Lumivex", desc: "Un'intelligenza bioluminescente che pulsa di luce viola." },
-  { params: CREATURE_VENOMAW, name: "Venomaw", desc: "Un orrore tossico ricoperto di spine e veleno." },
-  { params: CREATURE_TITANEX, name: "Titanex", desc: "Un titano corazzato, quasi indistruttibile." },
+  { params: CREATURE_KRAXON, name: "Kraxon", desc: "Bestia aggressiva forgiata nel sangue e nel ferro." },
+  { params: CREATURE_LUMIVEX, name: "Lumivex", desc: "Intelligenza bioluminescente che pulsa di luce viola." },
+  { params: CREATURE_SERPIX, name: "Serpix", desc: "Serpente ancestrale con occhi ipnotici e spine dorsali." },
+  { params: CREATURE_VENOMAW, name: "Venomaw", desc: "Orrore tossico ricoperto di spine e veleno." },
+  { params: CREATURE_TITANEX, name: "Titanex", desc: "Carro armato biologico, tozzo e impenetrabile." },
+  { params: CREATURE_FLORATH, name: "Florath", desc: "Creatura simbiotica ricoperta di pelliccia dorata." },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -229,7 +261,7 @@ export default function LandingPage() {
             La combinazione di elementi chimici che scegli determina l&apos;aspetto, la personalit&agrave; e le abilit&agrave; della tua creatura.
           </p>
 
-          <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3">
             {SHOWCASE_CREATURES.map((c) => (
               <div
                 key={c.name}
