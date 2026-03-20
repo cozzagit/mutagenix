@@ -233,9 +233,17 @@ export function LabDashboard({
       {/* LEFT PANEL — Desktop only: creature info, elements, synergies  */}
       {/* ============================================================= */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border/50 bg-surface/80 md:flex">
-        {/* Element levels — horizontal bars */}
         <div className="flex-1 overflow-y-auto px-3 py-3">
-          <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-muted">
+          {/* Personality donut — centered */}
+          <div className="flex justify-center">
+            <PersonalityRadar traitValues={creature.traitValues} size={150} />
+          </div>
+
+          {/* Divider */}
+          <div className="my-2 border-t border-border/20" />
+
+          {/* Element levels — centered title + bars */}
+          <p className="mb-1.5 text-center text-[9px] font-bold uppercase tracking-widest text-muted">
             Elementi
           </p>
           <div className="flex flex-col gap-0.5">
@@ -246,14 +254,12 @@ export function LabDashboard({
 
               return (
                 <div key={el} className="flex h-[22px] items-center gap-1.5">
-                  {/* Symbol */}
                   <span
                     className="w-6 shrink-0 text-right text-[10px] font-black"
                     style={{ color }}
                   >
                     {el}
                   </span>
-                  {/* Bar track */}
                   <div className="relative h-2.5 flex-1 overflow-hidden rounded-sm bg-surface-3/60">
                     <div
                       className="h-full rounded-sm transition-all duration-700 ease-out"
@@ -265,7 +271,6 @@ export function LabDashboard({
                       }}
                     />
                   </div>
-                  {/* Value */}
                   <span
                     className="w-5 shrink-0 text-right text-[10px] font-semibold tabular-nums"
                     style={{ color: level > 0 ? color : 'var(--color-muted)' }}
@@ -277,8 +282,11 @@ export function LabDashboard({
             })}
           </div>
 
+          {/* Divider */}
+          <div className="my-2 border-t border-border/20" />
+
           {/* Synergies */}
-          <p className="mb-1 mt-3 text-[9px] font-bold uppercase tracking-widest text-muted">
+          <p className="mb-1 text-center text-[9px] font-bold uppercase tracking-widest text-muted">
             Sinergie
           </p>
           {activeSynergies.length > 0 ? (
@@ -311,10 +319,6 @@ export function LabDashboard({
             <span className="text-[10px] text-muted">Nessuna attiva</span>
           )}
 
-          {/* Personality radar chart */}
-          <div className="mt-3">
-            <PersonalityRadar traitValues={creature.traitValues} size={160} />
-          </div>
         </div>
 
         {/* Dev badge */}
@@ -396,7 +400,7 @@ export function LabDashboard({
           </div>
 
           {/* Synergies */}
-          <p className="mb-1 mt-3 text-[9px] font-bold uppercase tracking-widest text-muted">
+          <p className="mb-1 text-center text-[9px] font-bold uppercase tracking-widest text-muted">
             Sinergie
           </p>
           {activeSynergies.length > 0 ? (
