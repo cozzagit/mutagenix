@@ -290,33 +290,24 @@ export function LabDashboard({
             Sinergie
           </p>
           {activeSynergies.length > 0 ? (
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-wrap justify-center gap-x-2 gap-y-0.5">
               {activeSynergies.map((name) => {
                 const color = SYNERGY_COLORS[name] ?? '#6b6d7b';
                 return (
-                  <div key={name} className="flex items-center gap-1.5 py-0.5">
+                  <span key={name} className="inline-flex items-center gap-1 py-0.5">
                     <span
                       className="h-1.5 w-1.5 shrink-0 rounded-full"
-                      style={{
-                        backgroundColor: color,
-                        boxShadow: `0 0 4px ${color}88`,
-                      }}
+                      style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}88` }}
                     />
-                    <span
-                      className="text-[11px] font-semibold"
-                      style={{
-                        color,
-                        textShadow: `0 0 6px ${color}33`,
-                      }}
-                    >
+                    <span className="text-[10px] font-semibold" style={{ color, textShadow: `0 0 6px ${color}33` }}>
                       {name}
                     </span>
-                  </div>
+                  </span>
                 );
               })}
             </div>
           ) : (
-            <span className="text-[10px] text-muted">Nessuna attiva</span>
+            <span className="block text-center text-[10px] text-muted">Nessuna attiva</span>
           )}
 
         </div>
