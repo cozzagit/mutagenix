@@ -90,17 +90,28 @@ export default function GuidaPage() {
       <div className="flex flex-col gap-5">
         {/* How the lab works */}
         <GuideCard title="Come funziona il laboratorio">
-          <p className="text-sm leading-relaxed text-muted">
-            Ogni giorno puoi iniettare un esperimento nella tua creatura. Hai a disposizione{' '}
-            <span className="font-semibold text-accent">50 crediti</span> da distribuire tra 10 elementi chimici.
-            La combinazione che scegli determina come la tua creatura muter&agrave;.
-          </p>
+          <div className="flex flex-col gap-3 text-sm leading-relaxed text-muted">
+            <p>
+              Nel laboratorio puoi iniettare esperimenti chimici nella tua creatura. Hai a disposizione{' '}
+              <span className="font-semibold text-accent">50 crediti</span> da distribuire tra 10 elementi chimici.
+            </p>
+            <p>
+              <span className="font-semibold text-foreground">Ogni iniezione fa avanzare la creatura di un giorno evolutivo.</span>{' '}
+              Dopo aver confermato l&apos;esperimento, la mutazione inizia in tempo reale: vedrai il tuo organismo trasformarsi
+              davanti ai tuoi occhi.
+            </p>
+            <p>
+              La creatura cresce <span className="font-semibold text-bio-cyan">solo quando tu inietti</span>. Se non giochi, resta ferma.
+              Chi torna spesso al laboratorio fa evolvere la sua creatura più velocemente.
+              Non esiste un limite giornaliero fisso: appena la mutazione è completata, puoi iniettare di nuovo.
+            </p>
+          </div>
         </GuideCard>
 
         {/* Elements */}
         <GuideCard title="Gli Elementi">
           <p className="mb-4 text-sm text-muted">
-            Dieci elementi chimici, dieci vie evolutive. Cosa far&agrave; ciascuno alla tua creatura? Scoprilo sperimentando.
+            Dieci elementi chimici, dieci vie evolutive. Cosa farà ciascuno alla tua creatura? Scoprilo sperimentando.
           </p>
           <div className="flex flex-col gap-2.5">
             {ELEMENTS_GUIDE.map((el) => (
@@ -133,7 +144,7 @@ export default function GuidaPage() {
         {/* Mutations */}
         <GuideCard title="Le Mutazioni">
           <p className="text-sm leading-relaxed text-muted">
-            Dopo ogni iniezione, la tua creatura inizia a mutare. Le mutazioni non sono casuali &mdash; dipendono
+            Dopo ogni iniezione, la tua creatura inizia a mutare. Le mutazioni non sono casuali — dipendono
             da cosa hai iniettato, dalla storia delle iniezioni precedenti, e da{' '}
             <span className="font-semibold text-bio-purple">sinergie nascoste</span> tra gli elementi.
           </p>
@@ -177,9 +188,9 @@ export default function GuidaPage() {
         </GuideCard>
 
         {/* Personality */}
-        <GuideCard title="La Personalit\u00E0">
+        <GuideCard title="La Personalità">
           <p className="mb-4 text-sm leading-relaxed text-muted">
-            La tua creatura non &egrave; solo un corpo &mdash; sviluppa tratti caratteriali che ne influenzano
+            La tua creatura non è solo un corpo — sviluppa tratti caratteriali che ne influenzano
             l&apos;aspetto e il comportamento.
           </p>
           <div className="flex flex-col gap-2">
@@ -196,7 +207,7 @@ export default function GuidaPage() {
                   <span className="text-xs font-semibold" style={{ color: trait.color }}>
                     {trait.name}
                   </span>
-                  <span className="text-[11px] text-muted"> &mdash; {trait.desc}</span>
+                  <span className="text-[11px] text-muted"> — {trait.desc}</span>
                 </div>
               </div>
             ))}
@@ -204,9 +215,9 @@ export default function GuidaPage() {
         </GuideCard>
 
         {/* Stability */}
-        <GuideCard title="Stabilit\u00E0">
+        <GuideCard title="Stabilità">
           <p className="text-sm leading-relaxed text-muted">
-            L&apos;equilibrio tra gli elementi determina la stabilit&agrave; della creatura. Una creatura{' '}
+            L&apos;equilibrio tra gli elementi determina la stabilità della creatura. Una creatura{' '}
             <span className="font-semibold text-danger">instabile</span> muta in modi imprevedibili.
             Una creatura <span className="font-semibold text-accent">stabile</span> consolida i suoi tratti.
           </p>

@@ -220,8 +220,8 @@ export default function LandingPage() {
         </p>
 
         <p className="mx-auto mb-10 max-w-lg text-base leading-relaxed text-muted sm:text-lg">
-          Il tuo organismo parte come un blob informe. Ogni giorno decidi tu come nutrirlo.
-          Ogni scelta lo trasforma in qualcosa di unico.
+          Il tuo organismo parte come un blob informe. Inietta esperimenti chimici, osserva la mutazione
+          in tempo reale e fallo evolvere di giorno in giorno in qualcosa di unico.
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -255,10 +255,10 @@ export default function LandingPage() {
       <section className="relative z-10 border-t border-border/30 bg-gradient-to-b from-surface/40 to-background px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
-            Ogni creatura &egrave; unica
+            Ogni creatura è unica
           </h2>
           <p className="mx-auto mb-12 max-w-md text-center text-sm text-muted">
-            La combinazione di elementi chimici che scegli determina l&apos;aspetto, la personalit&agrave; e le abilit&agrave; della tua creatura.
+            La combinazione di elementi chimici che scegli determina l&apos;aspetto, la personalità e le abilità della tua creatura.
           </p>
 
           <div className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3">
@@ -290,8 +290,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
             {[
               { icon: <FlaskIcon />, title: "Registrati e ricevi il tuo blob", desc: "Un organismo primordiale ti aspetta nel laboratorio. Il suo destino dipende solo da te." },
-              { icon: <SyringeIcon />, title: "Ogni giorno inietta elementi chimici", desc: "Distribuisci 50 crediti tra 10 elementi. La tua strategia determina la mutazione." },
-              { icon: <DnaIcon />, title: "Guarda il tuo organismo mutare", desc: "Corpo, arti, occhi, personalit\u00E0 \u2014 tutto cambia in base alle tue scelte." },
+              { icon: <SyringeIcon />, title: "Inietta un esperimento chimico", desc: "Distribuisci 50 crediti tra 10 elementi. Ogni iniezione fa avanzare la creatura di un giorno evolutivo." },
+              { icon: <DnaIcon />, title: "Guarda la mutazione in diretta", desc: "Dopo ogni iniezione la creatura muta in tempo reale. Torna spesso per farla crescere pi\u00F9 in fretta." },
             ].map((step, i) => (
               <div key={step.title} className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
@@ -317,7 +317,7 @@ export default function LandingPage() {
       <section className="relative z-10 border-t border-border/30 bg-gradient-to-b from-surface/30 to-background px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-3xl">
           <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
-            10 Elementi, Infinite Possibilit&agrave;
+            10 Elementi, Infinite Possibilità
           </h2>
           <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">
             Ogni elemento influenza la tua creatura in modi diversi. Scopri le combinazioni e le sinergie nascoste.

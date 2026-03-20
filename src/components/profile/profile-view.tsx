@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -65,15 +66,7 @@ export function ProfileView({ user, creature }: ProfileViewProps) {
 
   async function handleLogout() {
     setLoggingOut(true);
-    try {
-      const res = await fetch('/api/auth/signout', { method: 'POST' });
-      if (res.ok) {
-        router.push('/login');
-        router.refresh();
-      }
-    } catch {
-      setLoggingOut(false);
-    }
+    await signOut({ callbackUrl: '/login' });
   }
 
   async function handleReset() {
@@ -142,7 +135,7 @@ export function ProfileView({ user, creature }: ProfileViewProps) {
             <StatCard label="Giorno" value={creature.ageDays} />
             <StatCard label="Gen." value={creature.generation} />
             <StatCard
-              label="Stabilit&agrave;"
+              label="Stabilità"
               value={`${stabilityPercent}%`}
               accent={stabilityColor}
             />
@@ -182,8 +175,8 @@ export function ProfileView({ user, creature }: ProfileViewProps) {
         ) : (
           <div className="rounded-xl border border-danger/30 bg-danger/10 p-4">
             <p className="mb-3 text-xs text-foreground">
-              Sei sicuro? Questa azione canceller&agrave; la tua creatura e tutti
-              i dati di evoluzione. Non pu&ograve; essere annullata.
+              Sei sicuro? Questa azione cancellerà la tua creatura e tutti
+              i dati di evoluzione. Non può essere annullata.
             </p>
             <div className="flex gap-2">
               <Button

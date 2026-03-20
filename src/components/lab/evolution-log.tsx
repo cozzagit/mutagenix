@@ -149,7 +149,7 @@ function DayCard({ entry }: { entry: TimelineEntry }) {
               d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
             />
           </svg>
-          <span className="text-xs text-muted">Stabilit&agrave;:</span>
+          <span className="text-xs text-muted">Stabilità:</span>
           <span
             className={`text-xs font-semibold tabular-nums ${stabilityColor(snapshot.stabilityScore)} ${stabilityGlow(snapshot.stabilityScore)}`}
           >

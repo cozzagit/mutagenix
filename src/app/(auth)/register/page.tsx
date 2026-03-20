@@ -25,8 +25,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 12) {
-      setError("La password deve contenere almeno 12 caratteri.");
+    if (password.length < 8) {
+      setError("La password deve contenere almeno 8 caratteri.");
       return;
     }
 
@@ -106,7 +106,7 @@ export default function RegisterPage() {
         <Input
           label="Password"
           type="password"
-          placeholder="Minimo 12 caratteri"
+          placeholder="Minimo 8 caratteri"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
