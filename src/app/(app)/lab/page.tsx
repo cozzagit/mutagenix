@@ -47,17 +47,21 @@ export default async function LabPage() {
     cooldownRemaining = Math.max(0, TIME_CONFIG.COOLDOWN_MS - (Date.now() - creature.updatedAt.getTime()));
   }
 
-  // Count recent battles where user was defender (last 24h)
+  // Count battles user hasn't seen (defender battles after last arena visit)
   let unseenBattles = 0;
   try {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // Use the user's last login or ranking's last_battle_at as threshold
+    const [userRanking] = await db.select({ lastBattleAt: creatureRankings.lastBattleAt })
+      .from(creatureRankings).where(eq(creatureRankings.creatureId, creature.id));
+    // If user has fought recently, use that as "seen" marker; otherwise check last 24h
+    const threshold = userRanking?.lastBattleAt ?? new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [unseenCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(battles)
       .where(
         and(
           eq(battles.defenderUserId, session.userId),
-          gte(battles.createdAt, twentyFourHoursAgo),
+          gte(battles.createdAt, threshold),
         ),
       );
     unseenBattles = unseenCount?.count ?? 0;
