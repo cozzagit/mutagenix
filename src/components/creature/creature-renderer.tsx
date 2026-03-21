@@ -2258,33 +2258,62 @@ export function CreatureRenderer({
 
           {/* ==================== WARRIOR PHASE: BATTLE SCARS ==================== */}
           {scarCountVal > 0 && (
-            <g opacity={lerp(0.3, 0.6, scarCountVal / 8)}>
-              {battleScarPaths.map((scar, i) => (
-                <path
-                  key={`scar-${i}`}
-                  d={scar.path}
-                  fill="none"
-                  stroke={bodyColorLight}
-                  strokeWidth={lerp(0.8, 1.5, scarCountVal / 8)}
-                  strokeLinecap="round"
-                  opacity={0.5 + (i % 3) * 0.1}
-                />
-              ))}
+            <g opacity={lerp(0.4, 0.75, scarCountVal / 8)}>
+              {battleScarPaths.map((scar, i) => {
+                // Fresh scars: darker/redder. Healed: lighter/pinker
+                const mainColor = scar.fresh
+                  ? `hsl(${p.bodyHue}, ${Math.min(p.bodySaturation + 20, 60)}%, ${Math.max(p.bodyLightness - 8, 8)}%)`
+                  : `hsl(${p.bodyHue + 10}, ${Math.max(p.bodySaturation - 5, 5)}%, ${Math.min(p.bodyLightness + 15, 65)}%)`;
+                const edgeColor = scar.fresh
+                  ? `hsl(0, 40%, ${p.bodyLightness + 5}%)`
+                  : `hsl(${p.bodyHue + 15}, ${Math.max(p.bodySaturation - 10, 5)}%, ${Math.min(p.bodyLightness + 22, 72)}%)`;
+                const isBurn = scar.type === "burn";
+
+                return (
+                  <g key={`scar-${i}`}>
+                    {/* Main scar paths */}
+                    {scar.paths.map((sp, si) => (
+                      <path key={`scar-p-${i}-${si}`} d={sp}
+                        fill={isBurn ? mainColor : "none"}
+                        fillOpacity={isBurn ? 0.25 : 0}
+                        stroke={isBurn ? "none" : mainColor}
+                        strokeWidth={scar.type === "claw" ? lerp(1.0, 2.0, scarCountVal / 8) :
+                          scar.type === "bite" ? 1.2 : lerp(1.2, 2.2, scarCountVal / 8)}
+                        strokeLinecap="round"
+                        opacity={0.55 + (si % 3) * 0.08} />
+                    ))}
+                    {/* Edge highlights (healed tissue lighter color) */}
+                    {scar.edgePaths.map((ep, ei) => (
+                      <path key={`scar-e-${i}-${ei}`} d={ep}
+                        fill="none" stroke={edgeColor}
+                        strokeWidth={0.5} strokeLinecap="round"
+                        opacity={0.3} />
+                    ))}
+                    {/* Stitch marks (slash scars only) */}
+                    {scar.stitchPaths.map((st, sti) => (
+                      <path key={`scar-st-${i}-${sti}`} d={st}
+                        fill="none" stroke={mainColor}
+                        strokeWidth={0.6} strokeLinecap="round"
+                        opacity={0.4} />
+                    ))}
+                  </g>
+                );
+              })}
             </g>
           )}
 
           {/* ==================== WARRIOR PHASE: MUSCLE DEFINITION ==================== */}
-          {muscleDefVal > 0.2 && combatPhaseVal > 0 && (
-            <g clipPath={`url(#${id("torso-clip")})`} opacity={lerp(0.1, 0.3, muscleDefVal)}>
-              {muscleLines.map((line, i) => (
+          {muscleDefVal > 0.3 && combatPhaseVal > 0 && (
+            <g clipPath={`url(#${id("torso-clip")})`}>
+              {muscleLines.map((mg, i) => (
                 <path
                   key={`muscle-${i}`}
-                  d={line}
+                  d={mg.path}
                   fill="none"
                   stroke={bodyColorDark}
-                  strokeWidth={lerp(0.5, 1.2, muscleDefVal)}
+                  strokeWidth={mg.width}
                   strokeLinecap="round"
-                  opacity={0.3 + muscleDefVal * 0.4}
+                  opacity={mg.opacity}
                 />
               ))}
             </g>
@@ -2356,7 +2385,7 @@ export function CreatureRenderer({
             <g>
               {/* Glow on claw endpoints */}
               {limbClaws.map((lc, i) =>
-                lc.paths.length > 0 ? (
+                lc.claws.length > 0 ? (
                   <circle
                     key={`atk-glow-${i}`}
                     cx={lc.endX}
