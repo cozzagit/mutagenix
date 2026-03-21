@@ -65,7 +65,7 @@ interface AdminDashboardProps {
   stats: AdminStats;
 }
 
-type SortMode = 'newest' | 'most-evolved';
+type SortMode = 'evoluzione' | 'elo' | 'battaglie' | 'iscrizione';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -143,8 +143,40 @@ const TIER_LABELS: Record<string, string> = {
   legend: 'Leggenda',
 };
 
+/** Extract the active creature for a user (first non-archived), or null. */
+function getActiveCreature(user: AdminUser): AdminCreature | null {
+  return user.creatures.find((c) => !c.isArchived) ?? null;
+}
+
+/** Get the body color from visual params for glow effect. */
+function getBodyColor(creature: AdminCreature | null): string | null {
+  if (!creature) return null;
+  const vp = creature.visualParams;
+  if (vp && typeof vp === 'object' && 'bodyColor' in vp && typeof vp.bodyColor === 'string') {
+    return vp.bodyColor;
+  }
+  return null;
+}
+
+/** Check if a creature is in recovery (recoveryUntil is in the future). */
+function isInRecovery(creature: AdminCreature): boolean {
+  if (!creature.ranking?.recoveryUntil) return false;
+  return new Date(creature.ranking.recoveryUntil) > new Date();
+}
+
 // ---------------------------------------------------------------------------
-// Stat Card
+// Sort pills config
+// ---------------------------------------------------------------------------
+
+const SORT_OPTIONS: { key: SortMode; label: string }[] = [
+  { key: 'evoluzione', label: 'Evoluzione' },
+  { key: 'elo', label: 'ELO' },
+  { key: 'battaglie', label: 'Battaglie' },
+  { key: 'iscrizione', label: 'Iscrizione' },
+];
+
+// ---------------------------------------------------------------------------
+// Stat Card (compact)
 // ---------------------------------------------------------------------------
 
 function StatCard({
@@ -157,12 +189,12 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border/40 bg-surface/60 px-4 py-3">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-muted">
+    <div className="flex shrink-0 flex-col rounded-lg border border-border/40 bg-surface/60 px-3 py-2 min-w-[120px]">
+      <p className="text-[9px] font-medium uppercase tracking-wider text-muted">
         {label}
       </p>
-      <p className="mt-0.5 text-xl font-bold text-foreground">{value}</p>
-      {sub && <p className="text-[11px] text-muted">{sub}</p>}
+      <p className="text-lg font-bold leading-tight text-foreground">{value}</p>
+      {sub && <p className="text-[10px] text-muted">{sub}</p>}
     </div>
   );
 }
@@ -181,7 +213,357 @@ function PlaceholderBlob({ size }: { size: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Creature mini-card (inside user card)
+// User Grid Card (creature-focused)
+// ---------------------------------------------------------------------------
+
+function UserGridCard({
+  user,
+  onClick,
+}: {
+  user: AdminUser;
+  onClick: () => void;
+}) {
+  const active = getActiveCreature(user);
+  const archivedCount = user.creatures.filter((c) => c.isArchived).length;
+  const totalCount = user.creatures.length;
+  const bodyColor = getBodyColor(active);
+  const recovery = active ? isInRecovery(active) : false;
+  const trauma = active?.ranking?.traumaActive ?? false;
+  const isWarrior = active ? active.ageDays >= GAME_CONFIG.WARRIOR_PHASE_START : false;
+
+  const visualParams: VisualParams | null = active
+    ? ({
+        ...DEFAULT_VISUAL_PARAMS,
+        ...(active.visualParams as Partial<VisualParams>),
+      } as VisualParams)
+    : null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative flex w-full flex-col rounded-xl border border-border/40 bg-surface/60 p-3 text-left transition-all hover:border-border/70 hover:bg-surface/80 active:scale-[0.98]"
+      style={
+        bodyColor
+          ? {
+              boxShadow: `0 0 20px ${bodyColor}18, inset 0 0 20px ${bodyColor}08`,
+            }
+          : undefined
+      }
+    >
+      {/* Admin corner badge */}
+      {user.isAdmin && (
+        <div className="absolute right-2 top-2 z-10 rounded-sm bg-amber-500/20 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-400">
+          Admin
+        </div>
+      )}
+
+      {/* Creature SVG */}
+      <div className="flex items-center justify-center py-2">
+        {visualParams ? (
+          <CreatureRenderer
+            params={visualParams}
+            size={70}
+            animated={false}
+            seed={42}
+          />
+        ) : (
+          <PlaceholderBlob size={70} />
+        )}
+      </div>
+
+      {/* Creature info */}
+      <div className="mt-1 text-center">
+        <p className="truncate text-sm font-bold text-foreground">
+          {active?.name ?? 'Nessuna creatura'}
+        </p>
+        {active && (
+          <p className="text-[11px] text-muted">
+            Day {active.ageDays} &middot; Gen {active.generation}
+          </p>
+        )}
+      </div>
+
+      {/* Arena stats row */}
+      {active?.ranking && (
+        <p className="mt-1 text-center text-[11px]">
+          <span className="text-muted/80">{isWarrior ? '\u2694 ' : ''}ELO </span>
+          <span className="font-bold text-foreground">{active.ranking.eloRating}</span>
+          <span className="text-muted"> &middot; </span>
+          <span className="font-bold text-accent">{active.ranking.wins}V</span>
+          {' '}
+          <span className="font-bold text-red-400">{active.ranking.losses}S</span>
+        </p>
+      )}
+
+      {/* Status badges row */}
+      {(recovery || trauma || isWarrior) && (
+        <div className="mt-1.5 flex flex-wrap justify-center gap-1">
+          {isWarrior && (
+            <span className="rounded-sm bg-red-500/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-red-400">
+              Guerriero
+            </span>
+          )}
+          {recovery && (
+            <span className="rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-amber-400">
+              In Recupero
+            </span>
+          )}
+          {trauma && (
+            <span className="rounded-sm bg-red-600/20 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-red-500">
+              Trauma
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Divider */}
+      <div className="my-2 border-t border-border/20" />
+
+      {/* User info */}
+      <div className="space-y-0.5 text-[11px]">
+        <p className="truncate text-foreground/80">
+          <span className="text-muted/70">{'\uD83D\uDC64'} </span>
+          {user.displayName}
+        </p>
+        <p className="truncate text-muted">
+          <span className="text-muted/70">{'\uD83D\uDCE7'} </span>
+          {user.email.length > 22 ? user.email.slice(0, 20) + '...' : user.email}
+        </p>
+        <p className="text-muted">
+          <span className="text-muted/70">{'\uD83D\uDCC5'} </span>
+          {formatDate(user.createdAt)}
+        </p>
+        <p className="text-muted">
+          <span className="text-muted/70">{'\uD83E\uDDEC'} </span>
+          {totalCount} creatur{totalCount === 1 ? 'a' : 'e'}
+          {archivedCount > 0 && (
+            <span className="text-muted/60"> ({archivedCount} arch.)</span>
+          )}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// User Detail Drawer (slide-over) — shows user info + all creatures
+// ---------------------------------------------------------------------------
+
+function UserDetailDrawer({
+  user,
+  onCreatureClick,
+  onClose,
+}: {
+  user: AdminUser;
+  onCreatureClick: (creature: AdminCreature) => void;
+  onClose: () => void;
+}) {
+  const [resetting, setResetting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const activeCreatures = user.creatures.filter((c) => !c.isArchived);
+  const archivedCreatures = user.creatures.filter((c) => c.isArchived);
+
+  async function handleReset() {
+    if (activeCreatures.length === 0) return;
+    setResetting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/reset`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error?.message ?? 'Errore durante il reset');
+      }
+    } catch {
+      alert('Errore di rete');
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error?.message ?? 'Errore durante eliminazione');
+      }
+    } catch {
+      alert('Errore di rete');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Drawer */}
+      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col overflow-y-auto rounded-t-2xl border-t border-border/50 bg-background shadow-2xl md:inset-x-auto md:inset-y-0 md:right-0 md:max-h-none md:w-[420px] md:rounded-none md:border-l md:border-t-0">
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/40 bg-surface/80 px-4 py-3 backdrop-blur-md">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-foreground">
+                {user.displayName}
+              </h2>
+              {user.isAdmin && (
+                <span className="rounded-sm bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-400">
+                  Admin
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-muted">{user.email}</p>
+            <p className="text-[10px] text-muted">
+              Iscritto: {formatDateFull(user.createdAt)}
+              {user.lastLoginAt && (
+                <> &middot; Ultimo accesso: {formatDate(user.lastLoginAt)}</>
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="h-5 w-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18 18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-4 p-4">
+          {/* Battle stats */}
+          {user.totalBattles > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted">
+              <span>Battaglie totali:</span>
+              <span className="font-bold text-foreground">{user.totalBattles}</span>
+            </div>
+          )}
+
+          {/* Active creatures */}
+          {activeCreatures.length > 0 && (
+            <div>
+              <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted">
+                Creature Attive ({activeCreatures.length})
+              </p>
+              <div className="space-y-2">
+                {activeCreatures.map((creature) => (
+                  <CreatureMiniCard
+                    key={creature.id}
+                    creature={creature}
+                    onClick={() => onCreatureClick(creature)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Archived creatures */}
+          {archivedCreatures.length > 0 && (
+            <div>
+              <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted">
+                Creature Archiviate ({archivedCreatures.length})
+              </p>
+              <div className="space-y-1.5">
+                {archivedCreatures.map((creature) => (
+                  <CreatureMiniCard
+                    key={creature.id}
+                    creature={creature}
+                    onClick={() => onCreatureClick(creature)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {user.creatures.length === 0 && (
+            <p className="text-xs italic text-muted/60">Nessuna creatura</p>
+          )}
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2 border-t border-border/20 pt-3">
+            {activeCreatures.length > 0 && (
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={resetting}
+                className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] font-medium text-amber-400 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+              >
+                {resetting ? 'Resettando...' : 'Resetta Creatura Attiva'}
+              </button>
+            )}
+
+            {!confirmDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-400 transition-colors hover:bg-red-500/20"
+              >
+                Elimina Utente
+              </button>
+            ) : (
+              <div className="w-full space-y-2 rounded-lg border border-red-500/40 bg-red-500/5 p-3">
+                <p className="text-[11px] text-red-300">
+                  Sei sicuro? Questa azione elimina l&apos;utente, tutte le creature e
+                  tutti i dati correlati. Non e reversibile.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {deleting ? 'Eliminando...' : 'Conferma Eliminazione'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="flex-1 rounded-lg border border-border/50 bg-surface px-3 py-1.5 text-[11px] font-medium text-muted transition-colors hover:text-foreground"
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom spacer */}
+          <div className="h-8" />
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Creature mini-card (inside drawer)
 // ---------------------------------------------------------------------------
 
 function CreatureMiniCard({
@@ -291,191 +673,7 @@ function CreatureMiniCard({
 }
 
 // ---------------------------------------------------------------------------
-// User Card (expandable)
-// ---------------------------------------------------------------------------
-
-function UserCard({
-  user,
-  onCreatureClick,
-}: {
-  user: AdminUser;
-  onCreatureClick: (creature: AdminCreature) => void;
-}) {
-  const [resetting, setResetting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const activeCreatures = user.creatures.filter((c) => !c.isArchived);
-  const archivedCreatures = user.creatures.filter((c) => c.isArchived);
-  const totalCreatures = user.creatures.length;
-
-  async function handleReset() {
-    if (activeCreatures.length === 0) return;
-    setResetting(true);
-    try {
-      const res = await fetch(`/api/admin/users/${user.id}/reset`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        window.location.reload();
-      } else {
-        const data = await res.json();
-        alert(data.error?.message ?? 'Errore durante il reset');
-      }
-    } catch {
-      alert('Errore di rete');
-    } finally {
-      setResetting(false);
-    }
-  }
-
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        window.location.reload();
-      } else {
-        const data = await res.json();
-        alert(data.error?.message ?? 'Errore durante eliminazione');
-      }
-    } catch {
-      alert('Errore di rete');
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  return (
-    <div className="rounded-xl border border-border/40 bg-surface/60 p-4 transition-colors hover:border-border/60">
-      {/* User header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-base">&#x1F464;</span>
-            <h3 className="truncate text-sm font-bold text-foreground">
-              {user.displayName}
-            </h3>
-            {user.isAdmin && (
-              <span className="shrink-0 rounded-sm bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-                Admin
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 truncate text-xs text-muted">{user.email}</p>
-          <p className="mt-0.5 text-[11px] text-muted">
-            Iscritto: {formatDate(user.createdAt)}
-            {user.lastLoginAt && (
-              <> &middot; Ultimo accesso: {formatDate(user.lastLoginAt)}</>
-            )}
-          </p>
-        </div>
-        {user.totalBattles > 0 && (
-          <div className="shrink-0 text-right">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted">Battaglie</p>
-            <p className="text-sm font-bold text-foreground">{user.totalBattles}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Creature summary */}
-      <div className="mt-3 border-t border-border/20 pt-3">
-        {totalCreatures > 0 ? (
-          <>
-            <p className="mb-2 text-[11px] text-muted">
-              Creature: <span className="font-medium text-foreground/80">{totalCreatures} totali</span>
-              {' ('}
-              <span className="text-emerald-400">{activeCreatures.length} attiv{activeCreatures.length === 1 ? 'a' : 'e'}</span>
-              {archivedCreatures.length > 0 && (
-                <>, <span className="text-muted">{archivedCreatures.length} archiviat{archivedCreatures.length === 1 ? 'a' : 'e'}</span></>
-              )}
-              {')'}
-            </p>
-
-            {/* Active creatures */}
-            <div className="space-y-2">
-              {activeCreatures.map((creature) => (
-                <CreatureMiniCard
-                  key={creature.id}
-                  creature={creature}
-                  onClick={() => onCreatureClick(creature)}
-                />
-              ))}
-            </div>
-
-            {/* Archived creatures */}
-            {archivedCreatures.length > 0 && (
-              <div className="mt-2 space-y-1.5">
-                {archivedCreatures.map((creature) => (
-                  <CreatureMiniCard
-                    key={creature.id}
-                    creature={creature}
-                    onClick={() => onCreatureClick(creature)}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <p className="text-xs italic text-muted/60">Nessuna creatura</p>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="mt-3 flex flex-wrap gap-2 border-t border-border/20 pt-3">
-        {activeCreatures.length > 0 && (
-          <button
-            type="button"
-            onClick={handleReset}
-            disabled={resetting}
-            className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] font-medium text-amber-400 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
-          >
-            {resetting ? 'Resettando...' : 'Resetta Creatura Attiva'}
-          </button>
-        )}
-
-        {!confirmDelete ? (
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-400 transition-colors hover:bg-red-500/20"
-          >
-            Elimina Utente
-          </button>
-        ) : (
-          <div className="w-full space-y-2 rounded-lg border border-red-500/40 bg-red-500/5 p-3">
-            <p className="text-[11px] text-red-300">
-              Sei sicuro? Questa azione elimina l&apos;utente, tutte le creature e
-              tutti i dati correlati. Non e reversibile.
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleting ? 'Eliminando...' : 'Conferma Eliminazione'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="flex-1 rounded-lg border border-border/50 bg-surface px-3 py-1.5 text-[11px] font-medium text-muted transition-colors hover:text-foreground"
-              >
-                Annulla
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Detail Drawer (slide-over for creature deep-dive)
+// Creature Detail Drawer (slide-over for creature deep-dive)
 // ---------------------------------------------------------------------------
 
 function CreatureDetailDrawer({
@@ -506,12 +704,12 @@ function CreatureDetailDrawer({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Drawer — from right on desktop, from bottom on mobile */}
-      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col overflow-y-auto rounded-t-2xl border-t border-border/50 bg-background shadow-2xl md:inset-x-auto md:inset-y-0 md:right-0 md:max-h-none md:w-[420px] md:rounded-none md:border-l md:border-t-0">
+      {/* Drawer */}
+      <div className="fixed inset-x-0 bottom-0 z-[60] flex max-h-[90dvh] flex-col overflow-y-auto rounded-t-2xl border-t border-border/50 bg-background shadow-2xl md:inset-x-auto md:inset-y-0 md:right-0 md:max-h-none md:w-[420px] md:rounded-none md:border-l md:border-t-0">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/40 bg-surface/80 px-4 py-3 backdrop-blur-md">
           <div>
@@ -520,7 +718,7 @@ function CreatureDetailDrawer({
             </h2>
             <p className="text-[10px] text-muted">
               Day {creature.ageDays} &middot; Gen {creature.generation}
-              {creature.isArchived && ' &middot; Archiviata'}
+              {creature.isArchived && ' \u00B7 Archiviata'}
             </p>
           </div>
           <button
@@ -560,7 +758,7 @@ function CreatureDetailDrawer({
             <div className="flex justify-center">
               <span className="rounded-sm bg-muted/20 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">
                 {archiveReasonLabel(creature.archiveReason)}
-                {creature.archivedAt && ` — ${formatDate(creature.archivedAt)}`}
+                {creature.archivedAt && ` \u2014 ${formatDate(creature.archivedAt)}`}
               </span>
             </div>
           )}
@@ -743,7 +941,8 @@ function CreatureDetailDrawer({
 
 export function AdminDashboard({ data, stats }: AdminDashboardProps) {
   const [search, setSearch] = useState('');
-  const [sortMode, setSortMode] = useState<SortMode>('newest');
+  const [sortMode, setSortMode] = useState<SortMode>('evoluzione');
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedCreature, setSelectedCreature] = useState<AdminCreature | null>(null);
 
   const filtered = useMemo(() => {
@@ -755,38 +954,56 @@ export function AdminDashboard({ data, stats }: AdminDashboardProps) {
       result = result.filter(
         (user) =>
           user.displayName.toLowerCase().includes(q) ||
-          user.email.toLowerCase().includes(q),
+          user.email.toLowerCase().includes(q) ||
+          user.creatures.some((c) => c.name.toLowerCase().includes(q)),
       );
     }
 
     // Sort
-    if (sortMode === 'most-evolved') {
-      result = [...result].sort((a, b) => {
-        const aMax = Math.max(0, ...a.creatures.filter((c) => !c.isArchived).map((c) => c.ageDays));
-        const bMax = Math.max(0, ...b.creatures.filter((c) => !c.isArchived).map((c) => c.ageDays));
-        return bMax - aMax;
-      });
-    }
-    // 'newest' is default from server (already sorted by createdAt DESC)
+    result = [...result].sort((a, b) => {
+      const aActive = getActiveCreature(a);
+      const bActive = getActiveCreature(b);
+
+      switch (sortMode) {
+        case 'evoluzione': {
+          const aAge = aActive?.ageDays ?? -1;
+          const bAge = bActive?.ageDays ?? -1;
+          return bAge - aAge;
+        }
+        case 'elo': {
+          // Users with no ranking go to bottom
+          const aElo = aActive?.ranking?.eloRating ?? -Infinity;
+          const bElo = bActive?.ranking?.eloRating ?? -Infinity;
+          return bElo - aElo;
+        }
+        case 'battaglie': {
+          return b.totalBattles - a.totalBattles;
+        }
+        case 'iscrizione': {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        default:
+          return 0;
+      }
+    });
 
     return result;
   }, [data, search, sortMode]);
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-4">
-      {/* Stats bar */}
-      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="mx-auto w-full max-w-7xl px-4 py-4">
+      {/* Stats bar — horizontal scroll on mobile */}
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         <StatCard label="Totale utenti" value={stats.totalUsers} />
         <StatCard label="Creature attive" value={stats.activeCreatures} />
-        <StatCard label="Creature archiviate" value={stats.archivedCreatures} />
-        <StatCard label="Battaglie totali" value={stats.totalBattles} />
-        <StatCard label="Guerrieri in Arena" value={stats.warriorsInArena} />
+        <StatCard label="Archiviate" value={stats.archivedCreatures} />
+        <StatCard label="Battaglie" value={stats.totalBattles} />
+        <StatCard label="In Arena" value={stats.warriorsInArena} />
       </div>
 
-      {/* Search + Sort */}
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-        {/* Search */}
-        <div className="relative flex-1">
+      {/* Search */}
+      <div className="mb-3">
+        <div className="relative">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -804,45 +1021,40 @@ export function AdminDashboard({ data, stats }: AdminDashboardProps) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cerca per nome o email..."
+            placeholder="Cerca per nome, email o creatura..."
             className="w-full rounded-lg border border-border/50 bg-surface/60 py-2 pl-10 pr-4 text-xs text-foreground placeholder:text-muted/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
         </div>
-
-        {/* Sort */}
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => setSortMode('newest')}
-            className={`rounded-lg px-3 py-2 text-[11px] font-medium transition-colors ${
-              sortMode === 'newest'
-                ? 'bg-primary/15 text-primary'
-                : 'bg-surface/60 text-muted hover:text-foreground'
-            }`}
-          >
-            Piu recenti
-          </button>
-          <button
-            type="button"
-            onClick={() => setSortMode('most-evolved')}
-            className={`rounded-lg px-3 py-2 text-[11px] font-medium transition-colors ${
-              sortMode === 'most-evolved'
-                ? 'bg-primary/15 text-primary'
-                : 'bg-surface/60 text-muted hover:text-foreground'
-            }`}
-          >
-            Piu evolute
-          </button>
-        </div>
       </div>
 
-      {/* User list */}
-      <div className="space-y-3">
+      {/* Sort pills — horizontal scroll on mobile */}
+      <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {SORT_OPTIONS.map((opt) => (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => setSortMode(opt.key)}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-medium transition-colors ${
+              sortMode === opt.key
+                ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
+                : 'bg-surface/60 text-muted hover:bg-surface/80 hover:text-foreground'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+        <span className="shrink-0 self-center pl-2 text-[10px] text-muted/50">
+          {filtered.length} utent{filtered.length === 1 ? 'e' : 'i'}
+        </span>
+      </div>
+
+      {/* Card grid */}
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-4">
         {filtered.map((user) => (
-          <UserCard
+          <UserGridCard
             key={user.id}
             user={user}
-            onCreatureClick={(creature) => setSelectedCreature(creature)}
+            onClick={() => setSelectedUser(user)}
           />
         ))}
       </div>
@@ -853,7 +1065,16 @@ export function AdminDashboard({ data, stats }: AdminDashboardProps) {
         </p>
       )}
 
-      {/* Creature Detail Drawer */}
+      {/* User Detail Drawer (shows all creatures + actions) */}
+      {selectedUser && !selectedCreature && (
+        <UserDetailDrawer
+          user={selectedUser}
+          onCreatureClick={(creature) => setSelectedCreature(creature)}
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
+
+      {/* Creature Detail Drawer (deep-dive into a single creature) */}
       {selectedCreature && (
         <CreatureDetailDrawer
           creature={selectedCreature}
