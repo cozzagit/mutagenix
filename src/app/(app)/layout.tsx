@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ToastProvider } from "@/components/ui/toast";
+import { BattleNotifier } from "@/components/pwa/battle-notifier";
 
 interface NavItem {
   href: string;
@@ -198,6 +199,8 @@ export default function AppLayout({
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <ToastProvider>{children}</ToastProvider>
       </main>
+
+      <BattleNotifier />
 
       {/* Mobile: slim bottom nav (48px) */}
       <nav className="flex h-12 shrink-0 items-center justify-around border-t border-border/50 bg-surface/80 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] md:hidden">
