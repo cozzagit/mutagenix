@@ -23,9 +23,10 @@ import type { ElementLevels, TraitValues } from '@/types/game';
  */
 export function calculateTraitDeltas(
   elementLevels: ElementLevels,
-  _currentTraits: TraitValues,
+  currentTraits: TraitValues,
   ageDays: number,
   stability: number,
+  allocation?: Partial<Record<ElementId, number>>,
 ): Record<TraitId, number> {
   const growthRate =
     GAME_CONFIG.GROWTH_RATE_BASE / (1 + ageDays * 0.01);
@@ -39,12 +40,26 @@ export function calculateTraitDeltas(
 
   const deltas = {} as Record<TraitId, number>;
 
+  // Use current injection credits (not accumulated levels) for growth calculation.
+  // This keeps growth proportional to daily input, not snowballing with accumulated totals.
+  // Add a small base from accumulated levels (10%) for flavor.
+  const credits = allocation ?? {};
+
   for (const trait of TRAITS) {
-    let sum = 0;
+    let creditSum = 0;
+    let levelSum = 0;
     for (const el of ELEMENTS) {
-      sum += elementLevels[el] * ELEMENT_TRAIT_WEIGHTS[el][trait];
+      creditSum += (credits[el] ?? 0) * ELEMENT_TRAIT_WEIGHTS[el][trait];
+      levelSum += elementLevels[el] * ELEMENT_TRAIT_WEIGHTS[el][trait];
     }
-    deltas[trait] = sum * growthRate * stabilityModifier;
+    // Main growth from credits, small boost from accumulated levels
+    const rawDelta = (creditSum * 3 + levelSum * 0.02) * growthRate * stabilityModifier;
+
+    // Diminishing returns: traits grow slower as they approach 100
+    const currentValue = currentTraits[trait] ?? 0;
+    const diminishing = 1 - (currentValue / 100) * 0.6;
+
+    deltas[trait] = rawDelta * Math.max(diminishing, 0.1);
   }
 
   return deltas;

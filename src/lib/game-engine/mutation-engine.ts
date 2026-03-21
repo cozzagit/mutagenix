@@ -155,6 +155,7 @@ export function processDailyMutation(
     creature.traitValues,
     ageDays,
     newStability,
+    allocation,
   );
 
   // --- 4. Synergy bonuses ---
