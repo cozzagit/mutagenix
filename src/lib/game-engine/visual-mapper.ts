@@ -492,11 +492,14 @@ export function mapTraitsToVisuals(
   // ---------------------------------------------------------------------------
   // Personality-driven trait levels (preserved from original)
   // ---------------------------------------------------------------------------
-  const rawAggr = t('aggression');
-  const rawLumi = t('luminosity');
-  const rawToxi = t('toxicity');
-  const rawInte = t('intelligence');
-  const rawArmo = t('armoring');
+  // Personality: use raw trait values (0-100) for normalization, NOT the 0-1 t() values.
+  // This way, small differences in absolute values matter — not just relative 0-1 fractions.
+  // We square the values to amplify differences: a trait at 80 vs 60 becomes 6400 vs 3600.
+  const rawAggr = Math.pow(traitValues.aggression, 1.5);
+  const rawLumi = Math.pow(traitValues.luminosity, 1.5);
+  const rawToxi = Math.pow(traitValues.toxicity, 1.5);
+  const rawInte = Math.pow(traitValues.intelligence, 1.5);
+  const rawArmo = Math.pow(traitValues.armoring, 1.5);
   const personalityTotal = rawAggr + rawLumi + rawToxi + rawInte + rawArmo;
   const pNorm = personalityTotal > 0 ? 1 / personalityTotal : 0;
   const aggressionLevel = rawAggr * pNorm;
