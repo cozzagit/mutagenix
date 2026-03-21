@@ -181,7 +181,7 @@ function ExperimentCard({
             </div>
 
             {/* Personality radar */}
-            <PersonalityRadar traitValues={experiment.traitValues} size={140} />
+            <PersonalityRadar elementLevels={experiment.elementLevels} size={140} />
 
             {/* Synergies */}
             <div>

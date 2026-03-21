@@ -308,7 +308,7 @@ export function LabDashboard({
         <div className="flex-1 overflow-y-auto px-3 py-3">
           {/* Personality donut — centered */}
           <div className="flex justify-center">
-            <PersonalityRadar traitValues={creature.traitValues} size={150} />
+            <PersonalityRadar elementLevels={elementLevels} size={150} />
           </div>
 
           {/* Divider */}
@@ -544,7 +544,7 @@ export function LabDashboard({
           )}
 
           {/* Personality radar */}
-          <PersonalityRadar traitValues={creature.traitValues} size={120} />
+          <PersonalityRadar elementLevels={elementLevels} size={120} />
 
           {/* Combat stats — mobile */}
           {hasCombatStats && (
