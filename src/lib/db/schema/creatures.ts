@@ -39,6 +39,13 @@ export type TraitValues = {
   toxicity: number;
   intelligence: number;
   armoring: number;
+  // Combat traits (Warrior Phase)
+  attackPower: number;
+  defense: number;
+  speed: number;
+  stamina: number;
+  specialAttack: number;
+  battleScars: number;
 };
 
 export type VisualParams = Record<string, unknown>;
@@ -51,6 +58,8 @@ export const DEFAULT_TRAIT_VALUES: TraitValues = {
   bodySize: 0, headSize: 0, limbGrowth: 0, eyeDev: 0, skinTex: 0,
   furDensity: 0, spininess: 0, tailGrowth: 0, clawDev: 0, posture: 0,
   aggression: 0, luminosity: 0, toxicity: 0, intelligence: 0, armoring: 0,
+  // Combat traits
+  attackPower: 0, defense: 0, speed: 0, stamina: 0, specialAttack: 0, battleScars: 0,
 };
 
 export const creatures = pgTable('creatures', {

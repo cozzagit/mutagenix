@@ -59,6 +59,14 @@ export const DEFAULT_VISUAL_PARAMS: VisualParams = {
   veinColor: "hsl(5, 40%, 20%)",
   glowColorFromPalette: "hsl(210, 70%, 55%)",
   activeSynergyVisuals: [],
+  // Combat/Warrior phase defaults
+  combatPhase: 0,
+  attackGlow: 0,
+  defensePatches: 0,
+  speedLines: 0,
+  muscleDefinition: 0,
+  scarCount: 0,
+  specialAuraIntensity: 0,
 };
 
 /* ------------------------------------------------------------------ */
@@ -918,6 +926,97 @@ export function CreatureRenderer({
       }
     }
 
+    // ---- Combat / Warrior Phase visuals ----
+    const combatPhaseVal = p.combatPhase ?? 0;
+    const attackGlowVal = p.attackGlow ?? 0;
+    const defensePatchesVal = p.defensePatches ?? 0;
+    const speedLinesVal = p.speedLines ?? 0;
+    const muscleDefVal = p.muscleDefinition ?? 0;
+    const scarCountVal = p.scarCount ?? 0;
+    const specialAuraVal = p.specialAuraIntensity ?? 0;
+
+    // Battle scars: jagged diagonal lines on body and head
+    const battleScarPaths: { path: string; onHead: boolean }[] = [];
+    if (scarCountVal > 0) {
+      const scarRng = makeRng((fixedSeed ?? 42) + 1111);
+      for (let i = 0; i < scarCountVal; i++) {
+        const onHead = i < Math.ceil(scarCountVal * 0.3);
+        const regionCx = onHead ? headCx : cx;
+        const regionCy = onHead ? headCy : torsoCenterY;
+        const regionW = onHead ? headR * 0.7 : torsoW * 0.4;
+        const regionH = onHead ? headR * 0.5 : torsoH * 0.35;
+
+        const startX = regionCx + (scarRng() - 0.5) * regionW * 2;
+        const startY = regionCy + (scarRng() - 0.5) * regionH * 2;
+        const scarLen = 6 + scarRng() * 14;
+        const scarAngle = (scarRng() - 0.5) * Math.PI * 0.8;
+
+        // Jagged scar: 2-3 segments
+        const segments = 2 + Math.floor(scarRng() * 2);
+        let d = `M ${f1(startX)} ${f1(startY)}`;
+        let curX = startX;
+        let curY = startY;
+        for (let s = 0; s < segments; s++) {
+          const segLen = scarLen / segments;
+          const jag = (scarRng() - 0.5) * 4;
+          curX += Math.cos(scarAngle) * segLen + jag;
+          curY += Math.sin(scarAngle) * segLen + (scarRng() - 0.5) * 3;
+          d += ` L ${f1(curX)} ${f1(curY)}`;
+        }
+        battleScarPaths.push({ path: d, onHead });
+      }
+    }
+
+    // Muscle definition lines: curved lines on torso following body contour
+    const muscleLines: string[] = [];
+    if (muscleDefVal > 0.2) {
+      const muscRng = makeRng((fixedSeed ?? 42) + 2222);
+      const lineCount2 = Math.round(lerp(3, 5, (muscleDefVal - 0.2) / 0.8));
+      for (let i = 0; i < lineCount2; i++) {
+        const yFrac = 0.2 + (i / lineCount2) * 0.6;
+        const yPos = torsoTopY + torsoH * yFrac;
+        const xSpread = torsoW * lerp(0.2, 0.4, yFrac);
+        const curveMag = (muscRng() - 0.3) * 6;
+        muscleLines.push(
+          `M ${f1(cx - xSpread)} ${f1(yPos)} Q ${f1(cx)} ${f1(yPos + curveMag)} ${f1(cx + xSpread)} ${f1(yPos)}`
+        );
+      }
+    }
+
+    // Defense patches: thicker darkened armor plates (distinct from regular armoring)
+    const combatDefensePlates: { cx: number; cy: number; rx: number; ry: number; angle: number }[] = [];
+    if (defensePatchesVal > 0 && combatPhaseVal > 0.3) {
+      const defRng = makeRng((fixedSeed ?? 42) + 3333);
+      for (let i = 0; i < defensePatchesVal; i++) {
+        const yFrac = 0.15 + defRng() * 0.65;
+        const xOff = (defRng() - 0.5) * torsoW * 0.6;
+        combatDefensePlates.push({
+          cx: cx + xOff,
+          cy: torsoTopY + torsoH * yFrac,
+          rx: 8 + defRng() * 10,
+          ry: 5 + defRng() * 7,
+          angle: (defRng() - 0.5) * 40,
+        });
+      }
+    }
+
+    // Speed lines: horizontal streaks behind the creature
+    const speedLinePaths: { path: string; opacity: number }[] = [];
+    if (speedLinesVal > 0.2 && combatPhaseVal > 0) {
+      const speedRng = makeRng((fixedSeed ?? 42) + 4444);
+      const lineCountS = Math.round(lerp(3, 5, speedLinesVal));
+      for (let i = 0; i < lineCountS; i++) {
+        const yPos = torsoTopY + torsoH * (0.15 + (i / lineCountS) * 0.7);
+        const startX2 = cx + torsoW * 0.5 + 5 + speedRng() * 10;
+        const endX2 = startX2 + 15 + speedRng() * 25 * speedLinesVal;
+        const opacity2 = lerp(0.15, 0.4, speedLinesVal) * (1 - i * 0.15);
+        speedLinePaths.push({
+          path: `M ${f1(startX2)} ${f1(yPos)} L ${f1(endX2)} ${f1(yPos)}`,
+          opacity: Math.max(0.05, opacity2),
+        });
+      }
+    }
+
     return {
       id,
       p,
@@ -970,6 +1069,18 @@ export function CreatureRenderer({
       armorPlates,
       armorLimbPlates,
       intelCrownLines,
+      // Warrior phase
+      combatPhaseVal,
+      attackGlowVal,
+      defensePatchesVal,
+      speedLinesVal,
+      muscleDefVal,
+      scarCountVal,
+      specialAuraVal,
+      battleScarPaths,
+      muscleLines,
+      combatDefensePlates,
+      speedLinePaths,
     };
   }, [params, instanceId, fixedSeed]);
 
@@ -984,6 +1095,10 @@ export function CreatureRenderer({
     aggrLvl, lumiLvl, toxiLvl, inteLvl, armoLvl,
     lumiSpots, lumiVeins, toxPustules, toxDrips,
     armorPlates, armorLimbPlates, intelCrownLines,
+    // Warrior phase
+    combatPhaseVal, attackGlowVal, speedLinesVal,
+    muscleDefVal, scarCountVal, specialAuraVal,
+    battleScarPaths, muscleLines, combatDefensePlates, speedLinePaths,
   } = svg;
 
   const anim = animated;
@@ -1606,6 +1721,208 @@ export function CreatureRenderer({
                   opacity={0.6}
                 />
               ))}
+            </g>
+          )}
+
+          {/* ==================== WARRIOR PHASE: BATTLE SCARS ==================== */}
+          {scarCountVal > 0 && (
+            <g opacity={lerp(0.3, 0.6, scarCountVal / 8)}>
+              {battleScarPaths.map((scar, i) => (
+                <path
+                  key={`scar-${i}`}
+                  d={scar.path}
+                  fill="none"
+                  stroke={bodyColorLight}
+                  strokeWidth={lerp(0.8, 1.5, scarCountVal / 8)}
+                  strokeLinecap="round"
+                  opacity={0.5 + (i % 3) * 0.1}
+                />
+              ))}
+            </g>
+          )}
+
+          {/* ==================== WARRIOR PHASE: MUSCLE DEFINITION ==================== */}
+          {muscleDefVal > 0.2 && combatPhaseVal > 0 && (
+            <g clipPath={`url(#${id("torso-clip")})`} opacity={lerp(0.1, 0.3, muscleDefVal)}>
+              {muscleLines.map((line, i) => (
+                <path
+                  key={`muscle-${i}`}
+                  d={line}
+                  fill="none"
+                  stroke={bodyColorDark}
+                  strokeWidth={lerp(0.5, 1.2, muscleDefVal)}
+                  strokeLinecap="round"
+                  opacity={0.3 + muscleDefVal * 0.4}
+                />
+              ))}
+            </g>
+          )}
+
+          {/* ==================== WARRIOR PHASE: DEFENSE PATCHES ==================== */}
+          {combatDefensePlates.length > 0 && (
+            <g clipPath={`url(#${id("torso-clip")})`} opacity={0.7}>
+              {combatDefensePlates.map((plate, i) => (
+                <g key={`def-plate-${i}`}>
+                  {/* Main plate */}
+                  <ellipse
+                    cx={plate.cx}
+                    cy={plate.cy}
+                    rx={plate.rx}
+                    ry={plate.ry}
+                    transform={`rotate(${plate.angle}, ${plate.cx}, ${plate.cy})`}
+                    fill={bodyColorDark}
+                    stroke={bodyColorLight}
+                    strokeWidth={1}
+                    opacity={0.6}
+                  />
+                  {/* Crack lines within the plate */}
+                  <line
+                    x1={plate.cx - plate.rx * 0.3}
+                    y1={plate.cy - plate.ry * 0.2}
+                    x2={plate.cx + plate.rx * 0.4}
+                    y2={plate.cy + plate.ry * 0.3}
+                    stroke={bodyColorLight}
+                    strokeWidth={0.4}
+                    opacity={0.3}
+                    transform={`rotate(${plate.angle}, ${plate.cx}, ${plate.cy})`}
+                  />
+                  <line
+                    x1={plate.cx + plate.rx * 0.1}
+                    y1={plate.cy - plate.ry * 0.4}
+                    x2={plate.cx - plate.rx * 0.2}
+                    y2={plate.cy + plate.ry * 0.2}
+                    stroke={bodyColorLight}
+                    strokeWidth={0.3}
+                    opacity={0.25}
+                    transform={`rotate(${plate.angle}, ${plate.cx}, ${plate.cy})`}
+                  />
+                </g>
+              ))}
+            </g>
+          )}
+
+          {/* ==================== WARRIOR PHASE: SPEED LINES ==================== */}
+          {speedLinesVal > 0.2 && combatPhaseVal > 0 && (
+            <g>
+              {speedLinePaths.map((sl, i) => (
+                <path
+                  key={`speed-${i}`}
+                  d={sl.path}
+                  fill="none"
+                  stroke={bodyColorLight}
+                  strokeWidth={0.6}
+                  strokeLinecap="round"
+                  opacity={sl.opacity}
+                  strokeDasharray="4 3"
+                />
+              ))}
+            </g>
+          )}
+
+          {/* ==================== WARRIOR PHASE: ATTACK GLOW (claws/mouth) ==================== */}
+          {attackGlowVal > 0.2 && (
+            <g>
+              {/* Glow on claw endpoints */}
+              {limbClaws.map((lc, i) =>
+                lc.paths.length > 0 ? (
+                  <circle
+                    key={`atk-glow-${i}`}
+                    cx={lc.endX}
+                    cy={lc.endY}
+                    r={p.clawSize * 0.8 + attackGlowVal * 3}
+                    fill={glowColor}
+                    opacity={attackGlowVal * 0.25}
+                    filter={`url(#${id("eye-glow")})`}
+                    style={anim ? {
+                      animation: `pulse-glow ${2 + i * 0.3}s ease-in-out infinite`,
+                      transformOrigin: `${lc.endX}px ${lc.endY}px`,
+                    } : undefined}
+                  />
+                ) : null
+              )}
+              {/* Glow on mouth when teeth visible */}
+              {teeth.length > 0 && (
+                <ellipse
+                  cx={headCx}
+                  cy={mouthCy}
+                  rx={headR * 0.4}
+                  ry={headR * 0.2}
+                  fill={glowColor}
+                  opacity={attackGlowVal * 0.15}
+                  filter={`url(#${id("eye-glow")})`}
+                />
+              )}
+            </g>
+          )}
+
+          {/* ==================== WARRIOR PHASE: SPECIAL ATTACK AURA ==================== */}
+          {specialAuraVal > 0.3 && combatPhaseVal > 0 && (
+            <g>
+              {/* Determine dominant feature for aura placement */}
+              {inteLvl > 0.3 ? (
+                /* Intelligence: aura around head */
+                <ellipse
+                  cx={headCx}
+                  cy={headCy}
+                  rx={headR * 1.6}
+                  ry={headR * 1.4}
+                  fill={glowColor}
+                  opacity={specialAuraVal * 0.12}
+                  filter={`url(#${id("aura-blur")})`}
+                  style={anim ? {
+                    animation: "pulse-glow 2.5s ease-in-out infinite",
+                    transformOrigin: `${headCx}px ${headCy}px`,
+                  } : undefined}
+                />
+              ) : toxiLvl > 0.3 ? (
+                /* Toxicity: toxic cloud aura around body */
+                <ellipse
+                  cx={cx}
+                  cy={torsoCenterY}
+                  rx={torsoW * 1.4}
+                  ry={torsoH * 1.0}
+                  fill="hsl(110, 70%, 45%)"
+                  opacity={specialAuraVal * 0.1}
+                  filter={`url(#${id("aura-blur")})`}
+                  style={anim ? {
+                    animation: "pulse-glow 3s ease-in-out infinite",
+                    transformOrigin: `${cx}px ${torsoCenterY}px`,
+                  } : undefined}
+                />
+              ) : aggrLvl > 0.3 ? (
+                /* Aggression: aura on claws/limb ends */
+                <g>
+                  {limbs.slice(0, 2).map((limb, i) => (
+                    <circle
+                      key={`spec-aura-claw-${i}`}
+                      cx={limb.endX}
+                      cy={limb.endY}
+                      r={12 + specialAuraVal * 8}
+                      fill={glowColor}
+                      opacity={specialAuraVal * 0.15}
+                      filter={`url(#${id("aura-blur-sm")})`}
+                      style={anim ? {
+                        animation: `pulse-glow ${2 + i * 0.4}s ease-in-out infinite`,
+                      } : undefined}
+                    />
+                  ))}
+                </g>
+              ) : (
+                /* Default: general body aura */
+                <ellipse
+                  cx={cx}
+                  cy={torsoCenterY}
+                  rx={torsoW * 1.3}
+                  ry={torsoH * 0.9}
+                  fill={glowColor}
+                  opacity={specialAuraVal * 0.1}
+                  filter={`url(#${id("aura-blur")})`}
+                  style={anim ? {
+                    animation: "pulse-glow 3s ease-in-out infinite",
+                    transformOrigin: `${cx}px ${torsoCenterY}px`,
+                  } : undefined}
+                />
+              )}
             </g>
           )}
 

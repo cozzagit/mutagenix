@@ -87,6 +87,15 @@ export interface VisualParams {
 
   // Synergy effects
   activeSynergyVisuals: string[];
+
+  // Combat/Warrior phase visuals
+  combatPhase: number;           // 0-1, how far into warrior phase
+  attackGlow: number;            // 0-1, glow on attack features (claws, mouth)
+  defensePatches: number;        // 0-4, number of hardened patches
+  speedLines: number;            // 0-1, motion blur intensity
+  muscleDefinition: number;      // 0-1, visible muscle/vein lines
+  scarCount: number;             // 0-8, battle scar marks
+  specialAuraIntensity: number;  // 0-1, special attack energy aura
 }
 
 // ---------------------------------------------------------------------------
@@ -576,6 +585,25 @@ export function mapTraitsToVisuals(
 
   const palette = generateColorPalette(elementLevels, traitValues, stabilityEstimate);
 
+  // ---------------------------------------------------------------------------
+  // Combat / Warrior phase visuals
+  // ---------------------------------------------------------------------------
+  // Derive combatPhase from average physical trait saturation (not age, which
+  // is not available in the mapper). When most physical traits are >80%,
+  // the creature is in warrior phase.
+  const avgPhysical = (t('bodySize') + t('headSize') + t('limbGrowth') + t('eyeDev') + t('posture')) / 5;
+  const combatPhase = clamp((avgPhysical - 0.7) / 0.3, 0, 1);
+
+  // Read combat traits (they are stored alongside regular traits in TraitValues)
+  const ct = (trait: string): number => clamp(((traitValues as Record<string, number>)[trait] ?? 0) / 100, 0, 1);
+
+  const attackGlow = lerp(0, 1, ct('attackPower')) * combatPhase;
+  const defensePatches = Math.round(lerp(0, 4, ct('defense'))) * (combatPhase > 0.3 ? 1 : 0);
+  const speedLines = lerp(0, 1, ct('speed')) * combatPhase;
+  const muscleDefinition = lerp(0, 1, ct('stamina')) * combatPhase;
+  const scarCount = Math.round(lerp(0, 8, ct('battleScars')));
+  const specialAuraIntensity = lerp(0, 1, ct('specialAttack')) * combatPhase;
+
   return {
     bodyWidth,
     bodyHeight,
@@ -636,5 +664,14 @@ export function mapTraitsToVisuals(
     glowColorFromPalette: palette.glowColor,
 
     activeSynergyVisuals,
+
+    // Combat/Warrior phase visuals
+    combatPhase,
+    attackGlow,
+    defensePatches,
+    speedLines,
+    muscleDefinition,
+    scarCount,
+    specialAuraIntensity,
   };
 }

@@ -15,6 +15,15 @@ export const TRAITS = [
 export type TraitId = (typeof TRAITS)[number];
 
 // ---------------------------------------------------------------------------
+// Combat Traits (Warrior Phase)
+// ---------------------------------------------------------------------------
+
+export const COMBAT_TRAITS = [
+  'attackPower', 'defense', 'speed', 'stamina', 'specialAttack', 'battleScars',
+] as const;
+export type CombatTraitId = (typeof COMBAT_TRAITS)[number];
+
+// ---------------------------------------------------------------------------
 // Element → Trait weight matrix  (unlisted combinations = 0)
 // ---------------------------------------------------------------------------
 
@@ -23,6 +32,27 @@ const z = (): Record<TraitId, number> => ({
   furDensity: 0, spininess: 0, tailGrowth: 0, clawDev: 0, posture: 0,
   aggression: 0, luminosity: 0, toxicity: 0, intelligence: 0, armoring: 0,
 });
+
+// ---------------------------------------------------------------------------
+// Element → Combat Trait weight matrix (Warrior Phase)
+// ---------------------------------------------------------------------------
+
+const zc = (): Record<CombatTraitId, number> => ({
+  attackPower: 0, defense: 0, speed: 0, stamina: 0, specialAttack: 0, battleScars: 0,
+});
+
+export const ELEMENT_COMBAT_WEIGHTS: Record<ElementId, Record<CombatTraitId, number>> = {
+  Fe: { ...zc(), attackPower: 0.4, defense: 0.2, stamina: 0.2, battleScars: 0.2 },
+  Ca: { ...zc(), defense: 0.5, stamina: 0.2, attackPower: 0.1, battleScars: 0.2 },
+  S:  { ...zc(), specialAttack: 0.4, attackPower: 0.3, speed: 0.1, battleScars: 0.2 },
+  K:  { ...zc(), specialAttack: 0.3, speed: 0.3, stamina: 0.2, battleScars: 0.2 },
+  Na: { ...zc(), speed: 0.4, specialAttack: 0.2, stamina: 0.2, battleScars: 0.2 },
+  P:  { ...zc(), specialAttack: 0.5, speed: 0.2, stamina: 0.1, battleScars: 0.2 },
+  N:  { ...zc(), stamina: 0.4, defense: 0.2, speed: 0.2, battleScars: 0.2 },
+  O:  { ...zc(), stamina: 0.3, speed: 0.3, defense: 0.2, battleScars: 0.2 },
+  C:  { ...zc(), defense: 0.3, attackPower: 0.3, stamina: 0.2, battleScars: 0.2 },
+  Cl: { ...zc(), specialAttack: 0.3, attackPower: 0.2, speed: 0.2, battleScars: 0.3 },
+};
 
 export const ELEMENT_TRAIT_WEIGHTS: Record<ElementId, Record<TraitId, number>> = {
   N:  { ...z(), bodySize: 0.3, headSize: 0.1, limbGrowth: 0.2, skinTex: 0.1, posture: 0.3, toxicity: 0.1 },
@@ -118,6 +148,12 @@ export const GAME_CONFIG = {
   NOISE_AMPLITUDE: 0.05,
   STABILITY_THRESHOLD_LOW: 0.3,
   STABILITY_THRESHOLD_HIGH: 0.7,
+  /** Day when combat traits start appearing */
+  WARRIOR_PHASE_START: 40,
+  /** Day when almost all growth goes to combat */
+  WARRIOR_PHASE_FULL: 80,
+  /** Trait value above which physical growth slows dramatically */
+  GROWTH_CAP_THRESHOLD: 80,
 } as const;
 
 // ---------------------------------------------------------------------------

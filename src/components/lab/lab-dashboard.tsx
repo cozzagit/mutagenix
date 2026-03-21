@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { CreatureRenderer } from '@/components/creature/creature-renderer';
 import type { VisualParams } from '@/lib/game-engine/visual-mapper';
 import { DEFAULT_VISUAL_PARAMS } from '@/components/creature/creature-renderer';
-import { ELEMENTS, SYNERGIES, type ElementId } from '@/lib/game-engine/constants';
+import { ELEMENTS, SYNERGIES, COMBAT_TRAITS, GAME_CONFIG, type ElementId } from '@/lib/game-engine/constants';
 import { StatsBar } from './stats-bar';
 import { AllocationPanel } from './allocation-panel';
 import { ELEMENT_COLORS } from './element-levels-display';
@@ -75,6 +75,24 @@ const SYNERGY_COLORS: Record<string, string> = {
   Neural: '#b26eff',
   Organico: '#00f0ff',
   Caotico: '#ffd600',
+};
+
+const COMBAT_TRAIT_LABELS: Record<string, string> = {
+  attackPower: 'Attacco',
+  defense: 'Difesa',
+  speed: 'Velocità',
+  stamina: 'Resistenza',
+  specialAttack: 'Speciale',
+  battleScars: 'Cicatrici',
+};
+
+const COMBAT_TRAIT_COLORS: Record<string, string> = {
+  attackPower: '#ff3d3d',
+  defense: '#4488ff',
+  speed: '#00e5e5',
+  stamina: '#ff9100',
+  specialAttack: '#b26eff',
+  battleScars: '#8a8a8a',
 };
 
 
@@ -266,6 +284,12 @@ export function LabDashboard({
   const activeSynergies = getActiveSynergies(elementLevels);
   const progressPercent = Math.round(mutationProgress * 100);
 
+  // --- Warrior phase detection ---
+  const isWarrior = ageDays >= GAME_CONFIG.WARRIOR_PHASE_START;
+  const combatTraitValues = COMBAT_TRAITS.map((ct) => (creature.traitValues[ct] ?? 0));
+  const combatPowerTotal = Math.round(combatTraitValues.reduce((a, b) => a + b, 0));
+  const hasCombatStats = combatTraitValues.some((v) => v > 0.5);
+
   // Max element value for bar scaling
   const maxElementLevel = Math.max(
     ...ELEMENTS.map((el) => elementLevels[el] ?? 0),
@@ -356,6 +380,59 @@ export function LabDashboard({
             </div>
           ) : (
             <span className="block text-center text-[10px] text-muted">Nessuna attiva</span>
+          )}
+
+          {/* Combat stats — Warrior Phase */}
+          {hasCombatStats && (
+            <>
+              <div className="my-2 border-t border-border/20" />
+              <div className="mb-1 flex items-center justify-center gap-1.5">
+                <span
+                  className="rounded-sm bg-red-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-red-400"
+                  style={{ textShadow: '0 0 8px #ff3d3d33' }}
+                >
+                  Fase Guerriero
+                </span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                {COMBAT_TRAITS.map((ct) => {
+                  const value = Math.round(creature.traitValues[ct] ?? 0);
+                  const color = COMBAT_TRAIT_COLORS[ct];
+                  const label = COMBAT_TRAIT_LABELS[ct];
+                  const barWidth = value;
+                  return (
+                    <div key={ct} className="flex h-[20px] items-center gap-1.5">
+                      <span
+                        className="w-[52px] shrink-0 text-right text-[9px] font-bold"
+                        style={{ color }}
+                      >
+                        {label}
+                      </span>
+                      <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-surface-3/60">
+                        <div
+                          className="h-full rounded-sm transition-all duration-700 ease-out"
+                          style={{
+                            width: `${barWidth}%`,
+                            backgroundColor: color,
+                            boxShadow: value > 0 ? `0 0 6px ${color}44` : undefined,
+                            opacity: value > 0 ? 1 : 0.2,
+                          }}
+                        />
+                      </div>
+                      <span
+                        className="w-5 shrink-0 text-right text-[9px] font-semibold tabular-nums"
+                        style={{ color: value > 0 ? color : 'var(--color-muted)' }}
+                      >
+                        {value}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-center text-[9px] font-semibold text-muted">
+                Potenza: <span className="text-red-400">{combatPowerTotal}</span>
+              </p>
+            </>
           )}
 
         </div>
@@ -468,6 +545,59 @@ export function LabDashboard({
 
           {/* Personality radar */}
           <PersonalityRadar traitValues={creature.traitValues} size={120} />
+
+          {/* Combat stats — mobile */}
+          {hasCombatStats && (
+            <>
+              <div className="my-2 border-t border-border/20" />
+              <div className="mb-1 flex items-center justify-center gap-1.5">
+                <span
+                  className="rounded-sm bg-red-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-red-400"
+                  style={{ textShadow: '0 0 8px #ff3d3d33' }}
+                >
+                  Fase Guerriero
+                </span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                {COMBAT_TRAITS.map((ct) => {
+                  const value = Math.round(creature.traitValues[ct] ?? 0);
+                  const color = COMBAT_TRAIT_COLORS[ct];
+                  const label = COMBAT_TRAIT_LABELS[ct];
+                  const barWidth = value;
+                  return (
+                    <div key={ct} className="flex h-[20px] items-center gap-1.5">
+                      <span
+                        className="w-[52px] shrink-0 text-right text-[9px] font-bold"
+                        style={{ color }}
+                      >
+                        {label}
+                      </span>
+                      <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-surface-3/60">
+                        <div
+                          className="h-full rounded-sm transition-all duration-700 ease-out"
+                          style={{
+                            width: `${barWidth}%`,
+                            backgroundColor: color,
+                            boxShadow: value > 0 ? `0 0 6px ${color}44` : undefined,
+                            opacity: value > 0 ? 1 : 0.2,
+                          }}
+                        />
+                      </div>
+                      <span
+                        className="w-5 shrink-0 text-right text-[9px] font-semibold tabular-nums"
+                        style={{ color: value > 0 ? color : 'var(--color-muted)' }}
+                      >
+                        {value}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-center text-[9px] font-semibold text-muted">
+                Potenza: <span className="text-red-400">{combatPowerTotal}</span>
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -496,7 +626,7 @@ export function LabDashboard({
           className="text-sm"
         />
         <span className="text-border">·</span>
-        <StatsBar ageDays={ageDays} generation={generation} stability={stability} compact />
+        <StatsBar ageDays={ageDays} generation={generation} stability={stability} compact isWarrior={isWarrior} />
         {isDevMode && (
           <span className="rounded bg-warning/20 px-1 py-0.5 text-[8px] font-bold text-warning">
             DEV
@@ -529,7 +659,7 @@ export function LabDashboard({
             </Link>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted">
-            <StatsBar ageDays={ageDays} generation={generation} stability={stability} compact />
+            <StatsBar ageDays={ageDays} generation={generation} stability={stability} compact isWarrior={isWarrior} />
             {isDevMode && (
               <span className="rounded bg-warning/20 px-1 py-0.5 text-[8px] font-bold text-warning">DEV</span>
             )}

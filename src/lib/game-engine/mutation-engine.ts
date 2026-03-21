@@ -5,9 +5,12 @@
 import {
   ELEMENTS,
   TRAITS,
+  COMBAT_TRAITS,
   GAME_CONFIG,
+  ELEMENT_COMBAT_WEIGHTS,
   type ElementId,
   type TraitId,
+  type CombatTraitId,
 } from './constants';
 
 import type {
@@ -30,7 +33,7 @@ import { clamp } from './visual-mapper';
 
 export interface MutationResult {
   newElementLevels: Record<ElementId, number>;
-  newTraitValues: Record<TraitId, number>;
+  newTraitValues: TraitValues;
   newVisualParams: VisualParams;
   newStability: number;
   mutations: MutationEntry[];
@@ -135,6 +138,17 @@ export function processDailyMutation(
   // --- 2. Calculate stability ---
   const newStability = calculateStability(newElementLevels);
 
+  // --- 2b. Calculate combat ratio (Warrior Phase) ---
+  // Gradual transition: at WARRIOR_PHASE_START → 0%, at WARRIOR_PHASE_FULL → 90%
+  const combatRatio = ageDays < GAME_CONFIG.WARRIOR_PHASE_START
+    ? 0
+    : clamp(
+        (ageDays - GAME_CONFIG.WARRIOR_PHASE_START) /
+        (GAME_CONFIG.WARRIOR_PHASE_FULL - GAME_CONFIG.WARRIOR_PHASE_START),
+        0,
+        0.9,
+      );
+
   // --- 3. Trait growth deltas ---
   const growthDeltas = calculateTraitDeltas(
     newElementLevels,
@@ -163,13 +177,16 @@ export function processDailyMutation(
   }
 
   // --- 7. Apply all deltas and clamp ---
+  // Physical growth is reduced by combatRatio
+  const physicalMultiplier = 1 - combatRatio;
+
   const mutations: MutationEntry[] = [];
-  const newTraitValues = {} as Record<TraitId, number>;
+  const newTraitValues = {} as TraitValues;
 
   for (const trait of TRAITS) {
     const oldValue = creature.traitValues[trait];
 
-    const growthDelta = growthDeltas[trait];
+    const growthDelta = growthDeltas[trait] * physicalMultiplier;
     const synergyDelta = traitBonuses[trait];
     const decayDelta = decayDeltas[trait];
     const noiseDelta = noiseDeltas[trait];
@@ -222,6 +239,55 @@ export function processDailyMutation(
         delta: noiseDelta,
         triggerType: 'noise',
       });
+    }
+  }
+
+  // --- 7b. Combat trait growth (Warrior Phase) ---
+  // Combat traits grow using: sum(elementLevel × combatWeight) × combatRatio × growthRate
+  if (combatRatio > 0) {
+    const growthRate = GAME_CONFIG.GROWTH_RATE_BASE / (1 + ageDays * 0.01);
+
+    let stabilityModifier = 1;
+    if (newStability < GAME_CONFIG.STABILITY_THRESHOLD_LOW) {
+      stabilityModifier = 1.5;
+    } else if (newStability > GAME_CONFIG.STABILITY_THRESHOLD_HIGH) {
+      stabilityModifier = 0.7;
+    }
+
+    for (const combatTrait of COMBAT_TRAITS) {
+      const oldValue = creature.traitValues[combatTrait] ?? 0;
+
+      // Weighted sum of element contributions
+      let weightedSum = 0;
+      for (const el of ELEMENTS) {
+        weightedSum += newElementLevels[el] * ELEMENT_COMBAT_WEIGHTS[el][combatTrait];
+      }
+
+      const combatDelta = weightedSum * combatRatio * growthRate * stabilityModifier;
+
+      // battleScars always gets a tiny bonus with every injection (experience)
+      const scarBonus = combatTrait === 'battleScars' ? 0.15 : 0;
+
+      const totalCombatDelta = combatDelta + scarBonus;
+      const rawNew = oldValue + totalCombatDelta;
+      const clampedNew = clamp(rawNew, GAME_CONFIG.MIN_TRAIT_VALUE, GAME_CONFIG.MAX_TRAIT_VALUE);
+
+      newTraitValues[combatTrait] = clampedNew;
+
+      if (Math.abs(totalCombatDelta) > 0.001) {
+        mutations.push({
+          traitId: combatTrait,
+          oldValue,
+          newValue: clampedNew,
+          delta: totalCombatDelta,
+          triggerType: 'combat',
+        });
+      }
+    }
+  } else {
+    // Before warrior phase, carry forward existing combat trait values (all 0 initially)
+    for (const combatTrait of COMBAT_TRAITS) {
+      newTraitValues[combatTrait] = creature.traitValues[combatTrait] ?? 0;
     }
   }
 
