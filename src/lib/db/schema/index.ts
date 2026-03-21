@@ -33,3 +33,18 @@ export {
   type GameConfigEntry,
   type NewGameConfigEntry,
 } from './game-config';
+export {
+  battles,
+  type Battle,
+  type NewBattle,
+} from './battles';
+export {
+  creatureRankings,
+  type CreatureRanking,
+  type NewCreatureRanking,
+} from './creature-rankings';
+export {
+  battleChallenges,
+  type BattleChallenge,
+  type NewBattleChallenge,
+} from './battle-challenges';

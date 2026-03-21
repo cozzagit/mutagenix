@@ -10,7 +10,11 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const NAV_ITEMS: NavItem[] = [
+interface NavItemExt extends NavItem {
+  activeColor?: 'red' | 'blue';
+}
+
+const NAV_ITEMS: NavItemExt[] = [
   {
     href: "/lab",
     label: "Lab",
@@ -34,6 +38,21 @@ const NAV_ITEMS: NavItem[] = [
           strokeLinejoin="round"
           d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
         />
+      </svg>
+    ),
+  },
+  {
+    href: "/arena",
+    label: "Arena",
+    activeColor: 'red',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3l6 6 6-6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v12" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 3l-6 6-6-6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 7l-3 3 3 3" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 7l3 3-3 3" />
       </svg>
     ),
   },
@@ -67,14 +86,17 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
+function NavLink({ item, isActive }: { item: NavItemExt; isActive: boolean }) {
+  const isRed = item.activeColor === 'red';
+  const activeClass = isRed
+    ? "text-danger [&_svg]:drop-shadow-[0_0_6px_#ff3d3d88]"
+    : "text-primary [&_svg]:drop-shadow-[0_0_6px_#3d5afe88]";
+
   return (
     <Link
       href={item.href}
       className={`focus-ring flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-        isActive
-          ? "text-primary [&_svg]:drop-shadow-[0_0_6px_#3d5afe88]"
-          : "text-muted hover:text-foreground"
+        isActive ? activeClass : "text-muted hover:text-foreground"
       }`}
     >
       {item.icon}
@@ -83,14 +105,17 @@ function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
   );
 }
 
-function MobileNavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
+function MobileNavLink({ item, isActive }: { item: NavItemExt; isActive: boolean }) {
+  const isRed = item.activeColor === 'red';
+  const activeClass = isRed
+    ? "text-danger [&_svg]:drop-shadow-[0_0_6px_#ff3d3d88]"
+    : "text-primary [&_svg]:drop-shadow-[0_0_6px_#3d5afe88]";
+
   return (
     <Link
       href={item.href}
       className={`focus-ring flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-[10px] font-medium transition-colors ${
-        isActive
-          ? "text-primary [&_svg]:drop-shadow-[0_0_6px_#3d5afe88]"
-          : "text-muted hover:text-foreground"
+        isActive ? activeClass : "text-muted hover:text-foreground"
       }`}
     >
       {item.icon}
