@@ -199,9 +199,9 @@ export function interpolateCreatureState(
     );
   }
 
-  // Interpolate visual params (eased)
+  // Interpolate visual params (eased) — use fresh calculated params as starting point
   const interpVisualParams = interpolateVisualParams(
-    currentVisualParams,
+    freshVisualParams,
     creature.targetVisualParams as unknown as VisualParams,
     easedT,
   );
