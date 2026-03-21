@@ -408,7 +408,7 @@ export function mapTraitsToVisuals(
   let furDensity = lerp(0, 1, t('furDensity'));
   // Metallic/toxic creatures have less fur; organic creatures have more
   if (dom === 'Fe' || dom === 'S') {
-    furDensity *= 0.3;
+    furDensity *= 0.6;
   } else if (dom === 'Cl') {
     furDensity *= 0.4;
   } else if (dom === 'N' || dom === 'O') {

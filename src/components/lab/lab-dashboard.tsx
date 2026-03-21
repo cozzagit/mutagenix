@@ -98,6 +98,16 @@ const COMBAT_TRAIT_COLORS: Record<string, string> = {
   battleScars: '#8a8a8a',
 };
 
+function getLevelBadge(ageDays: number, tier?: string): { label: string; color: string; bg: string } {
+  if (ageDays < GAME_CONFIG.WARRIOR_PHASE_START) {
+    return { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' };
+  }
+  if (tier === 'legend') return { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' };
+  if (tier === 'veteran') return { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15' };
+  if (tier === 'intermediate') return { label: 'Intermedio', color: 'text-primary', bg: 'bg-primary/15' };
+  return { label: 'Novizio', color: 'text-muted', bg: 'bg-muted/15' };
+}
+
 
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
@@ -462,14 +472,6 @@ export function LabDashboard({
 
         </div>
 
-        {/* Dev badge */}
-        {isDevMode && (
-          <div className="border-t border-border/30 px-4 py-1.5">
-            <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[9px] font-bold text-warning">
-              DEV MODE
-            </span>
-          </div>
-        )}
       </aside>
 
       {/* ============================================================= */}
@@ -673,11 +675,9 @@ export function LabDashboard({
         />
         <span className="text-border">·</span>
         <StatsBar ageDays={ageDays} generation={generation} stability={stability} compact isWarrior={isWarrior} />
-        {isDevMode && (
-          <span className="rounded bg-warning/20 px-1 py-0.5 text-[8px] font-bold text-warning">
-            DEV
-          </span>
-        )}
+        <span className={`rounded-sm px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${getLevelBadge(ageDays, ranking?.tier).color} ${getLevelBadge(ageDays, ranking?.tier).bg}`}>
+          {getLevelBadge(ageDays, ranking?.tier).label}
+        </span>
       </div>
 
       {/* ============================================================= */}
@@ -732,9 +732,9 @@ export function LabDashboard({
           </div>
           <div className="flex items-center gap-2 text-xs text-muted">
             <StatsBar ageDays={ageDays} generation={generation} stability={stability} compact isWarrior={isWarrior} />
-            {isDevMode && (
-              <span className="rounded bg-warning/20 px-1 py-0.5 text-[8px] font-bold text-warning">DEV</span>
-            )}
+            <span className={`rounded-sm px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${getLevelBadge(ageDays, ranking?.tier).color} ${getLevelBadge(ageDays, ranking?.tier).bg}`}>
+              {getLevelBadge(ageDays, ranking?.tier).label}
+            </span>
           </div>
         </div>
 
