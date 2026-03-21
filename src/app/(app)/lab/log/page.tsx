@@ -4,6 +4,8 @@ import { creatures, dailySnapshots } from '@/lib/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { EvolutionDiary } from '@/components/lab/evolution-diary';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,16 +81,23 @@ export default async function EvolutionLogPage() {
   // Step 2: Pick key day numbers for visual timeline
   const keyDayNumbers = pickKeyDayNumbers(totalDays);
 
-  // Step 3: Filter key snapshots (with full visual params for rendering)
+  // Step 3: Filter key snapshots and RECALCULATE visual params with current mapper
+  // This ensures the diary always reflects the latest visual engine, even if
+  // snapshots were saved with an older version.
   const keySnapshots = allSnapshots
-    .map((snap, index) => ({
-      dayNumber: index + 1,
-      day: snap.day,
-      visualParams: snap.visualParams,
-      elementLevels: snap.elementLevels,
-      traitValues: snap.traitValues,
-      stabilityScore: snap.stabilityScore,
-    }))
+    .map((snap, index) => {
+      const tv = snap.traitValues as TraitValues;
+      const el = snap.elementLevels as ElementLevels;
+      const freshVisuals = mapTraitsToVisuals(tv, el, []);
+      return {
+        dayNumber: index + 1,
+        day: snap.day,
+        visualParams: freshVisuals as unknown as Record<string, unknown>,
+        elementLevels: snap.elementLevels,
+        traitValues: snap.traitValues,
+        stabilityScore: snap.stabilityScore,
+      };
+    })
     .filter((snap) => keyDayNumbers.has(snap.dayNumber));
 
   // Step 4: Prepare lightweight milestone data (every 10th day + first + last)
