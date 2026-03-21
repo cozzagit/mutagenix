@@ -4,6 +4,8 @@ import { creatures } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { ExperimentGallery } from '@/components/lab/experiment-gallery';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +35,10 @@ export default async function BachecaPage() {
     stability: c.stability ?? 0.5,
     elementLevels: c.elementLevels as Record<string, number>,
     traitValues: c.traitValues as Record<string, number>,
-    visualParams: c.visualParams as Record<string, unknown>,
+    visualParams: (c.isArchived
+      ? c.visualParams  // archived: keep historical snapshot
+      : mapTraitsToVisuals(c.traitValues as TraitValues, c.elementLevels as ElementLevels, [])
+    ) as Record<string, unknown>,
     isArchived: c.isArchived,
     archivedAt: c.archivedAt?.toISOString() ?? null,
     archiveReason: c.archiveReason,
