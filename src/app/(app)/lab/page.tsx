@@ -1,6 +1,6 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, battles } from '@/lib/db/schema';
+import { creatures, battles, creatureRankings } from '@/lib/db/schema';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { LabDashboard } from '@/components/lab/lab-dashboard';
@@ -65,6 +65,18 @@ export default async function LabPage() {
     // Arena tables may not exist yet — ignore
   }
 
+  // Fetch arena ranking
+  let ranking: { eloRating: number; wins: number; losses: number; draws: number } | null = null;
+  try {
+    const [r] = await db.select({
+      eloRating: creatureRankings.eloRating,
+      wins: creatureRankings.wins,
+      losses: creatureRankings.losses,
+      draws: creatureRankings.draws,
+    }).from(creatureRankings).where(eq(creatureRankings.creatureId, creature.id));
+    ranking = r ?? null;
+  } catch { /* table may not exist */ }
+
   return (
     <LabDashboard
       creature={creature}
@@ -79,6 +91,7 @@ export default async function LabPage() {
       isDevMode={TIME_CONFIG.isDevMode}
       cooldownRemaining={cooldownRemaining}
       unseenBattles={unseenBattles}
+      ranking={ranking}
     />
   );
 }

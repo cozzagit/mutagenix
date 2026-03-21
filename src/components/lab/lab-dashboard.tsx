@@ -40,6 +40,7 @@ interface Props {
   isDevMode: boolean;
   cooldownRemaining?: number;
   unseenBattles?: number;
+  ranking?: { eloRating: number; wins: number; losses: number; draws: number } | null;
 }
 
 type Phase = 'idle' | 'allocating' | 'mutating' | 'waiting';
@@ -114,6 +115,7 @@ export function LabDashboard({
   isDevMode,
   cooldownRemaining: initialCooldown = 0,
   unseenBattles = 0,
+  ranking = null,
 }: Props) {
   const router = useRouter();
 
@@ -388,7 +390,7 @@ export function LabDashboard({
           )}
 
           {/* Combat stats — Warrior Phase */}
-          {hasCombatStats && (
+          {(hasCombatStats || ranking) && (
             <>
               <div className="my-2 border-t border-border/20" />
               <div className="mb-1 flex items-center justify-center gap-1.5">
@@ -399,41 +401,58 @@ export function LabDashboard({
                   Fase Guerriero
                 </span>
               </div>
-              <div className="flex flex-col gap-0.5">
-                {COMBAT_TRAITS.map((ct) => {
-                  const value = Math.round(creature.traitValues[ct] ?? 0);
-                  const color = COMBAT_TRAIT_COLORS[ct];
-                  const label = COMBAT_TRAIT_LABELS[ct];
-                  const barWidth = value;
-                  return (
-                    <div key={ct} className="flex h-[20px] items-center gap-1.5">
-                      <span
-                        className="w-[52px] shrink-0 text-right text-[9px] font-bold"
-                        style={{ color }}
-                      >
-                        {label}
-                      </span>
-                      <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-surface-3/60">
-                        <div
-                          className="h-full rounded-sm transition-all duration-700 ease-out"
-                          style={{
-                            width: `${barWidth}%`,
-                            backgroundColor: color,
-                            boxShadow: value > 0 ? `0 0 6px ${color}44` : undefined,
-                            opacity: value > 0 ? 1 : 0.2,
-                          }}
-                        />
+
+              {/* ELO + Record */}
+              {ranking && (
+                <div className="flex items-center justify-center gap-3 mb-1">
+                  <span className="text-[11px] font-mono font-bold text-foreground" style={{ textShadow: '0 0 8px #ff3d3d33' }}>
+                    ELO {ranking.eloRating}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                    <span className="text-accent">{ranking.wins}V</span>
+                    <span className="text-danger">{ranking.losses}S</span>
+                    {ranking.draws > 0 && <span className="text-muted">{ranking.draws}P</span>}
+                  </div>
+                </div>
+              )}
+
+              {hasCombatStats && (
+                <div className="flex flex-col gap-0.5">
+                  {COMBAT_TRAITS.map((ct) => {
+                    const value = Math.round(creature.traitValues[ct] ?? 0);
+                    const color = COMBAT_TRAIT_COLORS[ct];
+                    const label = COMBAT_TRAIT_LABELS[ct];
+                    const barWidth = value;
+                    return (
+                      <div key={ct} className="flex h-[20px] items-center gap-1.5">
+                        <span
+                          className="w-[52px] shrink-0 text-right text-[9px] font-bold"
+                          style={{ color }}
+                        >
+                          {label}
+                        </span>
+                        <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-surface-3/60">
+                          <div
+                            className="h-full rounded-sm transition-all duration-700 ease-out"
+                            style={{
+                              width: `${barWidth}%`,
+                              backgroundColor: color,
+                              boxShadow: value > 0 ? `0 0 6px ${color}44` : undefined,
+                              opacity: value > 0 ? 1 : 0.2,
+                            }}
+                          />
+                        </div>
+                        <span
+                          className="w-5 shrink-0 text-right text-[9px] font-semibold tabular-nums"
+                          style={{ color: value > 0 ? color : 'var(--color-muted)' }}
+                        >
+                          {value}
+                        </span>
                       </div>
-                      <span
-                        className="w-5 shrink-0 text-right text-[9px] font-semibold tabular-nums"
-                        style={{ color: value > 0 ? color : 'var(--color-muted)' }}
-                      >
-                        {value}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
               <p className="mt-1 text-center text-[9px] font-semibold text-muted">
                 Potenza: <span className="text-red-400">{combatPowerTotal}</span>
               </p>
@@ -552,7 +571,7 @@ export function LabDashboard({
           <PersonalityRadar elementLevels={elementLevels} size={120} />
 
           {/* Combat stats — mobile */}
-          {hasCombatStats && (
+          {(hasCombatStats || ranking) && (
             <>
               <div className="my-2 border-t border-border/20" />
               <div className="mb-1 flex items-center justify-center gap-1.5">
@@ -563,41 +582,57 @@ export function LabDashboard({
                   Fase Guerriero
                 </span>
               </div>
-              <div className="flex flex-col gap-0.5">
-                {COMBAT_TRAITS.map((ct) => {
-                  const value = Math.round(creature.traitValues[ct] ?? 0);
-                  const color = COMBAT_TRAIT_COLORS[ct];
-                  const label = COMBAT_TRAIT_LABELS[ct];
-                  const barWidth = value;
-                  return (
-                    <div key={ct} className="flex h-[20px] items-center gap-1.5">
-                      <span
-                        className="w-[52px] shrink-0 text-right text-[9px] font-bold"
-                        style={{ color }}
-                      >
-                        {label}
-                      </span>
-                      <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-surface-3/60">
-                        <div
-                          className="h-full rounded-sm transition-all duration-700 ease-out"
-                          style={{
-                            width: `${barWidth}%`,
-                            backgroundColor: color,
-                            boxShadow: value > 0 ? `0 0 6px ${color}44` : undefined,
-                            opacity: value > 0 ? 1 : 0.2,
-                          }}
-                        />
+
+              {ranking && (
+                <div className="flex items-center justify-center gap-3 mb-1">
+                  <span className="text-[11px] font-mono font-bold text-foreground" style={{ textShadow: '0 0 8px #ff3d3d33' }}>
+                    ELO {ranking.eloRating}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                    <span className="text-accent">{ranking.wins}V</span>
+                    <span className="text-danger">{ranking.losses}S</span>
+                    {ranking.draws > 0 && <span className="text-muted">{ranking.draws}P</span>}
+                  </div>
+                </div>
+              )}
+
+              {hasCombatStats && (
+                <div className="flex flex-col gap-0.5">
+                  {COMBAT_TRAITS.map((ct) => {
+                    const value = Math.round(creature.traitValues[ct] ?? 0);
+                    const color = COMBAT_TRAIT_COLORS[ct];
+                    const label = COMBAT_TRAIT_LABELS[ct];
+                    const barWidth = value;
+                    return (
+                      <div key={ct} className="flex h-[20px] items-center gap-1.5">
+                        <span
+                          className="w-[52px] shrink-0 text-right text-[9px] font-bold"
+                          style={{ color }}
+                        >
+                          {label}
+                        </span>
+                        <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-surface-3/60">
+                          <div
+                            className="h-full rounded-sm transition-all duration-700 ease-out"
+                            style={{
+                              width: `${barWidth}%`,
+                              backgroundColor: color,
+                              boxShadow: value > 0 ? `0 0 6px ${color}44` : undefined,
+                              opacity: value > 0 ? 1 : 0.2,
+                            }}
+                          />
+                        </div>
+                        <span
+                          className="w-5 shrink-0 text-right text-[9px] font-semibold tabular-nums"
+                          style={{ color: value > 0 ? color : 'var(--color-muted)' }}
+                        >
+                          {value}
+                        </span>
                       </div>
-                      <span
-                        className="w-5 shrink-0 text-right text-[9px] font-semibold tabular-nums"
-                        style={{ color: value > 0 ? color : 'var(--color-muted)' }}
-                      >
-                        {value}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
               <p className="mt-1 text-center text-[9px] font-semibold text-muted">
                 Potenza: <span className="text-red-400">{combatPowerTotal}</span>
               </p>
