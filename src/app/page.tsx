@@ -313,6 +313,143 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ==================== FASE GUERRIERO ==================== */}
+      <section className="relative z-10 border-t border-border/30 px-6 py-16 sm:py-24">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
+            Da Creatura a Guerriero
+          </h2>
+          <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted">
+            Quando il tuo organismo raggiunge la maturità, inizia la trasformazione in macchina da guerra.
+          </p>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {/* Crescita */}
+            <div className="flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-6 text-center backdrop-blur-sm transition-all hover:border-accent/30 hover:bg-surface/60">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c0 0-4-3-4-8a4 4 0 0 1 8 0c0 5-4 8-4 8Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 13V3" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l3-3 3 3" />
+                </svg>
+              </div>
+              <h3 className="mb-2 text-sm font-bold text-foreground">Crescita</h3>
+              <p className="text-xs leading-relaxed text-muted">
+                Nei primi giorni il tuo organismo cresce: corpo, arti, occhi, pelliccia. Ogni iniezione lo trasforma.
+              </p>
+            </div>
+
+            {/* Maturità */}
+            <div className="flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-6 text-center backdrop-blur-sm transition-all hover:border-[#ff3d3d]/30 hover:bg-surface/60">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-[#ff3d3d]" style={{ backgroundColor: "#ff3d3d15" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2.25a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM9 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 22.5V21m6.364-2.636-.53-.53m-12.668 0-.53.53M21 12h1.5M1.5 12H3m15.364-6.364.53-.53M5.636 5.636l-.53-.53" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h1.5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-.75.75h-1.5m15-6h1.5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-.75.75h-1.5" />
+                </svg>
+              </div>
+              <h3 className="mb-2 text-sm font-bold text-foreground">Maturità</h3>
+              <p className="text-xs leading-relaxed text-muted">
+                Quando il corpo si stabilizza, le iniezioni iniziano a forgiare tratti da combattimento: attacco, difesa, velocità.
+              </p>
+            </div>
+
+            {/* Guerra */}
+            <div className="flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-6 text-center backdrop-blur-sm transition-all hover:border-[#ff3d3d]/30 hover:bg-surface/60">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-[#ff3d3d]" style={{ backgroundColor: "#ff3d3d15" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l6-6m0 0l-3-3m3 3l3-3m-3 3l-6 6" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-6 6m0 0l3 3m-3-3l-3 3m3-3l6-6" />
+                </svg>
+              </div>
+              <h3 className="mb-2 text-sm font-bold text-foreground">Guerra</h3>
+              <p className="text-xs leading-relaxed text-muted">
+                Il tuo guerriero è pronto per l&apos;Arena. Ogni elemento chimico influenza il suo stile di combattimento.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ==================== L'ARENA ==================== */}
+      <section className="relative z-10 border-t border-[#ff3d3d]/20 bg-gradient-to-b from-[#ff3d3d]/[0.03] to-background px-6 py-16 sm:py-24">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
+            L&apos;Arena
+          </h2>
+          <p className="mx-auto mb-10 max-w-md text-center text-sm" style={{ color: "#ff3d3d" }}>
+            Dove la selezione naturale fa il suo lavoro.
+          </p>
+
+          {/* Dramatic description */}
+          <div
+            className="mx-auto mb-10 max-w-2xl rounded-2xl border p-6 text-center text-sm leading-relaxed text-muted backdrop-blur-sm"
+            style={{
+              borderColor: "#ff3d3d30",
+              backgroundColor: "rgba(255, 61, 61, 0.04)",
+            }}
+          >
+            Sfida i guerrieri degli altri giocatori in combattimenti automatici. La strategia non è nei riflessi
+            — è nelle settimane di iniezioni che hanno forgiato la tua creatura. Ogni battaglia ha conseguenze
+            reali: il vincitore si rafforza, lo sconfitto porta le cicatrici.
+          </div>
+
+          {/* 2x2 feature pills */}
+          <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {[
+              {
+                title: "Combattimento Automatico",
+                desc: "Le creature combattono in base ai loro stats. Tu decidi la strategia nel laboratorio.",
+              },
+              {
+                title: "Classifica ELO",
+                desc: "Sistema di ranking competitivo. Scala la classifica e diventa l'Apex Predator.",
+              },
+              {
+                title: "Conseguenze Reali",
+                desc: "Cicatrici permanenti, periodi di recupero, boost per i vincitori. Ogni sfida conta.",
+              },
+              {
+                title: "Replay Round-by-Round",
+                desc: "Rivivi ogni battaglia turno per turno con animazioni e effetti speciali.",
+              },
+            ].map((feat) => (
+              <div
+                key={feat.title}
+                className="rounded-xl border p-4 backdrop-blur-sm transition-all hover:bg-surface/60"
+                style={{
+                  borderColor: "#ff3d3d25",
+                  backgroundColor: "rgba(255, 61, 61, 0.03)",
+                }}
+              >
+                <h3 className="mb-1 text-sm font-bold" style={{ color: "#ff3d3d" }}>
+                  {feat.title}
+                </h3>
+                <p className="text-xs leading-relaxed text-muted">{feat.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="flex justify-center">
+            <Link
+              href="/register"
+              className="focus-ring inline-flex h-12 min-w-[220px] items-center justify-center gap-2 rounded-xl px-8 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-[#ff3d3d]/40 active:scale-[0.97]"
+              style={{
+                backgroundColor: "#ff3d3d",
+                boxShadow: "0 10px 25px -5px rgba(255, 61, 61, 0.25)",
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l6-6m0 0l-3-3m3 3l3-3m-3 3l-6 6" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-6 6m0 0l3 3m-3-3l-3 3m3-3l6-6" />
+              </svg>
+              Entra nell&apos;Arena
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ==================== ELEMENTS TEASER ==================== */}
       <section className="relative z-10 border-t border-border/30 bg-gradient-to-b from-surface/30 to-background px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-3xl">

@@ -252,6 +252,221 @@ export default function GuidaPage() {
           </div>
         </GuideCard>
 
+        {/* Fase Guerriero */}
+        <GuideCard title="La Fase Guerriero">
+          <div className="flex flex-col gap-3 text-sm leading-relaxed text-muted">
+            <p>
+              Quando il corpo del tuo organismo raggiunge la maturità (circa dopo 40 iniezioni), le sostanze
+              chimiche iniziano a sviluppare tratti da combattimento. La crescita fisica rallenta e l&apos;energia
+              si concentra sulla preparazione alla battaglia.
+            </p>
+            <p>Sei tratti di combattimento emergono gradualmente:</p>
+            <div className="flex flex-col gap-2">
+              {[
+                { name: 'Attacco', color: '#ff3d3d', desc: 'La potenza dei colpi in battaglia' },
+                { name: 'Difesa', color: '#4488ff', desc: 'La capacità di assorbire danni' },
+                { name: 'Velocità', color: '#00e5e5', desc: 'Chi colpisce per primo e la possibilità di attacchi doppi' },
+                { name: 'Resistenza', color: '#ff9100', desc: 'Quanti round il guerriero può sostenere' },
+                { name: 'Speciale', color: '#b26eff', desc: 'La potenza delle mosse devastanti' },
+                { name: 'Cicatrici', color: '#8a8a8a', desc: 'L\u2019esperienza accumulata in battaglia (crescono sempre)' },
+              ].map((trait) => (
+                <div key={trait.name} className="flex items-center gap-3">
+                  <span
+                    className="h-1.5 w-8 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: trait.color,
+                      boxShadow: `0 0 4px ${trait.color}44`,
+                    }}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold" style={{ color: trait.color }}>
+                      {trait.name}
+                    </span>
+                    <span className="text-[11px] text-muted"> — {trait.desc}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] italic text-muted">
+              La transizione è graduale: non esiste un momento preciso in cui il tuo organismo &ldquo;diventa&rdquo;
+              guerriero. È un processo continuo.
+            </p>
+          </div>
+        </GuideCard>
+
+        {/* L'Arena */}
+        <GuideCard title="L&apos;Arena">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <p>
+              Quando il tuo guerriero è pronto, puoi entrare nell&apos;Arena e sfidare le creature degli altri giocatori.
+            </p>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Come funziona:</p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>• I combattimenti sono automatici — la tua creatura combatte in base ai suoi stats</li>
+                <li>• Ogni battaglia dura fino a 10 round</li>
+                <li>• Chi è più veloce attacca per primo</li>
+                <li>• Ogni 3 round si scatena un attacco speciale</li>
+                <li>• La personalità dominante influenza lo stile di combattimento</li>
+                <li>• Le sinergie chimiche danno bonus in battaglia</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-3 font-semibold text-foreground">Fasce di combattimento:</p>
+              <p className="mb-3 text-[13px]">
+                I guerrieri sono divisi in fasce per garantire sfide equilibrate:
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { name: 'Novizio', range: 'Giorno 40-60', color: '#8a8a8a', bg: '#8a8a8a' },
+                  { name: 'Intermedio', range: 'Giorno 61-100', color: '#4488ff', bg: '#4488ff' },
+                  { name: 'Veterano', range: 'Giorno 101-150', color: '#b26eff', bg: '#b26eff' },
+                  { name: 'Leggenda', range: 'Giorno 151+', color: '#ffd600', bg: '#ffd600' },
+                ].map((tier) => (
+                  <div
+                    key={tier.name}
+                    className="flex items-center gap-2.5 rounded-lg border border-border/20 bg-surface-2/40 px-3 py-2"
+                  >
+                    <span
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[9px] font-black"
+                      style={{
+                        color: tier.color,
+                        backgroundColor: `${tier.bg}15`,
+                        border: `1px solid ${tier.bg}30`,
+                        textShadow: `0 0 6px ${tier.bg}44`,
+                      }}
+                    >
+                      {tier.name.charAt(0)}
+                    </span>
+                    <div className="min-w-0">
+                      <span className="text-xs font-semibold" style={{ color: tier.color }}>
+                        {tier.name}
+                      </span>
+                      <p className="text-[10px] text-muted">{tier.range}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] italic text-muted">
+                Puoi sfidare avversari nella tua fascia o in quella adiacente.
+              </p>
+            </div>
+          </div>
+        </GuideCard>
+
+        {/* Conseguenze delle Battaglie */}
+        <GuideCard title="Conseguenze delle Battaglie">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <p>Ogni battaglia ha conseguenze reali sul tuo guerriero.</p>
+
+            <div>
+              <p className="mb-1.5 font-semibold text-accent">Vincitore:</p>
+              <ul className="flex flex-col gap-1 text-[13px]">
+                <li>• Nessun tempo di recupero</li>
+                <li>• Piccolo boost ai tratti di combattimento</li>
+                <li>• Vittorie consecutive: bonus speciali e badge</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-1.5 font-semibold" style={{ color: '#ff3d3d' }}>Sconfitto:</p>
+              <ul className="flex flex-col gap-1 text-[13px]">
+                <li>• Periodo di recupero prima di poter combattere di nuovo</li>
+                <li>• Leggera riduzione dei tratti di combattimento (recuperabile con iniezioni)</li>
+                <li>• Una nuova cicatrice permanente — segno di esperienza</li>
+                <li>• Le cicatrici non sono solo estetiche: ogni cicatrice rende il guerriero leggermente più forte</li>
+              </ul>
+            </div>
+
+            <p className="text-[13px]">
+              <span className="font-semibold text-foreground">Attenzione:</span> dopo 5 sconfitte consecutive
+              il guerriero entra in stato di <span className="font-semibold" style={{ color: '#ff3d3d' }}>Trauma</span>,
+              con una penalità temporanea a tutti gli stats. Il Trauma si cura vincendo una battaglia o aspettando
+              7 giorni.
+            </p>
+
+            <p className="text-[13px]">
+              Il tuo guerriero non morirà mai in battaglia. La morte avviene solo per tua scelta nel laboratorio.
+            </p>
+
+            {/* Callout box */}
+            <div
+              className="rounded-lg p-4 text-[12px] italic leading-relaxed"
+              style={{
+                borderLeft: '3px solid #ff3d3d',
+                backgroundColor: 'rgba(255, 61, 61, 0.05)',
+                color: '#ccc',
+              }}
+            >
+              &ldquo;Le cicatrici raccontano una storia. Un veterano con 20 cicatrici è più pericoloso di un novizio intatto.&rdquo;
+            </div>
+          </div>
+        </GuideCard>
+
+        {/* Stili di Combattimento */}
+        <GuideCard title="Stili di Combattimento">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <p>La personalità dominante del tuo guerriero determina il suo stile in battaglia:</p>
+
+            <div className="flex flex-col gap-2.5">
+              {[
+                { name: 'Aggressivo', color: '#ff4466', desc: 'Danni devastanti ma difese ridotte. Colpisce forte, incassa male.' },
+                { name: 'Luminoso', color: '#00f0ff', desc: 'Può accecare l\u2019avversario, facendogli saltare un turno.' },
+                { name: 'Tossico', color: '#76ff03', desc: 'Avvelena l\u2019avversario con danni che si accumulano ogni round.' },
+                { name: 'Intelligente', color: '#b26eff', desc: 'Schiva gli attacchi con riflessi superiori.' },
+                { name: 'Corazzato', color: '#ffcc80', desc: 'Riduce i danni speciali e può riflettere parte del danno subito.' },
+              ].map((style) => (
+                <div key={style.name} className="flex items-start gap-3">
+                  <span
+                    className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: style.color,
+                      boxShadow: `0 0 6px ${style.color}66`,
+                    }}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold" style={{ color: style.color }}>
+                      {style.name}
+                    </span>
+                    <span className="text-[11px] text-muted"> — {style.desc}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">
+                Anche le sinergie chimiche attive influenzano la battaglia:
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {[
+                  { name: 'Ossatura', color: '#ffcc80', desc: 'Difesa potenziata' },
+                  { name: 'Sangue', color: '#ff4466', desc: 'Rigenerazione HP ogni round' },
+                  { name: 'Veleno', color: '#76ff03', desc: 'L\u2019avversario parte già avvelenato' },
+                  { name: 'Neurale', color: '#b26eff', desc: 'Schivata e velocità potenziate' },
+                  { name: 'Organico', color: '#00f0ff', desc: 'Bonus a tutti gli stats' },
+                  { name: 'Caotico', color: '#ffd600', desc: 'Effetti imprevedibili ogni round' },
+                ].map((syn) => (
+                  <div
+                    key={syn.name}
+                    className="rounded-lg border border-border/20 bg-surface-2/40 px-3 py-2"
+                  >
+                    <span
+                      className="text-[11px] font-semibold"
+                      style={{ color: syn.color }}
+                    >
+                      {syn.name}
+                    </span>
+                    <p className="text-[10px] text-muted">{syn.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </GuideCard>
+
         {/* Back to lab */}
         <div className="flex justify-center pt-2">
           <Link
