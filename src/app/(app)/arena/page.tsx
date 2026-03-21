@@ -1,6 +1,6 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, creatureRankings, battles } from '@/lib/db/schema';
+import { creatures, creatureRankings, battles, users } from '@/lib/db/schema';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { ArenaPage } from '@/components/arena/arena-page';
@@ -53,6 +53,9 @@ export default async function ArenaMainPage() {
   } catch {
     redirect('/login');
   }
+
+  // Mark arena as visited — clears unseen battle notifications
+  await db.update(users).set({ lastArenaVisit: new Date() }).where(eq(users.id, session.userId)).catch(() => {});
 
   // Get user's active creature
   const [creature] = await db

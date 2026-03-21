@@ -1,6 +1,6 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, battles, creatureRankings } from '@/lib/db/schema';
+import { creatures, battles, creatureRankings, users } from '@/lib/db/schema';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { LabDashboard } from '@/components/lab/lab-dashboard';
@@ -47,14 +47,12 @@ export default async function LabPage() {
     cooldownRemaining = Math.max(0, TIME_CONFIG.COOLDOWN_MS - (Date.now() - creature.updatedAt.getTime()));
   }
 
-  // Count battles user hasn't seen (defender battles after last arena visit)
+  // Count battles user hasn't seen (defender battles AFTER last arena visit)
   let unseenBattles = 0;
   try {
-    // Use the user's last login or ranking's last_battle_at as threshold
-    const [userRanking] = await db.select({ lastBattleAt: creatureRankings.lastBattleAt })
-      .from(creatureRankings).where(eq(creatureRankings.creatureId, creature.id));
-    // If user has fought recently, use that as "seen" marker; otherwise check last 24h
-    const threshold = userRanking?.lastBattleAt ?? new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [user] = await db.select({ lastArenaVisit: users.lastArenaVisit })
+      .from(users).where(eq(users.id, session.userId));
+    const threshold = user?.lastArenaVisit ?? new Date(0); // if never visited, count all
     const [unseenCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(battles)

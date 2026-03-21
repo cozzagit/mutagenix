@@ -4,7 +4,7 @@ import {
   unauthorizedResponse,
 } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { battles } from '@/lib/db/schema';
+import { battles, users } from '@/lib/db/schema';
 import { eq, and, gte, sql } from 'drizzle-orm';
 
 export async function GET() {
@@ -15,22 +15,26 @@ export async function GET() {
     return unauthorizedResponse();
   }
 
-  // Count battles where user was DEFENDER in the last 24 hours
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  try {
+    // Get last arena visit timestamp
+    const [user] = await db.select({ lastArenaVisit: users.lastArenaVisit })
+      .from(users).where(eq(users.id, session.userId));
+    const threshold = user?.lastArenaVisit ?? new Date(0);
 
-  const [result] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(battles)
-    .where(
-      and(
-        eq(battles.defenderUserId, session.userId),
-        gte(battles.createdAt, twentyFourHoursAgo),
-      ),
-    );
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(battles)
+      .where(
+        and(
+          eq(battles.defenderUserId, session.userId),
+          gte(battles.createdAt, threshold),
+        ),
+      );
 
-  return NextResponse.json({
-    data: {
-      unseenBattles: result?.count ?? 0,
-    },
-  });
+    return NextResponse.json({
+      data: { unseenBattles: result?.count ?? 0 },
+    });
+  } catch {
+    return NextResponse.json({ data: { unseenBattles: 0 } });
+  }
 }
