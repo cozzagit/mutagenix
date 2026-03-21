@@ -32,11 +32,6 @@ export function StatsBar({ ageDays, generation, stability, compact, isWarrior }:
         <span className="text-border">·</span>
         <span className="font-medium text-foreground">
           Giorno {ageDays}
-          {isWarrior && (
-            <span className="ml-1 text-[9px] font-black text-red-400" title="Fase Guerriero">
-              GUERRIERO
-            </span>
-          )}
         </span>
         <span className="text-border">·</span>
         <span
@@ -56,11 +51,6 @@ export function StatsBar({ ageDays, generation, stability, compact, isWarrior }:
         <span className="text-border">·</span>
         <span className="font-medium text-foreground">
           Giorno {ageDays}
-          {isWarrior && (
-            <span className="ml-1 text-[9px] font-black text-red-400" title="Fase Guerriero">
-              GUERRIERO
-            </span>
-          )}
         </span>
       </span>
       <span className="inline-flex items-center gap-1.5">
