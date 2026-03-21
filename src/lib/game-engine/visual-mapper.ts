@@ -165,67 +165,289 @@ export function mapTraitsToVisuals(
   // Normalise traits to 0-1 range for interpolation
   const t = (trait: TraitId): number => clamp(traitValues[trait] / 100, 0, 1);
 
-  // ---- Colour derivation ----
-  const dominant = dominantElement(elementLevels);
+  // ---------------------------------------------------------------------------
+  // Determine dominant and secondary elements
+  // ---------------------------------------------------------------------------
+  const sorted = ([...ELEMENTS] as ElementId[]).sort(
+    (a, b) => elementLevels[b] - elementLevels[a],
+  );
+  const dom: ElementId = sorted[0];
+  const sec: ElementId = sorted[1];
+  const totalElements = ELEMENTS.reduce((sum, el) => sum + elementLevels[el], 0);
+  const domRatio = elementLevels[dom] / Math.max(totalElements, 1);
+
+  // ---------------------------------------------------------------------------
+  // Element-driven aspect-ratio tables
+  // ---------------------------------------------------------------------------
+  const ELEMENT_WIDTH_RATIO: Partial<Record<ElementId, number>> = {
+    Fe: 1.4, Ca: 1.3, C: 1.2, S: 0.9, Cl: 0.9,
+    K: 0.65, Na: 0.65, P: 0.6, N: 1.0, O: 1.0,
+  };
+  const ELEMENT_HEIGHT_RATIO: Partial<Record<ElementId, number>> = {
+    Fe: 0.7, Ca: 0.9, C: 0.85, S: 1.1, Cl: 1.1,
+    K: 1.35, Na: 1.35, P: 1.4, N: 1.0, O: 1.0,
+  };
+
+  // ---------------------------------------------------------------------------
+  // Colour derivation
+  // ---------------------------------------------------------------------------
   const maxLevel = Math.max(...ELEMENTS.map((e) => elementLevels[e]), 1);
 
-  let bodyHue = ELEMENT_HUE[dominant];
+  let bodyHue = ELEMENT_HUE[dom];
   let bodySaturation = 20 + (maxLevel / 100) * 60;
   let bodyLightness = 15 + clamp(t('skinTex'), 0, 1) * 30;
   let bodyOpacity = lerp(0.3, 1, t('bodySize'));
 
-  // ---- Body ----
-  const bodyWidth = lerp(50, 200, t('bodySize'));
-  const bodyHeight = lerp(40, 180, t('bodySize'));
-  let bodyBlobiness = lerp(0, 0.6, 1 - t('posture'));
+  // ---------------------------------------------------------------------------
+  // Body — element-driven proportions
+  // ---------------------------------------------------------------------------
+  const sizeT = t('bodySize');
+  const baseSize = lerp(60, 180, sizeT);
 
-  // ---- Head ----
-  const headSize = lerp(0.2, 0.8, t('headSize'));
+  // Primary ratio from dominant element
+  let widthRatio = ELEMENT_WIDTH_RATIO[dom] ?? 1.0;
+  let heightRatio = ELEMENT_HEIGHT_RATIO[dom] ?? 1.0;
+
+  // Blend secondary element for extra variety (30 % weight, scaled by how
+  // dominant the primary actually is — if domRatio is low, secondary matters more)
+  const secWeight = lerp(0.15, 0.35, 1 - domRatio);
+  const secWidthRatio = ELEMENT_WIDTH_RATIO[sec] ?? 1.0;
+  const secHeightRatio = ELEMENT_HEIGHT_RATIO[sec] ?? 1.0;
+  widthRatio = widthRatio * (1 - secWeight) + secWidthRatio * secWeight;
+  heightRatio = heightRatio * (1 - secWeight) + secHeightRatio * secWeight;
+
+  const bodyWidth = baseSize * widthRatio;
+  const bodyHeight = baseSize * heightRatio;
+
+  // Blobiness: spiny/toxic creatures are more irregular; armored are solid
+  let bodyBlobiness: number;
+  if (dom === 'S' || dom === 'Cl') {
+    bodyBlobiness = lerp(0.15, 0.8, 1 - t('posture'));
+  } else if (dom === 'Ca' || dom === 'C') {
+    bodyBlobiness = lerp(0, 0.25, 1 - t('posture'));
+  } else {
+    bodyBlobiness = lerp(0, 0.6, 1 - t('posture'));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Head — element-driven size
+  // ---------------------------------------------------------------------------
+  let headSize: number;
+  if (dom === 'K' || dom === 'Na') {
+    // Cerebral: bigger head
+    headSize = lerp(0.4, 1.0, t('headSize'));
+  } else if (dom === 'Fe' || dom === 'Ca' || dom === 'C') {
+    // Brutes/tanks: smaller head
+    headSize = lerp(0.15, 0.55, t('headSize'));
+  } else if (dom === 'P') {
+    // Alien: medium-large head
+    headSize = lerp(0.3, 0.85, t('headSize'));
+  } else {
+    headSize = lerp(0.2, 0.8, t('headSize'));
+  }
+
   const headYOffset = lerp(-20, 20, t('posture'));
 
-  // ---- Eyes ----
-  const eyeCount = stepped(traitValues.eyeDev, [
-    [0, 1],
-    [20, 2],
-    [60, 3],
-    [90, 4],
-  ] as const);
-  const eyeSize = lerp(3, 18, t('eyeDev'));
+  // ---------------------------------------------------------------------------
+  // Eyes — dramatically different by element
+  // ---------------------------------------------------------------------------
+  let eyeCount: number;
+  if (traitValues.eyeDev < 5) {
+    // Very underdeveloped: blind creature
+    eyeCount = 0;
+  } else if (dom === 'K' || dom === 'Na' || dom === 'P') {
+    // Neural/phosphorus creatures get more eyes earlier
+    eyeCount = stepped(traitValues.eyeDev, [
+      [5, 1], [15, 2], [30, 3], [50, 4], [70, 5], [90, 6],
+    ] as const);
+  } else if (dom === 'Fe' || dom === 'Ca') {
+    // Brutes/tanks: fewer eyes
+    eyeCount = stepped(traitValues.eyeDev, [
+      [5, 1], [40, 2], [80, 3],
+    ] as const);
+  } else if (dom === 'S' || dom === 'Cl') {
+    // Toxic creatures: irregular eye pattern
+    eyeCount = stepped(traitValues.eyeDev, [
+      [5, 1], [20, 2], [35, 4], [60, 3], [80, 5],
+    ] as const);
+  } else {
+    eyeCount = stepped(traitValues.eyeDev, [
+      [5, 1], [25, 2], [55, 3], [85, 4],
+    ] as const);
+  }
+
+  // Eye SIZE varies by element
+  const eyeSizeBase = lerp(3, 18, t('eyeDev'));
+  const eyeSizeMult =
+    (dom === 'P' || dom === 'K') ? 1.4 :
+    (dom === 'Fe' || dom === 'Ca') ? 0.7 :
+    (dom === 'Na') ? 1.2 :
+    1.0;
+  const eyeSize = eyeSizeBase * eyeSizeMult;
+
   let eyeGlow = lerp(0, 1, t('eyeDev'));
+  // Phosphorus creatures always have some glow
+  if (dom === 'P') eyeGlow = clamp(eyeGlow + 0.3, 0, 1);
+
   const pupilShape = lerp(0, 1, t('spininess'));
   const eyeColor = `hsl(${bodyHue}, ${clamp(bodySaturation + 20, 0, 100)}%, ${clamp(bodyLightness + 20, 0, 80)}%)`;
 
-  // ---- Limbs ----
-  const limbCount = stepped(traitValues.limbGrowth, [
-    [0, 0],
-    [15, 1],
-    [30, 2],
-    [45, 3],
-    [60, 4],
-    [80, 6],
-  ] as const);
-  const limbLength = lerp(15, 80, t('limbGrowth'));
+  // ---------------------------------------------------------------------------
+  // Limbs — element-driven count and thickness
+  // ---------------------------------------------------------------------------
+  let limbCount: number;
   let limbThickness = lerp(2, 8, t('limbGrowth') * 0.5 + t('bodySize') * 0.5);
+
+  // Serpentine check: S dominant + high Cl → no limbs, massive tail instead
+  const isSerpentine = (dom === 'S' || dom === 'Cl') && elementLevels.Cl > 30 && elementLevels.S > 20;
+
+  if (isSerpentine) {
+    limbCount = 0;
+    limbThickness *= 0.6; // no limbs, but keep value for tail thickness hint
+  } else if (dom === 'Fe' || dom === 'Ca') {
+    // Fewer but thicker limbs
+    limbCount = stepped(traitValues.limbGrowth, [
+      [0, 0], [20, 2], [60, 4],
+    ] as const);
+    limbThickness *= 1.5;
+  } else if (dom === 'K' || dom === 'Na' || dom === 'P') {
+    // More limbs but thinner
+    limbCount = stepped(traitValues.limbGrowth, [
+      [0, 0], [10, 2], [25, 4], [50, 6], [75, 8],
+    ] as const);
+    limbThickness *= 0.7;
+  } else if (dom === 'S' || dom === 'Cl') {
+    // Irregular limb count
+    limbCount = stepped(traitValues.limbGrowth, [
+      [0, 0], [15, 2], [35, 3], [55, 5], [80, 4],
+    ] as const);
+  } else {
+    limbCount = stepped(traitValues.limbGrowth, [
+      [0, 0], [15, 2], [40, 4], [70, 6],
+    ] as const);
+  }
+
+  const limbLength = lerp(15, 80, t('limbGrowth'));
   const limbCurve = lerp(0, 1, t('tailGrowth') * 0.3 + t('posture') * 0.7);
 
-  // ---- Details ----
-  const spineCount = Math.round(lerp(0, 12, t('spininess')));
-  const spineLength = lerp(0, 25, t('spininess'));
-  const tailLength = lerp(0, 60, t('tailGrowth'));
+  // ---------------------------------------------------------------------------
+  // Tail — element-driven length
+  // ---------------------------------------------------------------------------
+  let tailLength: number;
+  if (isSerpentine) {
+    // Serpentine: compensate lack of limbs with huge tail
+    tailLength = lerp(40, 100, t('tailGrowth'));
+  } else if (dom === 'Fe') {
+    // Brutes have stubby tails
+    tailLength = lerp(0, 60, t('tailGrowth')) * 0.5;
+  } else if (dom === 'K' || dom === 'P') {
+    // Elegant tails
+    tailLength = lerp(0, 60, t('tailGrowth')) * 1.3;
+  } else {
+    tailLength = lerp(0, 60, t('tailGrowth'));
+  }
   const tailCurve = lerp(0, 1, t('tailGrowth'));
-  const clawSize = lerp(0, 12, t('clawDev'));
 
-  // ---- Texture ----
-  const furDensity = lerp(0, 1, t('furDensity'));
+  // ---------------------------------------------------------------------------
+  // Spines — element-driven count and size
+  // ---------------------------------------------------------------------------
+  let spineCount: number;
+  let spineLength: number;
+
+  if (dom === 'S' || dom === 'Cl') {
+    // Many small spines — spiny horror
+    spineCount = Math.round(lerp(0, 20, t('spininess')));
+    spineLength = lerp(0, 15, t('spininess'));
+  } else if (dom === 'Ca') {
+    // Few big horn-like protrusions
+    spineCount = Math.round(lerp(0, 5, t('spininess')));
+    spineLength = lerp(0, 35, t('spininess'));
+  } else if (dom === 'K' || dom === 'Na') {
+    // Minimal — smooth cerebral beings
+    spineCount = Math.round(lerp(0, 3, t('spininess')));
+    spineLength = lerp(0, 10, t('spininess'));
+  } else if (dom === 'Fe') {
+    // Medium spines, thick
+    spineCount = Math.round(lerp(0, 8, t('spininess')));
+    spineLength = lerp(0, 20, t('spininess'));
+  } else {
+    spineCount = Math.round(lerp(0, 12, t('spininess')));
+    spineLength = lerp(0, 25, t('spininess'));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Claws — element-driven size
+  // ---------------------------------------------------------------------------
+  let clawSize: number;
+  if (dom === 'Fe' || dom === 'S') {
+    // Large fearsome claws
+    clawSize = lerp(0, 18, t('clawDev'));
+  } else if (dom === 'K' || dom === 'P') {
+    // Delicate / small claws
+    clawSize = lerp(0, 5, t('clawDev'));
+  } else if (dom === 'Ca') {
+    // Medium sturdy claws
+    clawSize = lerp(0, 14, t('clawDev'));
+  } else {
+    clawSize = lerp(0, 12, t('clawDev'));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Texture — fur and skin
+  // ---------------------------------------------------------------------------
+  let furDensity = lerp(0, 1, t('furDensity'));
+  // Metallic/toxic creatures have less fur; organic creatures have more
+  if (dom === 'Fe' || dom === 'S') {
+    furDensity *= 0.3;
+  } else if (dom === 'Cl') {
+    furDensity *= 0.4;
+  } else if (dom === 'N' || dom === 'O') {
+    furDensity = clamp(furDensity * 1.5, 0, 1);
+  } else if (dom === 'P') {
+    furDensity *= 0.5; // smooth alien
+  }
+  // Ca: fur maps to scale-like pattern (keep numeric value, renderer interprets)
+
   const skinRoughness = lerp(0, 1, t('skinTex'));
 
-  // ---- Meta ----
-  let postureAngle = lerp(0, 45, t('posture'));
-  let symmetry = lerp(0.5, 1, t('posture') * 0.5 + 0.5);
+  // ---------------------------------------------------------------------------
+  // Posture — element-driven max angle
+  // ---------------------------------------------------------------------------
+  let maxPosture: number;
+  if (dom === 'Fe') {
+    maxPosture = 25; // hunched gorilla
+  } else if (dom === 'S' || dom === 'Cl') {
+    maxPosture = 20; // crouched lurker
+  } else if (dom === 'Ca') {
+    maxPosture = 30; // medium stance
+  } else if (dom === 'K' || dom === 'Na' || dom === 'P') {
+    maxPosture = 45; // tall and upright
+  } else {
+    maxPosture = 40; // organic normal
+  }
+  let postureAngle = lerp(0, maxPosture, t('posture'));
+
+  // Symmetry: cerebral = high, toxic = low
+  let symmetry: number;
+  if (dom === 'K' || dom === 'Na' || dom === 'O' || dom === 'N') {
+    symmetry = lerp(0.7, 1, t('posture') * 0.5 + 0.5);
+  } else if (dom === 'S' || dom === 'Cl') {
+    symmetry = lerp(0.35, 0.8, t('posture') * 0.5 + 0.5);
+  } else {
+    symmetry = lerp(0.5, 1, t('posture') * 0.5 + 0.5);
+  }
+
+  // Glow: phosphorus creatures glow by default
   let glowIntensity = 0;
   let glowHue = bodyHue;
+  if (dom === 'P') {
+    glowIntensity = lerp(0.15, 0.6, t('luminosity'));
+    glowHue = 120; // green phosphorescent
+  }
 
-  // ---- Synergy visual effects ----
+  // ---------------------------------------------------------------------------
+  // Synergy visual effects (preserved from original)
+  // ---------------------------------------------------------------------------
   const activeSynergyVisuals: string[] = [];
 
   for (const syn of activeSynergies) {
@@ -261,14 +483,15 @@ export function mapTraitsToVisuals(
         break;
 
       case 'chaos_shimmer':
-        symmetry = clamp(symmetry - 0.2, 0.5, 1);
+        symmetry = clamp(symmetry - 0.2, 0.3, 1);
         bodyBlobiness = clamp(bodyBlobiness + 0.25, 0, 1);
         break;
     }
   }
 
-  // ---- Personality-driven trait levels ----
-  // Personality traits — normalized as relative distribution (sum to 1)
+  // ---------------------------------------------------------------------------
+  // Personality-driven trait levels (preserved from original)
+  // ---------------------------------------------------------------------------
   const rawAggr = t('aggression');
   const rawLumi = t('luminosity');
   const rawToxi = t('toxicity');
@@ -282,12 +505,14 @@ export function mapTraitsToVisuals(
   const intelligenceLevel = rawInte * pNorm;
   const armoringLevel = rawArmo * pNorm;
 
-  // ---- Cross-trait visual modifications ----
+  // ---------------------------------------------------------------------------
+  // Cross-trait visual modifications (preserved from original)
+  // ---------------------------------------------------------------------------
 
   // Aggression > 0.3: shift hue toward red, increase blobiness slightly
   if (aggressionLevel > 0.3) {
-    const aggrFactor = (aggressionLevel - 0.3) / 0.7; // 0-1 within active range
-    bodyHue = bodyHue + aggrFactor * 70 * ((bodyHue > 180 ? -1 : 1)); // shift toward red (0)
+    const aggrFactor = (aggressionLevel - 0.3) / 0.7;
+    bodyHue = bodyHue + aggrFactor * 70 * ((bodyHue > 180 ? -1 : 1));
     if (bodyHue < 0) bodyHue += 360;
     if (bodyHue > 360) bodyHue -= 360;
     bodyBlobiness = clamp(bodyBlobiness + aggrFactor * 0.1, 0, 1);
@@ -323,8 +548,9 @@ export function mapTraitsToVisuals(
     limbThickness = clamp(limbThickness + armorFactor * 2, 2, 12);
   }
 
-  // ---- Color palette (contrasting feature colors) ----
-  // Estimate stability from trait balance: more evenly distributed traits = more stable
+  // ---------------------------------------------------------------------------
+  // Color palette (preserved from original)
+  // ---------------------------------------------------------------------------
   const traitVals = TRAITS.map((tid) => traitValues[tid]);
   const maxTrait = Math.max(...traitVals, 1);
   const avgTrait = traitVals.reduce((a, b) => a + b, 0) / traitVals.length;
