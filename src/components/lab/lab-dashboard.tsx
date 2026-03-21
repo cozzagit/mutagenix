@@ -102,9 +102,11 @@ function getLevelBadge(ageDays: number, tier?: string): { label: string; color: 
   if (ageDays < GAME_CONFIG.WARRIOR_PHASE_START) {
     return { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' };
   }
-  if (tier === 'legend') return { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' };
-  if (tier === 'veteran') return { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15' };
-  if (tier === 'intermediate') return { label: 'Intermedio', color: 'text-primary', bg: 'bg-primary/15' };
+  // Use ranking tier if available, otherwise derive from age
+  const effectiveTier = tier ?? (ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice');
+  if (effectiveTier === 'legend') return { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' };
+  if (effectiveTier === 'veteran') return { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15' };
+  if (effectiveTier === 'intermediate') return { label: 'Intermedio', color: 'text-primary', bg: 'bg-primary/15' };
   return { label: 'Novizio', color: 'text-muted', bg: 'bg-muted/15' };
 }
 

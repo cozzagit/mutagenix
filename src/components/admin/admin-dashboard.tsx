@@ -231,11 +231,13 @@ function UserGridCard({
   const trauma = active?.ranking?.traumaActive ?? false;
   const isWarrior = active ? active.ageDays >= GAME_CONFIG.WARRIOR_PHASE_START : false;
 
-  // Level badge: tier for warriors, "Embrione" for growing creatures
-  const tierLabel = active?.ranking?.tier;
+  // Level badge: based on age (not registration status)
+  const ageDays = active?.ageDays ?? 0;
+  const tierFromAge = ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : ageDays >= 40 ? 'novice' : 'embryo';
+  const tierLabel = active?.ranking?.tier ?? tierFromAge;
   const levelBadge: { label: string; color: string; bg: string } = !active
     ? { label: 'Nessuno', color: 'text-muted', bg: 'bg-muted/10' }
-    : !isWarrior
+    : tierLabel === 'embryo' || tierFromAge === 'embryo'
       ? { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' }
       : tierLabel === 'legend'
         ? { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' }
