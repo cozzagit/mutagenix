@@ -289,10 +289,17 @@ function UserGridCard({
         )}
       </div>
 
-      {/* Arena stats row */}
+      {/* Warrior badge + Arena stats */}
+      {isWarrior && (
+        <div className="mt-1.5 flex justify-center">
+          <span className="rounded-sm bg-red-500/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-red-400">
+            Guerriero
+          </span>
+        </div>
+      )}
       {active?.ranking && (
         <p className="mt-1 text-center text-[11px]">
-          <span className="text-muted/80">{isWarrior ? '⚔ ' : ''}ELO </span>
+          <span className="text-muted/80">ELO </span>
           <span className="font-bold text-foreground">{active.ranking.eloRating}</span>
           <span className="text-muted"> · </span>
           <span className="font-bold text-accent">{active.ranking.wins}V</span>
@@ -301,14 +308,9 @@ function UserGridCard({
         </p>
       )}
 
-      {/* Status badges row */}
-      {(recovery || trauma || isWarrior) && (
+      {/* Recovery / Trauma badges */}
+      {(recovery || trauma) && (
         <div className="mt-1.5 flex flex-wrap justify-center gap-1">
-          {isWarrior && (
-            <span className="rounded-sm bg-red-500/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-red-400">
-              Guerriero
-            </span>
-          )}
           {recovery && (
             <span className="rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-amber-400">
               In Recupero
