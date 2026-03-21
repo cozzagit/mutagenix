@@ -175,13 +175,13 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
         <StatBar label="SPC" value={warrior.specialAttack} max={maxStat * 1.2} color="bg-bio-purple" />
       </div>
 
-      {/* Personality */}
-      <div className="flex items-center gap-2">
-        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${personalityInfo.color} bg-surface-2`}>
+      {/* Personality + synergies */}
+      <div className="flex flex-wrap items-center gap-1">
+        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${personalityInfo.color} bg-surface-2`}>
           {personalityInfo.label}
         </span>
-        {warrior.activeSynergies.length > 0 && warrior.activeSynergies.map((syn) => (
-          <span key={syn} className="inline-flex items-center rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-mono text-muted">
+        {warrior.activeSynergies.map((syn) => (
+          <span key={syn} className="inline-flex items-center rounded-md bg-surface-2 px-1 py-0.5 text-[9px] font-mono text-muted">
             {syn}
           </span>
         ))}
