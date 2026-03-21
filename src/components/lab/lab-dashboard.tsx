@@ -41,7 +41,7 @@ interface Props {
   isDevMode: boolean;
   cooldownRemaining?: number;
   unseenBattles?: number;
-  ranking?: { eloRating: number; wins: number; losses: number; draws: number } | null;
+  ranking?: { eloRating: number; wins: number; losses: number; draws: number; tier: string } | null;
 }
 
 type Phase = 'idle' | 'allocating' | 'mutating' | 'waiting';

@@ -68,13 +68,14 @@ export default async function LabPage() {
   }
 
   // Fetch arena ranking
-  let ranking: { eloRating: number; wins: number; losses: number; draws: number } | null = null;
+  let ranking: { eloRating: number; wins: number; losses: number; draws: number; tier: string } | null = null;
   try {
     const [r] = await db.select({
       eloRating: creatureRankings.eloRating,
       wins: creatureRankings.wins,
       losses: creatureRankings.losses,
       draws: creatureRankings.draws,
+      tier: creatureRankings.rankTier,
     }).from(creatureRankings).where(eq(creatureRankings.creatureId, creature.id));
     ranking = r ?? null;
   } catch { /* table may not exist */ }
