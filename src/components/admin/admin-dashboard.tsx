@@ -242,44 +242,49 @@ function UserGridCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex w-full flex-col rounded-xl border border-border/40 bg-surface/60 p-3 text-left transition-all hover:border-border/70 hover:bg-surface/80 active:scale-[0.98]"
+      className="group relative flex h-full w-full cursor-pointer flex-col rounded-xl border border-border/40 bg-surface/60 p-3 text-left transition-all hover:border-border/70 hover:bg-surface/80 active:scale-[0.98]"
       style={
         bodyColor
-          ? {
-              boxShadow: `0 0 20px ${bodyColor}18, inset 0 0 20px ${bodyColor}08`,
-            }
+          ? { boxShadow: `0 0 20px ${bodyColor}18, inset 0 0 20px ${bodyColor}08` }
           : undefined
       }
     >
       {/* Admin corner badge */}
       {user.isAdmin && (
-        <div className="absolute right-2 top-2 z-10 rounded-sm bg-amber-500/20 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-400">
+        <div className="absolute left-2 top-2 z-10 rounded-sm bg-amber-500/20 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-400">
           Admin
         </div>
       )}
 
-      {/* Creature SVG */}
-      <div className="flex items-center justify-center py-2">
+      {/* Archived count badge — top right */}
+      {archivedCount > 0 && (
+        <div className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-bio-purple/25 text-[9px] font-bold text-bio-purple" title={`${archivedCount} creatur${archivedCount === 1 ? 'a' : 'e'} archiviat${archivedCount === 1 ? 'a' : 'e'}`}>
+          {archivedCount}
+        </div>
+      )}
+
+      {/* Creature SVG — BIG */}
+      <div className="flex items-center justify-center py-3">
         {visualParams ? (
           <CreatureRenderer
             params={visualParams}
-            size={70}
+            size={140}
             animated={false}
             seed={42}
           />
         ) : (
-          <PlaceholderBlob size={70} />
+          <PlaceholderBlob size={100} />
         )}
       </div>
 
       {/* Creature info */}
-      <div className="mt-1 text-center">
+      <div className="text-center">
         <p className="truncate text-sm font-bold text-foreground">
           {active?.name ?? 'Nessuna creatura'}
         </p>
         {active && (
           <p className="text-[11px] text-muted">
-            Day {active.ageDays} &middot; Gen {active.generation}
+            Day {active.ageDays} · Gen {active.generation}
           </p>
         )}
       </div>
@@ -287,9 +292,9 @@ function UserGridCard({
       {/* Arena stats row */}
       {active?.ranking && (
         <p className="mt-1 text-center text-[11px]">
-          <span className="text-muted/80">{isWarrior ? '\u2694 ' : ''}ELO </span>
+          <span className="text-muted/80">{isWarrior ? '⚔ ' : ''}ELO </span>
           <span className="font-bold text-foreground">{active.ranking.eloRating}</span>
-          <span className="text-muted"> &middot; </span>
+          <span className="text-muted"> · </span>
           <span className="font-bold text-accent">{active.ranking.wins}V</span>
           {' '}
           <span className="font-bold text-red-400">{active.ranking.losses}S</span>
@@ -317,29 +322,22 @@ function UserGridCard({
         </div>
       )}
 
+      {/* Spacer — pushes user info to bottom */}
+      <div className="flex-1" />
+
       {/* Divider */}
       <div className="my-2 border-t border-border/20" />
 
-      {/* User info */}
+      {/* User info — always at bottom */}
       <div className="space-y-0.5 text-[11px]">
         <p className="truncate text-foreground/80">
-          <span className="text-muted/70">{'\uD83D\uDC64'} </span>
-          {user.displayName}
+          👤 {user.displayName}
         </p>
         <p className="truncate text-muted">
-          <span className="text-muted/70">{'\uD83D\uDCE7'} </span>
-          {user.email.length > 22 ? user.email.slice(0, 20) + '...' : user.email}
+          ✉ {user.email.length > 22 ? user.email.slice(0, 20) + '…' : user.email}
         </p>
         <p className="text-muted">
-          <span className="text-muted/70">{'\uD83D\uDCC5'} </span>
-          {formatDate(user.createdAt)}
-        </p>
-        <p className="text-muted">
-          <span className="text-muted/70">{'\uD83E\uDDEC'} </span>
-          {totalCount} creatur{totalCount === 1 ? 'a' : 'e'}
-          {archivedCount > 0 && (
-            <span className="text-muted/60"> ({archivedCount} arch.)</span>
-          )}
+          📅 {formatDate(user.createdAt)}
         </p>
       </div>
     </button>
