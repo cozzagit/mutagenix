@@ -5,7 +5,7 @@
 // between its "before" state and the mutation target state.
 
 import type { ElementLevels, TraitValues } from '@/types/game';
-import type { VisualParams } from './visual-mapper';
+import { mapTraitsToVisuals, type VisualParams } from './visual-mapper';
 import { ELEMENTS, TRAITS, MUTATION_PHASES, type MutationPhase } from './constants';
 import type { Creature } from '@/lib/db/schema/creatures';
 
@@ -114,10 +114,16 @@ export function interpolateCreatureState(
 ): InterpolatedState {
   const currentElementLevels = creature.elementLevels;
   const currentTraitValues = creature.traitValues;
-  const currentVisualParams = creature.visualParams as unknown as VisualParams;
   const currentStability = creature.stability ?? 0.5;
 
-  // No active mutation — return current state
+  // Always recalculate visual params with the current mapper to ensure consistency
+  const freshVisualParams = mapTraitsToVisuals(
+    currentTraitValues as TraitValues,
+    currentElementLevels as ElementLevels,
+    [],
+  );
+
+  // No active mutation — return current state with fresh visuals
   if (
     !creature.targetVisualParams ||
     !creature.targetElementLevels ||
@@ -128,7 +134,7 @@ export function interpolateCreatureState(
     return {
       elementLevels: currentElementLevels,
       traitValues: currentTraitValues,
-      visualParams: currentVisualParams,
+      visualParams: freshVisualParams,
       stability: currentStability,
       progress: 0,
       mutationActive: false,
