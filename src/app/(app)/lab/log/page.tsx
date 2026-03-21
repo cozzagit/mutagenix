@@ -122,6 +122,12 @@ export default async function EvolutionLogPage() {
       creatureName={creature.name}
       totalDays={totalDays}
       elementLevels={creature.elementLevels}
+      traitValues={creature.traitValues as Record<string, number>}
+      currentVisualParams={mapTraitsToVisuals(
+        creature.traitValues as TraitValues,
+        creature.elementLevels as ElementLevels,
+        [],
+      ) as unknown as Record<string, number>}
       keySnapshots={keySnapshots}
       allSnapshotsForMilestones={milestoneCandidates}
     />

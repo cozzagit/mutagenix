@@ -32,6 +32,8 @@ interface EvolutionDiaryProps {
   creatureName: string;
   totalDays: number;
   elementLevels: ElementLevels;
+  traitValues?: Record<string, number>;
+  currentVisualParams?: Record<string, number>;
   keySnapshots: KeySnapshot[];
   allSnapshotsForMilestones: MilestoneCandidate[];
 }
@@ -108,6 +110,8 @@ function getDominantElement(elLevels: Record<string, number>): ElementId {
 function generateInsights(
   elLevels: Record<string, number>,
   lastSnapshot: KeySnapshot | undefined,
+  currentTraits?: Record<string, number>,
+  currentVisuals?: Record<string, number>,
 ): string[] {
   const insights: string[] = [];
   const sorted = getSortedElements(elLevels);
@@ -128,9 +132,10 @@ function generateInsights(
     insights.push('I toni cianotici sono dovuti all\'alta presenza di Ossigeno.');
   }
 
-  if (lastSnapshot) {
-    const vp = lastSnapshot.visualParams as Partial<VisualParams>;
-    const tv = lastSnapshot.traitValues;
+  // Use CURRENT data if available, fallback to last snapshot
+  {
+    const vp = (currentVisuals ?? lastSnapshot?.visualParams ?? {}) as Partial<VisualParams>;
+    const tv = currentTraits ?? lastSnapshot?.traitValues ?? {};
 
     // Body shape insights
     const bw = (vp.bodyWidth as number) ?? 70;
@@ -554,6 +559,8 @@ export function EvolutionDiary({
   creatureName,
   totalDays,
   elementLevels,
+  traitValues: currentTraitValues,
+  currentVisualParams,
   keySnapshots,
   allSnapshotsForMilestones,
 }: EvolutionDiaryProps) {
@@ -561,8 +568,13 @@ export function EvolutionDiary({
   const elLevels = elementLevels as Record<string, number>;
 
   const insights = useMemo(
-    () => generateInsights(elLevels, keySnapshots.length > 0 ? keySnapshots[keySnapshots.length - 1] : undefined),
-    [elLevels, keySnapshots],
+    () => generateInsights(
+      elLevels,
+      keySnapshots.length > 0 ? keySnapshots[keySnapshots.length - 1] : undefined,
+      currentTraitValues,
+      currentVisualParams,
+    ),
+    [elLevels, keySnapshots, currentTraitValues, currentVisualParams],
   );
 
   const milestones = useMemo(
