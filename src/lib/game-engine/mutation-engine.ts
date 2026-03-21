@@ -243,32 +243,40 @@ export function processDailyMutation(
   }
 
   // --- 7b. Combat trait growth (Warrior Phase) ---
-  // Combat traits grow using: sum(elementLevel × combatWeight) × combatRatio × growthRate
+  // Combat traits: use ONLY current injection credits (not accumulated element levels)
+  // to determine WHICH combat traits grow. This keeps them as a distribution that
+  // reflects recent strategy, not just "everything maxes out over time".
   if (combatRatio > 0) {
-    const growthRate = GAME_CONFIG.GROWTH_RATE_BASE / (1 + ageDays * 0.01);
+    // Much slower growth rate for combat — reaches meaningful levels slowly
+    const combatGrowthRate = 0.008 / (1 + ageDays * 0.005);
 
-    let stabilityModifier = 1;
-    if (newStability < GAME_CONFIG.STABILITY_THRESHOLD_LOW) {
-      stabilityModifier = 1.5;
-    } else if (newStability > GAME_CONFIG.STABILITY_THRESHOLD_HIGH) {
-      stabilityModifier = 0.7;
-    }
+    // Calculate combat contribution from THIS injection only (not total elements)
+    const injectionTotal = Object.values(allocation).reduce((a, b) => a + b, 0);
 
     for (const combatTrait of COMBAT_TRAITS) {
       const oldValue = creature.traitValues[combatTrait] ?? 0;
 
-      // Weighted sum of element contributions
-      let weightedSum = 0;
+      // Weight from current injection credits only
+      let injectionContrib = 0;
       for (const el of ELEMENTS) {
-        weightedSum += newElementLevels[el] * ELEMENT_COMBAT_WEIGHTS[el][combatTrait];
+        injectionContrib += (allocation[el] ?? 0) * ELEMENT_COMBAT_WEIGHTS[el][combatTrait];
       }
 
-      const combatDelta = weightedSum * combatRatio * growthRate * stabilityModifier;
+      // Normalize by injection size so it's proportional, not absolute
+      const normalizedContrib = injectionTotal > 0 ? injectionContrib / injectionTotal : 0;
 
-      // battleScars always gets a tiny bonus with every injection (experience)
-      const scarBonus = combatTrait === 'battleScars' ? 0.15 : 0;
+      // Growth: contribution × combatRatio × rate
+      // With diminishing returns: grows slower as it gets higher
+      const diminishing = 1 - (oldValue / 100) * 0.7; // at 80, only 44% effective
+      const combatDelta = normalizedContrib * combatRatio * combatGrowthRate * 100 * diminishing;
 
-      const totalCombatDelta = combatDelta + scarBonus;
+      // battleScars: tiny constant growth (experience from battle)
+      const scarBonus = combatTrait === 'battleScars' ? 0.08 * combatRatio : 0;
+
+      // Decay: traits not fed by this injection slowly decrease
+      const decayRate = normalizedContrib < 0.1 ? -0.02 * oldValue * combatRatio : 0;
+
+      const totalCombatDelta = combatDelta + scarBonus + decayRate;
       const rawNew = oldValue + totalCombatDelta;
       const clampedNew = clamp(rawNew, GAME_CONFIG.MIN_TRAIT_VALUE, GAME_CONFIG.MAX_TRAIT_VALUE);
 

@@ -846,18 +846,51 @@ export function CreatureRenderer({
       }
     }
 
-    // ---- Toxicity: pustules on body ----
-    const toxPustules: { cx: number; cy: number; r: number }[] = [];
+    // ---- Toxicity: pustules on body (grotesque alien boils) ----
+    type PustuleData = {
+      cx: number; cy: number; r: number;
+      // cluster bumps: overlapping ellipses forming lumpy mass
+      bumps: { dx: number; dy: number; rx: number; ry: number; rot: number }[];
+      // crater at center
+      craterR: number;
+      // drip path (only some pustules leak)
+      drip: { dx: number; length: number } | null;
+      // wet highlight
+      hasHighlight: boolean;
+      // color variation
+      hueShift: number;
+    };
+    const toxPustules: PustuleData[] = [];
     if (toxiLvl > 0.2) {
-      const pustCount = Math.round(lerp(3, 8, (toxiLvl - 0.2) / 0.8));
+      const pustCount = Math.round(lerp(4, 12, (toxiLvl - 0.2) / 0.8));
       const pustRng = makeRng((fixedSeed ?? 42) + 555);
       for (let i = 0; i < pustCount; i++) {
         const angle = pustRng() * Math.PI * 2;
         const dist = 0.1 + pustRng() * 0.35;
+        // Dramatic size variation: some tiny (2px) some large (6-8px)
+        const sizeRoll = pustRng();
+        const baseR = sizeRoll < 0.3 ? (1.5 + pustRng() * 1) : sizeRoll < 0.7 ? (3 + pustRng() * 2) : (5 + pustRng() * 3 * toxiLvl);
+        // Generate 2-3 overlapping bump ellipses
+        const bumpCount = 2 + Math.floor(pustRng() * 2);
+        const bumps: PustuleData["bumps"] = [];
+        for (let b = 0; b < bumpCount; b++) {
+          bumps.push({
+            dx: (pustRng() - 0.5) * baseR * 0.6,
+            dy: (pustRng() - 0.5) * baseR * 0.5,
+            rx: baseR * (0.6 + pustRng() * 0.5),
+            ry: baseR * (0.5 + pustRng() * 0.4),
+            rot: (pustRng() - 0.5) * 40,
+          });
+        }
         toxPustules.push({
           cx: cx + Math.cos(angle) * torsoW * dist,
           cy: torsoCenterY + Math.sin(angle) * torsoH * dist,
-          r: 1.5 + pustRng() * 3 * toxiLvl,
+          r: baseR,
+          bumps,
+          craterR: baseR * (0.2 + pustRng() * 0.15),
+          drip: (pustRng() < 0.35 && baseR > 3) ? { dx: (pustRng() - 0.5) * 2, length: 4 + pustRng() * 10 * toxiLvl } : null,
+          hasHighlight: pustRng() < 0.6,
+          hueShift: (pustRng() - 0.5) * 20,
         });
       }
     }
@@ -935,35 +968,153 @@ export function CreatureRenderer({
     const scarCountVal = p.scarCount ?? 0;
     const specialAuraVal = p.specialAuraIntensity ?? 0;
 
-    // Battle scars: jagged diagonal lines on body and head
-    const battleScarPaths: { path: string; onHead: boolean }[] = [];
+    // Battle scars: varied scar types (claw marks, slashes, bites, burns)
+    type ScarData = {
+      type: "claw" | "slash" | "bite" | "burn";
+      paths: string[];         // main scar paths
+      edgePaths: string[];     // lighter edge highlights
+      stitchPaths: string[];   // stitch marks (slash only)
+      onHead: boolean;
+      onLimb: boolean;
+      fresh: boolean;          // fresh = darker/redder, healed = lighter/pinker
+    };
+    const battleScarPaths: ScarData[] = [];
     if (scarCountVal > 0) {
       const scarRng = makeRng((fixedSeed ?? 42) + 1111);
-      for (let i = 0; i < scarCountVal; i++) {
-        const onHead = i < Math.ceil(scarCountVal * 0.3);
-        const regionCx = onHead ? headCx : cx;
-        const regionCy = onHead ? headCy : torsoCenterY;
-        const regionW = onHead ? headR * 0.7 : torsoW * 0.4;
-        const regionH = onHead ? headR * 0.5 : torsoH * 0.35;
 
-        const startX = regionCx + (scarRng() - 0.5) * regionW * 2;
-        const startY = regionCy + (scarRng() - 0.5) * regionH * 2;
-        const scarLen = 6 + scarRng() * 14;
-        const scarAngle = (scarRng() - 0.5) * Math.PI * 0.8;
+      // Determine scar types based on scarCount
+      const scarTypes: ScarData["type"][] = [];
+      // 1-2: claw marks
+      scarTypes.push("claw");
+      if (scarCountVal >= 2) scarTypes.push("claw");
+      // 3-4: add slash
+      if (scarCountVal >= 3) scarTypes.push("slash");
+      if (scarCountVal >= 4) scarTypes.push("slash");
+      // 5-6: add bite
+      if (scarCountVal >= 5) scarTypes.push("bite");
+      if (scarCountVal >= 6) scarTypes.push("bite");
+      // 7-8: add burn + extra claws
+      if (scarCountVal >= 7) scarTypes.push("burn");
+      if (scarCountVal >= 8) { scarTypes.push("claw"); scarTypes.push("burn"); }
 
-        // Jagged scar: 2-3 segments
-        const segments = 2 + Math.floor(scarRng() * 2);
-        let d = `M ${f1(startX)} ${f1(startY)}`;
-        let curX = startX;
-        let curY = startY;
-        for (let s = 0; s < segments; s++) {
-          const segLen = scarLen / segments;
-          const jag = (scarRng() - 0.5) * 4;
-          curX += Math.cos(scarAngle) * segLen + jag;
-          curY += Math.sin(scarAngle) * segLen + (scarRng() - 0.5) * 3;
-          d += ` L ${f1(curX)} ${f1(curY)}`;
+      // Limit to scarCountVal
+      const usedTypes = scarTypes.slice(0, scarCountVal);
+
+      for (let i = 0; i < usedTypes.length; i++) {
+        const scarType = usedTypes[i];
+        // Placement: max 1 on head, rest on torso, some on limbs
+        const onHead = i === 0 && scarCountVal >= 3;
+        const onLimb = !onHead && i >= 3 && limbs.length > 0;
+        const fresh = scarRng() < 0.4;
+
+        let regionCx: number, regionCy: number, regionW: number, regionH: number;
+        if (onHead) {
+          regionCx = headCx; regionCy = headCy;
+          regionW = headR * 0.6; regionH = headR * 0.4;
+        } else if (onLimb) {
+          const limbIdx = Math.floor(scarRng() * limbs.length);
+          const limb = limbs[limbIdx];
+          regionCx = (limb.jointX + limb.endX) / 2;
+          regionCy = (limb.jointY + limb.endY) / 2;
+          regionW = 8; regionH = 8;
+        } else {
+          regionCx = cx; regionCy = torsoCenterY;
+          regionW = torsoW * 0.35; regionH = torsoH * 0.3;
         }
-        battleScarPaths.push({ path: d, onHead });
+
+        const startX = regionCx + (scarRng() - 0.5) * regionW * 1.5;
+        const startY = regionCy + (scarRng() - 0.5) * regionH * 1.5;
+        const paths: string[] = [];
+        const edgePaths: string[] = [];
+        const stitchPaths: string[] = [];
+
+        if (scarType === "claw") {
+          // 3 parallel curved lines (beast claw scratch)
+          const scarAngle = (scarRng() - 0.5) * Math.PI * 0.6;
+          const scarLen = 8 + scarRng() * 16;
+          const spacing = 2 + scarRng() * 1.5;
+          const perpX = Math.cos(scarAngle + Math.PI / 2) * spacing;
+          const perpY = Math.sin(scarAngle + Math.PI / 2) * spacing;
+          for (let c = -1; c <= 1; c++) {
+            const sx = startX + perpX * c;
+            const sy = startY + perpY * c;
+            const curve = (scarRng() - 0.5) * 6;
+            const ex = sx + Math.cos(scarAngle) * scarLen;
+            const ey = sy + Math.sin(scarAngle) * scarLen;
+            const cpx = (sx + ex) / 2 + Math.cos(scarAngle + Math.PI / 2) * curve;
+            const cpy = (sy + ey) / 2 + Math.sin(scarAngle + Math.PI / 2) * curve;
+            paths.push(`M ${f1(sx)} ${f1(sy)} Q ${f1(cpx)} ${f1(cpy)} ${f1(ex)} ${f1(ey)}`);
+            // Edge highlights (slightly offset)
+            edgePaths.push(`M ${f1(sx + 0.5)} ${f1(sy - 0.5)} Q ${f1(cpx + 0.5)} ${f1(cpy - 0.5)} ${f1(ex + 0.5)} ${f1(ey - 0.5)}`);
+          }
+        } else if (scarType === "slash") {
+          // Single long diagonal wound with dark center + lighter edges + stitches
+          const scarAngle = (scarRng() - 0.5) * Math.PI * 0.7;
+          const scarLen = 12 + scarRng() * 18;
+          const ex = startX + Math.cos(scarAngle) * scarLen;
+          const ey = startY + Math.sin(scarAngle) * scarLen;
+          const curve = (scarRng() - 0.5) * 5;
+          const cpx = (startX + ex) / 2 + Math.cos(scarAngle + Math.PI / 2) * curve;
+          const cpy = (startY + ey) / 2 + Math.sin(scarAngle + Math.PI / 2) * curve;
+          // Main dark center line
+          paths.push(`M ${f1(startX)} ${f1(startY)} Q ${f1(cpx)} ${f1(cpy)} ${f1(ex)} ${f1(ey)}`);
+          // Lighter edges (healed tissue)
+          const off = 1.2;
+          const pxN = Math.cos(scarAngle + Math.PI / 2) * off;
+          const pyN = Math.sin(scarAngle + Math.PI / 2) * off;
+          edgePaths.push(`M ${f1(startX + pxN)} ${f1(startY + pyN)} Q ${f1(cpx + pxN)} ${f1(cpy + pyN)} ${f1(ex + pxN)} ${f1(ey + pyN)}`);
+          edgePaths.push(`M ${f1(startX - pxN)} ${f1(startY - pyN)} Q ${f1(cpx - pxN)} ${f1(cpy - pyN)} ${f1(ex - pxN)} ${f1(ey - pyN)}`);
+          // Stitch marks: small perpendicular dashes crossing the line
+          if (scarRng() < 0.6) {
+            const stitchCount = 3 + Math.floor(scarRng() * 4);
+            for (let s = 0; s < stitchCount; s++) {
+              const t = (s + 1) / (stitchCount + 1);
+              const mx = startX + (ex - startX) * t + Math.cos(scarAngle + Math.PI / 2) * curve * t * (1 - t) * 4;
+              const my = startY + (ey - startY) * t + Math.sin(scarAngle + Math.PI / 2) * curve * t * (1 - t) * 4;
+              const stitchLen = 2 + scarRng();
+              const sx1 = mx + Math.cos(scarAngle + Math.PI / 2) * stitchLen;
+              const sy1 = my + Math.sin(scarAngle + Math.PI / 2) * stitchLen;
+              const sx2 = mx - Math.cos(scarAngle + Math.PI / 2) * stitchLen;
+              const sy2 = my - Math.sin(scarAngle + Math.PI / 2) * stitchLen;
+              stitchPaths.push(`M ${f1(sx1)} ${f1(sy1)} L ${f1(sx2)} ${f1(sy2)}`);
+            }
+          }
+        } else if (scarType === "bite") {
+          // Semi-circular arrangement of small dashes (teeth marks)
+          const biteRadius = 4 + scarRng() * 5;
+          const teethCount = 4 + Math.floor(scarRng() * 3);
+          const arcStart = scarRng() * Math.PI * 2;
+          const arcSpan = Math.PI * (0.5 + scarRng() * 0.5);
+          for (let t = 0; t < teethCount; t++) {
+            const a = arcStart + (t / (teethCount - 1)) * arcSpan;
+            const tx = startX + Math.cos(a) * biteRadius;
+            const ty = startY + Math.sin(a) * biteRadius;
+            const toothLen = 1.5 + scarRng() * 2;
+            const inX = tx - Math.cos(a) * toothLen;
+            const inY = ty - Math.sin(a) * toothLen;
+            paths.push(`M ${f1(tx)} ${f1(ty)} L ${f1(inX)} ${f1(inY)}`);
+          }
+        } else if (scarType === "burn") {
+          // Irregular blotchy patch: 2-3 overlapping circles with rough edges
+          const blobCount = 2 + Math.floor(scarRng() * 2);
+          for (let b = 0; b < blobCount; b++) {
+            const bx = startX + (scarRng() - 0.5) * 6;
+            const by = startY + (scarRng() - 0.5) * 6;
+            const br = 3 + scarRng() * 4;
+            // Create rough circle via 8-point polygon with jitter
+            const pts: string[] = [];
+            for (let pi = 0; pi < 8; pi++) {
+              const a = (pi / 8) * Math.PI * 2;
+              const jitter = br * (0.7 + scarRng() * 0.6);
+              const px = bx + Math.cos(a) * jitter;
+              const py = by + Math.sin(a) * jitter;
+              pts.push(`${f1(px)} ${f1(py)}`);
+            }
+            paths.push(`M ${pts[0]} L ${pts.slice(1).join(" L ")} Z`);
+          }
+        }
+
+        battleScarPaths.push({ type: scarType, paths, edgePaths, stitchPaths, onHead, onLimb, fresh });
       }
     }
 
