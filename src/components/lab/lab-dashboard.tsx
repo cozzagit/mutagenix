@@ -260,7 +260,7 @@ export function LabDashboard({
   const [creatureName, setCreatureName] = useState(creature.name);
 
   // --- Derived values ---
-  const ageDays = creature.ageDays ?? 0;
+  const ageDays = parseInt(dayKey, 10) || (creature.ageDays ?? 0);
   const generation = creature.generation ?? 1;
   const stability = creature.stability ?? 0.5;
   const activeSynergies = getActiveSynergies(elementLevels);

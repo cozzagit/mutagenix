@@ -5,6 +5,7 @@
 import {
   ELEMENTS,
   TRAITS,
+  ELEMENT_TRAIT_WEIGHTS,
   type ElementId,
   type TraitId,
   type Synergy,
@@ -492,14 +493,28 @@ export function mapTraitsToVisuals(
   // ---------------------------------------------------------------------------
   // Personality-driven trait levels (preserved from original)
   // ---------------------------------------------------------------------------
-  // Personality: use raw trait values (0-100) for normalization, NOT the 0-1 t() values.
-  // This way, small differences in absolute values matter — not just relative 0-1 fractions.
-  // We square the values to amplify differences: a trait at 80 vs 60 becomes 6400 vs 3600.
-  const rawAggr = Math.pow(traitValues.aggression, 1.5);
-  const rawLumi = Math.pow(traitValues.luminosity, 1.5);
-  const rawToxi = Math.pow(traitValues.toxicity, 1.5);
-  const rawInte = Math.pow(traitValues.intelligence, 1.5);
-  const rawArmo = Math.pow(traitValues.armoring, 1.5);
+  // Personality: derived DIRECTLY from element weights, not accumulated trait values.
+  // This ensures the personality reflects the actual element composition,
+  // not just accumulated growth that converges to equal values over time.
+  //
+  // For each personality trait, sum (elementLevel × element weight for that trait).
+  // Then normalize so all 5 sum to 1.
+  const pWeights = { aggression: 0, luminosity: 0, toxicity: 0, intelligence: 0, armoring: 0 };
+  for (const el of ELEMENTS) {
+    const elLevel = elementLevels[el] ?? 0;
+    const w = ELEMENT_TRAIT_WEIGHTS[el];
+    pWeights.aggression += elLevel * (w.aggression ?? 0);
+    pWeights.luminosity += elLevel * (w.luminosity ?? 0);
+    pWeights.toxicity += elLevel * (w.toxicity ?? 0);
+    pWeights.intelligence += elLevel * (w.intelligence ?? 0);
+    pWeights.armoring += elLevel * (w.armoring ?? 0);
+  }
+  // Square to amplify differences
+  const rawAggr = pWeights.aggression * pWeights.aggression;
+  const rawLumi = pWeights.luminosity * pWeights.luminosity;
+  const rawToxi = pWeights.toxicity * pWeights.toxicity;
+  const rawInte = pWeights.intelligence * pWeights.intelligence;
+  const rawArmo = pWeights.armoring * pWeights.armoring;
   const personalityTotal = rawAggr + rawLumi + rawToxi + rawInte + rawArmo;
   const pNorm = personalityTotal > 0 ? 1 / personalityTotal : 0;
   const aggressionLevel = rawAggr * pNorm;
