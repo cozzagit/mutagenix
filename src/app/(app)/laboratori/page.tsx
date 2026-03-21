@@ -91,14 +91,14 @@ export default async function LaboratoriPage() {
       const traitValues = c.traitValues as TraitValues;
       const elementLevels = c.elementLevels as ElementLevels;
 
-      // Recalculate visual params from traits
-      const synergyResult = calculateSynergies(elementLevels, c.id, c.ageDays ?? 0);
-      const visualParams = mapTraitsToVisuals(traitValues, elementLevels, synergyResult.activeSynergies);
+      // Recalculate visual params from traits (same approach as admin)
+      const visualParams = mapTraitsToVisuals(traitValues, elementLevels, []);
 
       // Calculate potenza
       const potenza = calculatePotenza(traitValues, ranking ?? null);
 
       // Get active synergy names
+      const synergyResult = calculateSynergies(elementLevels, c.id, c.ageDays ?? 0);
       const activeSynergies = synergyResult.activeSynergies.map((s) => s.name);
 
       // Level from age
