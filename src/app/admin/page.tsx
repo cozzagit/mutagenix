@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { users, creatures, creatureRankings } from '@/lib/db/schema';
 import { sql, desc, asc } from 'drizzle-orm';
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 export default async function AdminPage() {
   let session;
@@ -87,7 +89,11 @@ export default async function AdminPage() {
           archivedAt: c.archivedAt?.toISOString() ?? null,
           elementLevels: c.elementLevels,
           traitValues: c.traitValues,
-          visualParams: c.visualParams as Record<string, unknown>,
+          visualParams: mapTraitsToVisuals(
+            c.traitValues as TraitValues,
+            c.elementLevels as ElementLevels,
+            [],
+          ) as unknown as Record<string, unknown>,
           ranking: ranking
             ? {
                 eloRating: ranking.eloRating,
