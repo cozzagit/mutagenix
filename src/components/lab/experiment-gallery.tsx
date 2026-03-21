@@ -91,12 +91,13 @@ function ExperimentCard({
       {isFailed && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-xl">
           <div
-            className="select-none whitespace-nowrap border-4 border-red-600/60 px-4 py-2 text-center font-black uppercase tracking-wider text-red-600/70"
+            className="select-none border-2 border-red-600/60 px-3 py-1.5 text-center font-black uppercase leading-tight text-red-600/70"
             style={{
               transform: 'rotate(-12deg)',
-              fontSize: 'clamp(14px, 3.5vw, 22px)',
+              fontSize: 'clamp(10px, 2.5vw, 14px)',
               textShadow: '0 0 20px rgba(220, 38, 38, 0.3)',
-              letterSpacing: '0.15em',
+              letterSpacing: '0.1em',
+              maxWidth: '80%',
             }}
           >
             Esperimento Fallito
