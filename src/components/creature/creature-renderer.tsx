@@ -388,7 +388,7 @@ function drawClaws(
   const curveMult = isRazor ? 1.5 : isBlunt ? 0.4 : 1.0;
 
   for (let i = 0; i < count; i++) {
-    const frac = count === 1 ? 0 : (i / (count - 1)) - 0.5; // -0.5 to 0.5
+    const frac = count <= 1 ? 0 : (i / (count - 1)) - 0.5; // -0.5 to 0.5
     const clawAngle = (isArm ? angle + Math.PI * 0.5 : Math.PI * 0.5) + frac * spread;
     const len = clawSize * lerp(0.8, 1.3, Math.abs(frac)) * lengthMult;
     const dirX = isArm ? side : 1;
@@ -2022,7 +2022,18 @@ export function CreatureRenderer({
             )}
           </g>
 
-          {/* ==================== FUR ==================== */}
+          {/* ==================== FUR: UNDERCOAT (dense short strokes) ==================== */}
+          {furUndercoat.length > 0 && (
+            <g opacity={Math.min(1, 0.3 + p.furDensity * 0.4)}>
+              {furUndercoat.map((uc, i) => (
+                <path key={`fur-uc-${i}`} d={uc.path} fill="none"
+                  stroke={bodyColor} strokeWidth={uc.width}
+                  strokeLinecap="round" opacity={uc.opacity} />
+              ))}
+            </g>
+          )}
+
+          {/* ==================== FUR: MAIN COAT ==================== */}
           {furTufts.length > 0 && (
             <g opacity={Math.min(1, 0.4 + p.furDensity * 0.7)}>
               {furTufts.map((tuft, i) => {
@@ -2045,6 +2056,29 @@ export function CreatureRenderer({
                   />
                 );
               })}
+            </g>
+          )}
+
+          {/* ==================== FUR: GUARD HAIRS (thick longer strands) ==================== */}
+          {furGuardHairs.length > 0 && (
+            <g opacity={Math.min(1, 0.35 + p.furDensity * 0.5)}>
+              {furGuardHairs.map((gh, i) => (
+                <path key={`fur-gh-${i}`} d={gh.path} fill="none"
+                  stroke={p.furColor || bodyColorLight}
+                  strokeWidth={gh.width} strokeLinecap="round"
+                  opacity={0.4 + (i % 3) * 0.1} />
+              ))}
+            </g>
+          )}
+
+          {/* ==================== FUR: WHISKERS (long strands from head sides) ==================== */}
+          {furWhiskers.length > 0 && (
+            <g opacity={0.5}>
+              {furWhiskers.map((w, i) => (
+                <path key={`fur-wh-${i}`} d={w.path} fill="none"
+                  stroke={p.furColor || bodyColorLight}
+                  strokeWidth={0.6} strokeLinecap="round" opacity={0.45} />
+              ))}
             </g>
           )}
 
