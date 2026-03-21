@@ -10,6 +10,7 @@ import { ELEMENTS, SYNERGIES, type ElementId } from '@/lib/game-engine/constants
 import { StatsBar } from './stats-bar';
 import { AllocationPanel } from './allocation-panel';
 import { ELEMENT_COLORS } from './element-levels-display';
+import { LabChamber } from '@/components/creature/lab-chamber';
 import { PersonalityRadar } from './personality-radar';
 import { EditableCreatureName } from './editable-creature-name';
 
@@ -488,66 +489,40 @@ export function LabDashboard({
           </div>
         </div>
 
-        {/* CREATURE SVG — centered, biased slightly upward */}
-        <div className="relative flex flex-1 items-center justify-center px-4 -mt-4 md:-mt-6">
+        {/* CREATURE IN LAB CHAMBER — centered */}
+        <div className="relative flex flex-1 items-center justify-center px-2 -mt-2 md:-mt-4">
           <div className="relative">
-            <div
-              className="relative"
-              style={
-                mutationActive
-                  ? { animation: 'mutation-morph 2s ease-in-out infinite' }
-                  : { animation: 'breathe 4s ease-in-out infinite' }
-              }
-            >
-              <div className="md:hidden">
-                <CreatureRenderer params={visualParams} size={260} animated seed={42} />
-              </div>
-              <div
-                className="hidden md:block [&>svg]:h-auto [&>svg]:w-full"
-                style={{
-                  width: 'clamp(280px, calc(100vh - 280px), 420px)',
-                  maxHeight: 'calc(100vh - 260px)',
-                }}
-              >
-                <CreatureRenderer params={visualParams} size={420} animated seed={42} />
-              </div>
-
-              {mutationActive && (
-                <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                  {[...Array(10)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute rounded-full"
-                      style={{
-                        width: 3 + (i % 4) * 2,
-                        height: 3 + (i % 4) * 2,
-                        backgroundColor: `${['#00e5a0', '#3d5afe', '#b26eff', '#00f0ff'][i % 4]}88`,
-                        left: `${10 + i * 8}%`,
-                        bottom: `${(mutationProgress * 120 + i * 10) % 100}%`,
-                        animation: `float ${1.2 + i * 0.25}s ease-in-out infinite ${i * 0.15}s`,
-                        boxShadow: `0 0 6px ${['#00e5a0', '#3d5afe', '#b26eff', '#00f0ff'][i % 4]}44`,
-                      }}
-                    />
-                  ))}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `radial-gradient(circle, #b26eff${Math.round(mutationProgress * 20).toString(16).padStart(2, '0')} 0%, transparent 60%)`,
-                      animation: 'pulse-glow 2s ease-in-out infinite',
-                    }}
-                  />
+            {/* Mobile chamber */}
+            <div className="md:hidden">
+              <LabChamber width={220} height={280} mutating={mutationActive} glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`}>
+                <div style={mutationActive ? { animation: 'mutation-morph 2s ease-in-out infinite' } : { animation: 'breathe 4s ease-in-out infinite' }}>
+                  <CreatureRenderer params={visualParams} size={200} animated seed={42} />
                 </div>
-              )}
+              </LabChamber>
+            </div>
+            {/* Desktop chamber */}
+            <div className="hidden md:block">
+              <LabChamber
+                width={Math.min(380, typeof window !== 'undefined' ? window.innerHeight - 300 : 380)}
+                height={Math.min(440, typeof window !== 'undefined' ? window.innerHeight - 220 : 440)}
+                mutating={mutationActive}
+                glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`}
+              >
+                <div
+                  style={mutationActive ? { animation: 'mutation-morph 2s ease-in-out infinite' } : { animation: 'breathe 4s ease-in-out infinite' }}
+                  className="[&>svg]:h-auto [&>svg]:w-full"
+                >
+                  <CreatureRenderer params={visualParams} size={380} animated seed={42} />
+                </div>
+              </LabChamber>
             </div>
 
+            {/* Mutation complete flash */}
             {mutationComplete && (
-              <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ animation: 'pulse-glow 0.5s ease-out' }}
-              >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                 <span
                   className="rounded-full bg-accent/20 px-5 py-2 text-sm font-black text-accent backdrop-blur-sm"
-                  style={{ textShadow: '0 0 12px #00e5a088' }}
+                  style={{ textShadow: '0 0 12px #00e5a088', animation: 'pulse-glow 0.5s ease-out' }}
                 >
                   Mutazione Completa!
                 </span>
