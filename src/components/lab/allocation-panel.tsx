@@ -9,7 +9,7 @@ import { ELEMENT_COLORS, ELEMENT_SHORT_NAMES } from './element-levels-display';
 interface AllocationPanelProps {
   creatureId: string;
   elementLevels: Record<string, number>;
-  onAllocated: () => void;
+  onAllocated: (recipe?: Record<string, number>) => void;
   open: boolean;
   onClose: () => void;
 }
@@ -159,7 +159,10 @@ export function AllocationPanel({
       }
 
       toast('success', 'Iniezione completata! La creatura sta mutando...');
-      onAllocated();
+      // Pass the recipe so dashboard can use it for auto-inject
+      const recipe: Record<string, number> = {};
+      for (const el of ELEMENTS) { if (credits[el] > 0) recipe[el] = credits[el]; }
+      onAllocated(recipe);
     } catch {
       toast('error', 'Errore di rete. Riprova.');
     } finally {

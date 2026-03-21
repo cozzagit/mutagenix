@@ -116,6 +116,15 @@ export function LabDashboard({
   // --- Phase ---
   const [panelOpen, setPanelOpen] = useState(false);
 
+  // --- Auto-inject mode ---
+  const [autoInject, setAutoInject] = useState(false);
+  const [autoRecipe, setAutoRecipe] = useState<Record<string, number> | null>(null);
+  const [autoCount, setAutoCount] = useState(0);
+  const autoInjectRef = useRef(false);
+
+  // Keep ref in sync
+  useEffect(() => { autoInjectRef.current = autoInject; }, [autoInject]);
+
   // --- Mobile stats panel ---
   const [statsOpen, setStatsOpen] = useState(false);
 
@@ -183,10 +192,39 @@ export function LabDashboard({
           cooldownStartRef.current = Date.now();
           cooldownInitRef.current = newCooldown;
           setCanAllocate(d.canAllocate ?? false);
-          setTimeout(() => {
-            setMutationComplete(false);
-            router.refresh();
-          }, 2500);
+
+          // Auto-inject: if enabled, wait for cooldown then re-inject
+          if (autoInjectRef.current && autoRecipe) {
+            const waitMs = Math.max(newCooldown + 1500, 2500); // wait cooldown + buffer
+            setTimeout(async () => {
+              if (!autoInjectRef.current) return;
+              setMutationComplete(false);
+              try {
+                const res = await fetch('/api/allocations', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ creatureId: creature.id, credits: autoRecipe }),
+                });
+                if (res.ok) {
+                  setAutoCount((c) => c + 1);
+                  setMutationActive(true);
+                  setMutationProgress(0);
+                  setCanAllocate(false);
+                } else {
+                  setAutoInject(false); // stop on error
+                  router.refresh();
+                }
+              } catch {
+                setAutoInject(false);
+                router.refresh();
+              }
+            }, waitMs);
+          } else {
+            setTimeout(() => {
+              setMutationComplete(false);
+              router.refresh();
+            }, 2500);
+          }
         }
       } catch {
         // silently retry next cycle
@@ -201,12 +239,21 @@ export function LabDashboard({
     };
   }, [mutationActive, router]);
 
+  // --- Stop auto-inject ---
+  const stopAutoInject = useCallback(() => {
+    setAutoInject(false);
+    setAutoRecipe(null);
+    setAutoCount(0);
+  }, []);
+
   // --- Allocation callback ---
-  const handleAllocated = useCallback(() => {
+  const handleAllocated = useCallback((recipe?: Record<string, number>) => {
     setPanelOpen(false);
     setMutationActive(true);
     setMutationProgress(0);
     setCanAllocate(false);
+    // If a recipe is passed, store it for potential auto-inject
+    if (recipe) setAutoRecipe(recipe);
   }, []);
 
   // --- Creature name state ---
@@ -588,7 +635,7 @@ export function LabDashboard({
             )}
 
             {/* INJECT BUTTON — appears here when ready */}
-            {canAllocate && !mutationActive && !panelOpen && (
+            {canAllocate && !mutationActive && !panelOpen && !autoInject && (
               <button
                 onClick={() => setPanelOpen(true)}
                 className="group relative w-full max-w-xs overflow-hidden rounded-xl bg-accent/10 px-8 py-3 text-sm font-bold text-accent transition-all hover:bg-accent/20 active:scale-95 md:w-auto md:max-w-none"
@@ -607,6 +654,35 @@ export function LabDashboard({
                   }}
                 />
               </button>
+            )}
+
+            {/* AUTO-INJECT TOGGLE — shown after first injection when recipe exists */}
+            {autoRecipe && !panelOpen && (
+              <div className="flex items-center justify-center gap-3 mt-1">
+                {!autoInject ? (
+                  <button
+                    onClick={() => { setAutoInject(true); setAutoCount(0); }}
+                    className="flex items-center gap-2 rounded-lg border border-bio-purple/30 bg-bio-purple/10 px-4 py-2 text-xs font-semibold text-bio-purple transition-all hover:bg-bio-purple/20 active:scale-95"
+                  >
+                    <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+                      <path d="M2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4Zm4.78 1.97a.75.75 0 0 0-1.06 1.06L7.44 8.75 5.72 10.47a.75.75 0 1 0 1.06 1.06l2.25-2.25a.75.75 0 0 0 0-1.06L6.78 5.97Zm3.44 4.78a.75.75 0 0 0 0-1.5H9.5a.75.75 0 0 0 0 1.5h.72Z" />
+                    </svg>
+                    Auto-iniezione
+                  </button>
+                ) : (
+                  <button
+                    onClick={stopAutoInject}
+                    className="flex items-center gap-2 rounded-lg border border-danger/40 bg-danger/15 px-4 py-2 text-xs font-bold text-danger transition-all hover:bg-danger/25 active:scale-95"
+                    style={{ animation: 'pulse-glow 2s ease-in-out infinite' }}
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-danger" />
+                    </span>
+                    STOP Auto ({autoCount} iniezioni)
+                  </button>
+                )}
+              </div>
             )}
 
           </div>
