@@ -494,7 +494,7 @@ export function LabDashboard({
           <div className="relative">
             {/* Mobile chamber */}
             <div className="md:hidden">
-              <LabChamber width={220} height={280} mutating={mutationActive} glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`}>
+              <LabChamber width={220} height={280} mutating={mutationActive} glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`} stability={stability} dayNumber={ageDays}>
                 <div style={mutationActive ? { animation: 'mutation-morph 2s ease-in-out infinite' } : { animation: 'breathe 4s ease-in-out infinite' }}>
                   <CreatureRenderer params={visualParams} size={200} animated seed={42} />
                 </div>
@@ -507,6 +507,8 @@ export function LabDashboard({
                 height={Math.min(440, typeof window !== 'undefined' ? window.innerHeight - 220 : 440)}
                 mutating={mutationActive}
                 glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`}
+                stability={stability}
+                dayNumber={ageDays}
               >
                 <div
                   style={mutationActive ? { animation: 'mutation-morph 2s ease-in-out infinite' } : { animation: 'breathe 4s ease-in-out infinite' }}

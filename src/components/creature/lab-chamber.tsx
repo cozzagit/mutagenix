@@ -1,245 +1,447 @@
 'use client';
 
 /**
- * Lab Chamber — a sci-fi containment cylinder/tube that surrounds the creature.
- * Think: sci-fi movie specimen tube with liquid, bubbles, lights, and monitoring equipment.
+ * Lab Chamber — an atmospheric sci-fi containment environment for the creature.
+ *
+ * Built primarily with CSS effects, gradients, and subtle SVG accents.
+ * Inspired by Kamino clone labs, Prometheus specimen rooms, Jurassic Park genetics labs.
+ * The creature is the star — everything else is ambient atmosphere.
  */
+
+import { useMemo } from 'react';
 
 interface LabChamberProps {
   children: React.ReactNode;
-  width: number;   // chamber width in px
-  height: number;  // chamber height in px
+  width: number;
+  height: number;
   mutating?: boolean;
   glowColor?: string;
+  stability?: number;   // 0-1
+  dayNumber?: number;
 }
 
-export function LabChamber({ children, width, height, mutating = false, glowColor = '#3d5afe' }: LabChamberProps) {
-  const tubeW = width;
-  const tubeH = height;
-  const padding = 24;
-  const totalW = tubeW + padding * 2;
-  const totalH = tubeH + padding * 2 + 40; // extra for base
+/* ------------------------------------------------------------------ */
+/* Tiny helper: format day as DAY.023                                  */
+/* ------------------------------------------------------------------ */
+function formatDay(n: number): string {
+  return `DAY.${String(n).padStart(3, '0')}`;
+}
 
-  const tubeLeft = padding;
-  const tubeRight = padding + tubeW;
-  const tubeTop = padding;
-  const tubeBottom = padding + tubeH;
-  const capRadius = tubeW * 0.5;
+/* ------------------------------------------------------------------ */
+/* Tiny helper: format stability as percentage                         */
+/* ------------------------------------------------------------------ */
+function formatStability(s: number): string {
+  return `STAB: ${Math.round(s * 100)}%`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
+export function LabChamber({
+  children,
+  width,
+  height,
+  mutating = false,
+  glowColor = '#3d5afe',
+  stability = 0.5,
+  dayNumber = 1,
+}: LabChamberProps) {
+  const padding = 32;
+  const totalW = width + padding * 2;
+  const totalH = height + padding * 2;
+
+  // Memoize particles so positions don't shift on re-render
+  const particles = useMemo(() =>
+    Array.from({ length: 5 }, (_, i) => ({
+      id: i,
+      left: 20 + (i * 17) % 60,   // percentage
+      size: 1.5 + (i % 3) * 0.5,
+      duration: mutating ? 2 + i * 0.4 : 4 + i * 0.8,
+      delay: i * 0.6,
+      opacity: 0.15 + (i % 3) * 0.08,
+    })),
+    [mutating],
+  );
+
+  const borderColor = mutating ? '#b26eff' : glowColor;
+  const borderOpacity = mutating ? 0.35 : 0.18;
 
   return (
-    <div className="relative" style={{ width: totalW, height: totalH }}>
-      {/* Background SVG: the chamber structure */}
-      <svg
+    <div
+      className="relative select-none"
+      style={{ width: totalW, height: totalH }}
+    >
+      {/* ============================================================ */}
+      {/* LAYER 1 — Background environment                             */}
+      {/* ============================================================ */}
+
+      {/* Dark vignette gradient */}
+      <div
+        className="absolute inset-0 rounded-lg"
+        style={{
+          background: `
+            radial-gradient(
+              ellipse 60% 55% at 50% 48%,
+              rgba(15, 16, 24, 0.0) 0%,
+              rgba(10, 11, 15, 0.6) 60%,
+              rgba(10, 11, 15, 0.95) 100%
+            )
+          `,
+        }}
+      />
+
+      {/* Subtle holographic grid */}
+      <div
+        className="absolute inset-0 rounded-lg pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 39px,
+              rgba(61, 90, 254, 0.035) 39px,
+              rgba(61, 90, 254, 0.035) 40px
+            ),
+            repeating-linear-gradient(
+              90deg,
+              transparent,
+              transparent 39px,
+              rgba(61, 90, 254, 0.035) 39px,
+              rgba(61, 90, 254, 0.035) 40px
+            )
+          `,
+        }}
+      />
+
+      {/* Central radial glow behind creature */}
+      <div
         className="absolute inset-0 pointer-events-none"
-        width={totalW}
-        height={totalH}
-        viewBox={`0 0 ${totalW} ${totalH}`}
+        style={{
+          background: `
+            radial-gradient(
+              ellipse 50% 45% at 50% 50%,
+              ${glowColor}${mutating ? '18' : '0a'} 0%,
+              transparent 70%
+            )
+          `,
+          transition: 'background 0.6s ease',
+        }}
+      />
+
+      {/* ============================================================ */}
+      {/* LAYER 2 — Containment field                                   */}
+      {/* ============================================================ */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: padding - 1,
+          top: padding - 1,
+          width: width + 2,
+          height: height + 2,
+          border: `1px solid`,
+          borderColor: `${borderColor}${Math.round(borderOpacity * 255).toString(16).padStart(2, '0')}`,
+          borderRadius: 6,
+          boxShadow: mutating
+            ? `0 0 20px ${borderColor}22, 0 0 60px ${borderColor}11, inset 0 0 30px ${borderColor}08`
+            : `0 0 12px ${borderColor}11, 0 0 40px ${borderColor}08, inset 0 0 20px ${borderColor}05`,
+          transition: 'border-color 0.4s ease, box-shadow 0.4s ease',
+          animation: mutating ? 'chamber-pulse 2s ease-in-out infinite' : undefined,
+        }}
+      />
+
+      {/* Corner brackets — top-left */}
+      <svg
+        className="absolute pointer-events-none"
+        style={{ left: padding - 6, top: padding - 6 }}
+        width="16" height="16" viewBox="0 0 16 16"
       >
-        <defs>
-          {/* Glass gradient — semi-transparent with edge highlights */}
-          <linearGradient id="glass-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity={0.08} />
-            <stop offset="15%" stopColor="#ffffff" stopOpacity={0.02} />
-            <stop offset="50%" stopColor="#ffffff" stopOpacity={0} />
-            <stop offset="85%" stopColor="#ffffff" stopOpacity={0.02} />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity={0.08} />
-          </linearGradient>
-
-          {/* Liquid gradient — subtle colored fill at the bottom */}
-          <linearGradient id="liquid-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={glowColor} stopOpacity={0} />
-            <stop offset="60%" stopColor={glowColor} stopOpacity={0.02} />
-            <stop offset="100%" stopColor={glowColor} stopOpacity={0.06} />
-          </linearGradient>
-
-          {/* Base metallic gradient */}
-          <linearGradient id="base-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#2a2b38" />
-            <stop offset="50%" stopColor="#1a1b24" />
-            <stop offset="100%" stopColor="#12131a" />
-          </linearGradient>
-
-          {/* Glow filter for the tube rim */}
-          <filter id="tube-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
-          </filter>
-
-          {/* Clip path for liquid/bubbles inside tube */}
-          <clipPath id="tube-clip">
-            <rect x={tubeLeft} y={tubeTop} width={tubeW} height={tubeH} rx={capRadius} />
-          </clipPath>
-        </defs>
-
-        {/* === OUTER GLOW === */}
-        <rect
-          x={tubeLeft - 4} y={tubeTop - 4}
-          width={tubeW + 8} height={tubeH + 8}
-          rx={capRadius + 4}
+        <path
+          d="M1 12 L1 1 L12 1"
           fill="none"
-          stroke={glowColor}
-          strokeWidth={1}
-          opacity={mutating ? 0.3 : 0.1}
-          filter="url(#tube-glow)"
-          style={mutating ? { animation: 'pulse-glow 2s ease-in-out infinite' } : undefined}
-        />
-
-        {/* === GLASS TUBE === */}
-        {/* Tube outline */}
-        <rect
-          x={tubeLeft} y={tubeTop}
-          width={tubeW} height={tubeH}
-          rx={capRadius}
-          fill="none"
-          stroke="#2a2b38"
-          strokeWidth={2}
-        />
-
-        {/* Glass highlight — inner edge reflection */}
-        <rect
-          x={tubeLeft} y={tubeTop}
-          width={tubeW} height={tubeH}
-          rx={capRadius}
-          fill="url(#glass-grad)"
-        />
-
-        {/* Liquid fill */}
-        <rect
-          x={tubeLeft} y={tubeTop}
-          width={tubeW} height={tubeH}
-          rx={capRadius}
-          fill="url(#liquid-grad)"
-        />
-
-        {/* === BUBBLES inside the tube === */}
-        <g clipPath="url(#tube-clip)" opacity={mutating ? 0.6 : 0.25}>
-          {[...Array(8)].map((_, i) => {
-            const bx = tubeLeft + 10 + (i * 37) % tubeW;
-            const by = tubeBottom - 20 - (i * 47) % (tubeH * 0.7);
-            const br = 1.5 + (i % 3) * 1;
-            return (
-              <circle
-                key={`bubble-${i}`}
-                cx={bx} cy={by} r={br}
-                fill="#ffffff"
-                opacity={0.15 + (i % 4) * 0.05}
-                style={{
-                  animation: `float ${3 + i * 0.7}s ease-in-out ${i * 0.4}s infinite`,
-                }}
-              />
-            );
-          })}
-        </g>
-
-        {/* === LEFT REFLECTION LINE === */}
-        <line
-          x1={tubeLeft + 6} y1={tubeTop + capRadius}
-          x2={tubeLeft + 6} y2={tubeBottom - capRadius}
-          stroke="#ffffff"
-          strokeWidth={1}
-          opacity={0.06}
+          stroke={borderColor}
+          strokeWidth="1"
+          opacity={mutating ? 0.5 : 0.25}
           strokeLinecap="round"
         />
-
-        {/* === RIGHT REFLECTION LINE === */}
-        <line
-          x1={tubeRight - 8} y1={tubeTop + capRadius + 20}
-          x2={tubeRight - 8} y2={tubeBottom - capRadius - 10}
-          stroke="#ffffff"
-          strokeWidth={0.5}
-          opacity={0.04}
+      </svg>
+      {/* Corner brackets — top-right */}
+      <svg
+        className="absolute pointer-events-none"
+        style={{ right: padding - 6, top: padding - 6 }}
+        width="16" height="16" viewBox="0 0 16 16"
+      >
+        <path
+          d="M15 12 L15 1 L4 1"
+          fill="none"
+          stroke={borderColor}
+          strokeWidth="1"
+          opacity={mutating ? 0.5 : 0.25}
           strokeLinecap="round"
         />
-
-        {/* === MEASUREMENT MARKS on left side === */}
-        {[0.2, 0.4, 0.6, 0.8].map((frac, i) => {
-          const my = tubeTop + tubeH * (1 - frac);
-          return (
-            <g key={`mark-${i}`} opacity={0.15}>
-              <line
-                x1={tubeLeft} y1={my}
-                x2={tubeLeft + 8} y2={my}
-                stroke="#ffffff" strokeWidth={0.5}
-              />
-              <text
-                x={tubeLeft + 10} y={my + 3}
-                fill="#6b6d7b" fontSize={7} fontFamily="monospace"
-              >
-                {Math.round(frac * 100)}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* === BASE / PLATFORM === */}
-        <rect
-          x={tubeLeft - 12} y={tubeBottom + 2}
-          width={tubeW + 24} height={8}
-          rx={3}
-          fill="url(#base-grad)"
-          stroke="#2a2b38"
-          strokeWidth={1}
-        />
-        {/* Base details — small lights */}
-        {[0.2, 0.4, 0.6, 0.8].map((frac, i) => (
-          <circle
-            key={`light-${i}`}
-            cx={tubeLeft + tubeW * frac}
-            cy={tubeBottom + 6}
-            r={1.5}
-            fill={i === 1 ? '#00e5a0' : i === 2 && mutating ? '#ff4466' : '#3d5afe'}
-            opacity={0.5}
-            style={mutating && i === 2 ? { animation: 'pulse-glow 1s ease-in-out infinite' } : undefined}
-          />
-        ))}
-
-        {/* Base bottom plate */}
-        <rect
-          x={tubeLeft - 20} y={tubeBottom + 10}
-          width={tubeW + 40} height={5}
-          rx={2}
-          fill="#12131a"
-          stroke="#1a1b24"
-          strokeWidth={0.5}
-        />
-
-        {/* === TOP CAP / RING === */}
-        <ellipse
-          cx={tubeLeft + tubeW / 2} cy={tubeTop + 2}
-          rx={tubeW * 0.35} ry={3}
+      </svg>
+      {/* Corner brackets — bottom-left */}
+      <svg
+        className="absolute pointer-events-none"
+        style={{ left: padding - 6, bottom: padding - 6 }}
+        width="16" height="16" viewBox="0 0 16 16"
+      >
+        <path
+          d="M1 4 L1 15 L12 15"
           fill="none"
-          stroke="#2a2b38"
-          strokeWidth={1.5}
+          stroke={borderColor}
+          strokeWidth="1"
+          opacity={mutating ? 0.5 : 0.25}
+          strokeLinecap="round"
         />
-
-        {/* === TUBE CONNECTORS (pipes) on the sides === */}
-        {/* Left pipe */}
-        <g opacity={0.3}>
-          <line x1={tubeLeft - 8} y1={tubeTop + tubeH * 0.3} x2={tubeLeft} y2={tubeTop + tubeH * 0.3}
-            stroke="#2a2b38" strokeWidth={3} strokeLinecap="round" />
-          <circle cx={tubeLeft - 10} cy={tubeTop + tubeH * 0.3} r={3}
-            fill="#1a1b24" stroke="#2a2b38" strokeWidth={1} />
-        </g>
-        {/* Right pipe */}
-        <g opacity={0.3}>
-          <line x1={tubeRight} y1={tubeTop + tubeH * 0.6} x2={tubeRight + 8} y2={tubeTop + tubeH * 0.6}
-            stroke="#2a2b38" strokeWidth={3} strokeLinecap="round" />
-          <circle cx={tubeRight + 10} cy={tubeTop + tubeH * 0.6} r={3}
-            fill="#1a1b24" stroke="#2a2b38" strokeWidth={1} />
-        </g>
+      </svg>
+      {/* Corner brackets — bottom-right */}
+      <svg
+        className="absolute pointer-events-none"
+        style={{ right: padding - 6, bottom: padding - 6 }}
+        width="16" height="16" viewBox="0 0 16 16"
+      >
+        <path
+          d="M15 4 L15 15 L4 15"
+          fill="none"
+          stroke={borderColor}
+          strokeWidth="1"
+          opacity={mutating ? 0.5 : 0.25}
+          strokeLinecap="round"
+        />
       </svg>
 
-      {/* Creature inside the chamber */}
+      {/* ============================================================ */}
+      {/* LAYER 3 — Floating HUD elements                              */}
+      {/* ============================================================ */}
+
+      {/* Top-left: SPECIMEN label with blinking dot */}
+      <div
+        className="absolute flex items-center gap-1 pointer-events-none"
+        style={{
+          left: padding + 6,
+          top: padding + 6,
+          opacity: 0.35,
+          fontFamily: 'var(--font-mono), monospace',
+          fontSize: 8,
+          letterSpacing: '0.08em',
+          color: '#6b6d7b',
+        }}
+      >
+        <span
+          style={{
+            width: 4,
+            height: 4,
+            borderRadius: '50%',
+            backgroundColor: mutating ? '#b26eff' : '#00e5a0',
+            display: 'inline-block',
+            animation: 'blink 3s ease-in-out infinite',
+          }}
+        />
+        <span>{mutating ? 'MUTATING...' : 'SPECIMEN'}</span>
+      </div>
+
+      {/* Top-right: Day counter */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          right: padding + 6,
+          top: padding + 6,
+          opacity: 0.3,
+          fontFamily: 'var(--font-mono), monospace',
+          fontSize: 8,
+          letterSpacing: '0.08em',
+          color: '#6b6d7b',
+        }}
+      >
+        {formatDay(dayNumber)}
+      </div>
+
+      {/* Bottom-left: Heartbeat SVG */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: padding + 4,
+          bottom: padding + 6,
+          opacity: 0.3,
+        }}
+      >
+        <svg width="48" height="14" viewBox="0 0 48 14">
+          <path
+            d="M0 7 L8 7 L11 2 L14 12 L17 4 L20 9 L23 7 L48 7"
+            fill="none"
+            stroke={mutating ? '#b26eff' : '#00e5a0'}
+            strokeWidth="0.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              strokeDasharray: 80,
+              strokeDashoffset: 0,
+              animation: `heartbeat-draw ${mutating ? '1s' : '2s'} linear infinite`,
+            }}
+          />
+        </svg>
+      </div>
+
+      {/* Bottom-right: Stability readout */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          right: padding + 6,
+          bottom: padding + 6,
+          opacity: 0.3,
+          fontFamily: 'var(--font-mono), monospace',
+          fontSize: 8,
+          letterSpacing: '0.08em',
+          color: '#6b6d7b',
+        }}
+      >
+        {formatStability(stability)}
+      </div>
+
+      {/* ============================================================ */}
+      {/* LAYER 4 — Floating particles                                  */}
+      {/* ============================================================ */}
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            left: `${padding + (width * p.left) / 100}px`,
+            bottom: `${padding + 20}px`,
+            width: p.size,
+            height: p.size,
+            backgroundColor: mutating ? '#b26eff' : glowColor,
+            opacity: p.opacity,
+            animation: `chamber-particle-rise ${p.duration}s ease-in-out ${p.delay}s infinite`,
+          }}
+        />
+      ))}
+
+      {/* ============================================================ */}
+      {/* LAYER 5 — Edge lighting                                       */}
+      {/* ============================================================ */}
+
+      {/* Top-down overhead light */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: padding,
+          top: padding,
+          width: width,
+          height: height * 0.35,
+          background: `linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.015) 0%,
+            transparent 100%
+          )`,
+          borderRadius: '6px 6px 0 0',
+        }}
+      />
+
+      {/* Left rim light */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: padding - 1,
+          top: padding + 16,
+          width: 1,
+          height: height - 32,
+          background: `linear-gradient(
+            to bottom,
+            transparent 0%,
+            ${glowColor}15 30%,
+            ${glowColor}20 50%,
+            ${glowColor}15 70%,
+            transparent 100%
+          )`,
+          filter: 'blur(1px)',
+        }}
+      />
+
+      {/* Right rim light */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          right: padding - 1,
+          top: padding + 16,
+          width: 1,
+          height: height - 32,
+          background: `linear-gradient(
+            to bottom,
+            transparent 0%,
+            ${glowColor}15 30%,
+            ${glowColor}20 50%,
+            ${glowColor}15 70%,
+            transparent 100%
+          )`,
+          filter: 'blur(1px)',
+        }}
+      />
+
+      {/* ============================================================ */}
+      {/* CREATURE — centered                                           */}
+      {/* ============================================================ */}
       <div
         className="absolute flex items-center justify-center"
         style={{
           left: padding,
           top: padding,
-          width: tubeW,
-          height: tubeH,
+          width: width,
+          height: height,
         }}
       >
         {children}
       </div>
+
+      {/* ============================================================ */}
+      {/* INLINE STYLES — keyframes for chamber-specific animations     */}
+      {/* ============================================================ */}
+      <style>{`
+        @keyframes chamber-pulse {
+          0%, 100% {
+            box-shadow:
+              0 0 20px ${borderColor}22,
+              0 0 60px ${borderColor}11,
+              inset 0 0 30px ${borderColor}08;
+          }
+          50% {
+            box-shadow:
+              0 0 30px ${borderColor}33,
+              0 0 80px ${borderColor}1a,
+              inset 0 0 40px ${borderColor}0f;
+          }
+        }
+
+        @keyframes chamber-particle-rise {
+          0% {
+            transform: translateY(0) translateX(0);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.2;
+          }
+          50% {
+            transform: translateY(-${height * 0.5}px) translateX(${3}px);
+            opacity: 0.15;
+          }
+          90% {
+            opacity: 0.05;
+          }
+          100% {
+            transform: translateY(-${height * 0.85}px) translateX(-${2}px);
+            opacity: 0;
+          }
+        }
+
+        @keyframes heartbeat-draw {
+          0% {
+            stroke-dashoffset: 80;
+          }
+          100% {
+            stroke-dashoffset: -80;
+          }
+        }
+      `}</style>
     </div>
   );
 }
