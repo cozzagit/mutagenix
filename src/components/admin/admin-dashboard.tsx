@@ -231,6 +231,20 @@ function UserGridCard({
   const trauma = active?.ranking?.traumaActive ?? false;
   const isWarrior = active ? active.ageDays >= GAME_CONFIG.WARRIOR_PHASE_START : false;
 
+  // Level badge: tier for warriors, "Embrione" for growing creatures
+  const tierLabel = active?.ranking?.tier;
+  const levelBadge: { label: string; color: string; bg: string } = !active
+    ? { label: 'Nessuno', color: 'text-muted', bg: 'bg-muted/10' }
+    : !isWarrior
+      ? { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' }
+      : tierLabel === 'legend'
+        ? { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' }
+        : tierLabel === 'veteran'
+          ? { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15' }
+          : tierLabel === 'intermediate'
+            ? { label: 'Intermedio', color: 'text-primary', bg: 'bg-primary/15' }
+            : { label: 'Novizio', color: 'text-muted', bg: 'bg-muted/15' };
+
   const visualParams: VisualParams | null = active
     ? ({
         ...DEFAULT_VISUAL_PARAMS,
@@ -289,11 +303,11 @@ function UserGridCard({
         )}
       </div>
 
-      {/* Warrior badge + Arena stats */}
-      {isWarrior && (
+      {/* Level badge */}
+      {active && (
         <div className="mt-1.5 flex justify-center">
-          <span className="rounded-sm bg-red-500/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-red-400">
-            Guerriero
+          <span className={`rounded-sm px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${levelBadge.color} ${levelBadge.bg}`}>
+            {levelBadge.label}
           </span>
         </div>
       )}
