@@ -247,8 +247,8 @@ export function processDailyMutation(
   // to determine WHICH combat traits grow. This keeps them as a distribution that
   // reflects recent strategy, not just "everything maxes out over time".
   if (combatRatio > 0) {
-    // Much slower growth rate for combat — reaches meaningful levels slowly
-    const combatGrowthRate = 0.008 / (1 + ageDays * 0.005);
+    // Combat growth: meaningful by Day 80-100, dominant trait ~50-60 by Day 150
+    const combatGrowthRate = 0.035 / (1 + ageDays * 0.003);
 
     // Calculate combat contribution from THIS injection only (not total elements)
     const injectionTotal = Object.values(allocation).reduce((a, b) => a + b, 0);
@@ -267,11 +267,11 @@ export function processDailyMutation(
 
       // Growth: contribution × combatRatio × rate
       // With diminishing returns: grows slower as it gets higher
-      const diminishing = 1 - (oldValue / 100) * 0.7; // at 80, only 44% effective
+      const diminishing = 1 - (oldValue / 100) * 0.5; // at 80, still 60% effective
       const combatDelta = normalizedContrib * combatRatio * combatGrowthRate * 100 * diminishing;
 
       // battleScars: tiny constant growth (experience from battle)
-      const scarBonus = combatTrait === 'battleScars' ? 0.08 * combatRatio : 0;
+      const scarBonus = combatTrait === 'battleScars' ? 0.2 * combatRatio : 0;
 
       // Decay: traits not fed by this injection slowly decrease
       const decayRate = normalizedContrib < 0.1 ? -0.02 * oldValue * combatRatio : 0;

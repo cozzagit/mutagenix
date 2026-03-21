@@ -352,7 +352,12 @@ function drawLimbPath(
   return { upper, lower, jointX, jointY, endX, endY };
 }
 
-/** Draw claws/fingers at a limb end */
+/** Draw detailed claws/talons at a limb end — tapered filled shapes with ridges */
+type ClawData = {
+  outline: string;    // filled tapered claw shape
+  ridge: string;      // darker center ridge line
+  highlight: string;  // light edge highlight
+};
 function drawClaws(
   ex: number,
   ey: number,
@@ -360,39 +365,184 @@ function drawClaws(
   angle: number,
   side: number,
   isArm: boolean,
-): string[] {
+  aggressionLevel: number = 0,
+  armoringLevel: number = 0,
+  speedLevel: number = 0,
+): ClawData[] {
   if (clawSize < 1) return [];
-  // Number of claws based on size
+  // Number of claws: 2-4 based on clawSize
   const count = clawSize < 3 ? 2 : clawSize < 6 ? 3 : 4;
   const spread = lerp(0.3, 0.7, clawSize / 12);
-  const claws: string[] = [];
+  const claws: ClawData[] = [];
+
+  // Claw style based on dominant trait
+  // High aggression: long, curved, razor-sharp (wide base, extreme taper)
+  // High armoring: thick, blunt, sturdy
+  // High speed: short, retractile-looking (thinner)
+  const isRazor = aggressionLevel > 0.5;
+  const isBlunt = armoringLevel > 0.5 && !isRazor;
+  const isRetractile = speedLevel > 0.5 && !isRazor && !isBlunt;
+
+  const lengthMult = isRazor ? 1.4 : isBlunt ? 0.9 : isRetractile ? 0.7 : 1.0;
+  const baseMult = isBlunt ? 1.6 : isRazor ? 1.0 : isRetractile ? 0.7 : 1.0;
+  const curveMult = isRazor ? 1.5 : isBlunt ? 0.4 : 1.0;
 
   for (let i = 0; i < count; i++) {
-    const frac = (i / (count - 1)) - 0.5; // -0.5 to 0.5
+    const frac = count === 1 ? 0 : (i / (count - 1)) - 0.5; // -0.5 to 0.5
     const clawAngle = (isArm ? angle + Math.PI * 0.5 : Math.PI * 0.5) + frac * spread;
-    const len = clawSize * lerp(0.8, 1.2, Math.abs(frac));
-    const tipX = ex + Math.cos(clawAngle) * len * (isArm ? side : 1);
+    const len = clawSize * lerp(0.8, 1.3, Math.abs(frac)) * lengthMult;
+    const dirX = isArm ? side : 1;
+
+    // Base width (wide at root, narrows to tip)
+    const baseW = lerp(1.0, 2.5, clawSize / 12) * baseMult;
+
+    // Perpendicular direction for width
+    const perpAngle = clawAngle + Math.PI / 2;
+    const perpX = Math.cos(perpAngle) * baseW;
+    const perpY = Math.sin(perpAngle) * baseW;
+
+    // Tip point (sharp)
+    const tipX = ex + Math.cos(clawAngle) * len * dirX;
     const tipY = ey + Math.sin(clawAngle) * len;
-    // Curved tapered claw
-    const cpX = ex + Math.cos(clawAngle) * len * 0.5 * (isArm ? side : 1) + (1 - Math.abs(frac)) * 2 * side;
-    const cpY = ey + Math.sin(clawAngle) * len * 0.5;
-    claws.push(`M ${f1(ex)} ${f1(ey)} Q ${f1(cpX)} ${f1(cpY)} ${f1(tipX)} ${f1(tipY)}`);
+
+    // Curve offset for the claw bend
+    const curveOff = len * 0.25 * curveMult;
+    const curveAngle = clawAngle + (side > 0 ? 0.3 : -0.3);
+    const curveDx = Math.cos(curveAngle + Math.PI / 2) * curveOff;
+    const curveDy = Math.sin(curveAngle + Math.PI / 2) * curveOff;
+
+    // Control points for left and right edges of the claw
+    const midFrac = 0.55;
+    const midX = ex + Math.cos(clawAngle) * len * midFrac * dirX;
+    const midY = ey + Math.sin(clawAngle) * len * midFrac;
+
+    // Tapered filled shape: left base -> curved left edge -> tip -> curved right edge -> right base
+    const outline = `M ${f1(ex - perpX)} ${f1(ey - perpY)} ` +
+      `Q ${f1(midX - perpX * 0.4 + curveDx)} ${f1(midY - perpY * 0.4 + curveDy)} ${f1(tipX)} ${f1(tipY)} ` +
+      `Q ${f1(midX + perpX * 0.4 + curveDx)} ${f1(midY + perpY * 0.4 + curveDy)} ${f1(ex + perpX)} ${f1(ey + perpY)} Z`;
+
+    // Center ridge line (nail ridge)
+    const ridge = `M ${f1(ex)} ${f1(ey)} Q ${f1(midX + curveDx * 0.5)} ${f1(midY + curveDy * 0.5)} ${f1(tipX)} ${f1(tipY)}`;
+
+    // Highlight along one edge
+    const hlEdgeX = ex - perpX * 0.7;
+    const hlEdgeY = ey - perpY * 0.7;
+    const highlight = `M ${f1(hlEdgeX)} ${f1(hlEdgeY)} Q ${f1(midX - perpX * 0.25 + curveDx)} ${f1(midY - perpY * 0.25 + curveDy)} ${f1(tipX)} ${f1(tipY)}`;
+
+    claws.push({ outline, ridge, highlight });
   }
   return claws;
 }
 
-/** Draw a spine triangle */
+/** Draw a detailed spine/horn/protrusion */
+type SpineType = "sharp" | "horn" | "crystal" | "bone";
+type SpineData = {
+  outline: string;     // main filled shape
+  ridge: string;       // center ridge or detail line
+  rings: string[];     // growth rings (horns) or facet lines (crystal)
+  baseShadow: { cx: number; cy: number; r: number }; // shadow at base
+  spineType: SpineType;
+};
+
 function drawSpine(
   baseX: number,
   baseY: number,
   height: number,
   angle: number,
-): string {
+  spineType: SpineType,
+  rng: () => number,
+): SpineData {
   const tipX = baseX + Math.cos(angle) * height;
   const tipY = baseY + Math.sin(angle) * height;
-  const perpX = Math.sin(angle) * height * 0.18;
-  const perpY = -Math.cos(angle) * height * 0.18;
-  return `M ${f1(baseX - perpX)} ${f1(baseY - perpY)} L ${f1(tipX)} ${f1(tipY)} L ${f1(baseX + perpX)} ${f1(baseY + perpY)} Z`;
+  const perpX = Math.sin(angle);
+  const perpY = -Math.cos(angle);
+
+  const baseShadow = { cx: baseX, cy: baseY, r: height * 0.15 + 1.5 };
+  const rings: string[] = [];
+
+  if (spineType === "horn") {
+    // Thick, curved backwards, with growth rings
+    const baseW = height * 0.25;
+    const curveOff = height * 0.3;
+    // Curved horn shape
+    const midX = (baseX + tipX) / 2 + perpX * curveOff;
+    const midY = (baseY + tipY) / 2 + perpY * curveOff;
+    const outline = `M ${f1(baseX - perpX * baseW)} ${f1(baseY - perpY * baseW)} ` +
+      `Q ${f1(midX - perpX * baseW * 0.5)} ${f1(midY - perpY * baseW * 0.5)} ${f1(tipX)} ${f1(tipY)} ` +
+      `Q ${f1(midX + perpX * baseW * 0.4)} ${f1(midY + perpY * baseW * 0.4)} ${f1(baseX + perpX * baseW)} ${f1(baseY + perpY * baseW)} Z`;
+    const ridge = `M ${f1(baseX + perpX * baseW * 0.2)} ${f1(baseY + perpY * baseW * 0.2)} ` +
+      `Q ${f1(midX + perpX * baseW * 0.1)} ${f1(midY + perpY * baseW * 0.1)} ${f1(tipX)} ${f1(tipY)}`;
+    // 2-3 growth rings (horizontal lines across the horn)
+    const ringCount = 2 + Math.floor(rng() * 2);
+    for (let r = 0; r < ringCount; r++) {
+      const t = 0.25 + (r / ringCount) * 0.5;
+      const rx = baseX + Math.cos(angle) * height * t + perpX * curveOff * t * (1 - t) * 4;
+      const ry = baseY + Math.sin(angle) * height * t + perpY * curveOff * t * (1 - t) * 4;
+      const rw = baseW * (1 - t * 0.7);
+      rings.push(`M ${f1(rx - perpX * rw)} ${f1(ry - perpY * rw)} L ${f1(rx + perpX * rw)} ${f1(ry + perpY * rw)}`);
+    }
+    return { outline, ridge, rings, baseShadow, spineType };
+
+  } else if (spineType === "crystal") {
+    // Faceted polygon (5-6 sides) with internal facet lines
+    const sideCount = 5 + Math.floor(rng() * 2);
+    const pts: { x: number; y: number }[] = [];
+    // Generate irregular polygon roughly along the spine direction
+    for (let s = 0; s < sideCount; s++) {
+      const t = s / sideCount;
+      const along = t < 0.5 ? t * 2 : (1 - t) * 2; // 0->1->0 diamond-ish
+      const dist = height * (0.3 + along * 0.7);
+      const sideOff = (rng() - 0.5) * height * 0.25;
+      const px = baseX + Math.cos(angle) * dist + perpX * sideOff;
+      const py = baseY + Math.sin(angle) * dist + perpY * sideOff;
+      pts.push({ x: px, y: py });
+    }
+    const outline = `M ${pts.map(pt => `${f1(pt.x)} ${f1(pt.y)}`).join(" L ")} Z`;
+    // Internal facet lines from center to some vertices
+    const centX = pts.reduce((s, pt) => s + pt.x, 0) / pts.length;
+    const centY = pts.reduce((s, pt) => s + pt.y, 0) / pts.length;
+    for (let f = 0; f < Math.min(3, sideCount); f++) {
+      const fi = Math.floor(rng() * sideCount);
+      rings.push(`M ${f1(centX)} ${f1(centY)} L ${f1(pts[fi].x)} ${f1(pts[fi].y)}`);
+    }
+    const ridge = `M ${f1(baseX)} ${f1(baseY)} L ${f1(tipX)} ${f1(tipY)}`;
+    return { outline, ridge, rings, baseShadow, spineType };
+
+  } else if (spineType === "bone") {
+    // Knobby organic spur with bulbous base narrowing to point
+    const baseW = height * 0.3;
+    const bulgeX = baseX + Math.cos(angle) * height * 0.2;
+    const bulgeY = baseY + Math.sin(angle) * height * 0.2;
+    const outline = `M ${f1(baseX - perpX * baseW)} ${f1(baseY - perpY * baseW)} ` +
+      `Q ${f1(bulgeX - perpX * baseW * 1.2)} ${f1(bulgeY - perpY * baseW * 1.2)} ${f1(bulgeX - perpX * baseW * 0.6)} ${f1(bulgeY - perpY * baseW * 0.6 + height * 0.1)} ` +
+      `L ${f1(tipX)} ${f1(tipY)} ` +
+      `L ${f1(bulgeX + perpX * baseW * 0.5)} ${f1(bulgeY + perpY * baseW * 0.5 + height * 0.1)} ` +
+      `Q ${f1(bulgeX + perpX * baseW * 1.1)} ${f1(bulgeY + perpY * baseW * 1.1)} ${f1(baseX + perpX * baseW)} ${f1(baseY + perpY * baseW)} Z`;
+    const ridge = `M ${f1(baseX)} ${f1(baseY)} L ${f1(tipX)} ${f1(tipY)}`;
+    // Small bumps at base
+    for (let b = 0; b < 2; b++) {
+      const bOff = (rng() - 0.5) * baseW * 1.5;
+      rings.push(`M ${f1(baseX + perpX * bOff - 1)} ${f1(baseY + perpY * bOff - 1)} a 1.5 1.5 0 1 0 3 0 a 1.5 1.5 0 1 0 -3 0`);
+    }
+    return { outline, ridge, rings, baseShadow, spineType };
+
+  } else {
+    // Sharp blade spine: elongated diamond with center ridge and slight curve
+    const baseW = height * 0.18;
+    const curveOff = (rng() - 0.3) * height * 0.15;
+    const midDist = height * 0.5;
+    const midX = baseX + Math.cos(angle) * midDist + perpX * curveOff;
+    const midY = baseY + Math.sin(angle) * midDist + perpY * curveOff;
+    const outline = `M ${f1(baseX - perpX * baseW)} ${f1(baseY - perpY * baseW)} ` +
+      `Q ${f1(midX - perpX * baseW * 0.6)} ${f1(midY - perpY * baseW * 0.6)} ${f1(tipX)} ${f1(tipY)} ` +
+      `Q ${f1(midX + perpX * baseW * 0.5)} ${f1(midY + perpY * baseW * 0.5)} ${f1(baseX + perpX * baseW)} ${f1(baseY + perpY * baseW)} Z`;
+    // Center ridge
+    const ridge = `M ${f1(baseX)} ${f1(baseY)} Q ${f1(midX)} ${f1(midY)} ${f1(tipX)} ${f1(tipY)}`;
+    // Highlight along one edge
+    rings.push(`M ${f1(baseX - perpX * baseW * 0.8)} ${f1(baseY - perpY * baseW * 0.8)} ` +
+      `Q ${f1(midX - perpX * baseW * 0.5)} ${f1(midY - perpY * baseW * 0.5)} ${f1(tipX)} ${f1(tipY)}`);
+    return { outline, ridge, rings, baseShadow, spineType };
+  }
 }
 
 /** Draw tail as tapering cubic bezier */
@@ -762,11 +912,12 @@ export function CreatureRenderer({
     }
 
     // ---- Claws ----
-    const limbClaws: { paths: string[]; endX: number; endY: number }[] = [];
+    const limbClaws: { claws: ClawData[]; endX: number; endY: number }[] = [];
     for (const limb of limbs) {
       const angle = Math.atan2(limb.endY - limb.jointY, limb.endX - limb.jointX);
-      const claws = drawClaws(limb.endX, limb.endY, p.clawSize, angle, limb.side, limb.isArm);
-      limbClaws.push({ paths: claws, endX: limb.endX, endY: limb.endY });
+      const claws = drawClaws(limb.endX, limb.endY, p.clawSize, angle, limb.side, limb.isArm,
+        p.aggressionLevel ?? 0, p.armoringLevel ?? 0, p.speedLines ?? 0);
+      limbClaws.push({ claws, endX: limb.endX, endY: limb.endY });
     }
 
     // ---- Tail ----
@@ -775,7 +926,14 @@ export function CreatureRenderer({
     const tailPath = drawTail(tailStartX, tailStartY, p.tailLength, p.tailCurve);
 
     // ---- Spines ----
-    const spines: string[] = [];
+    // Determine spine type from visual params
+    const spineTypeForCreature: SpineType =
+      (p.armoringLevel ?? 0) > 0.5 ? "horn" :
+      (p.luminosityLevel ?? 0) > 0.4 ? "crystal" :
+      (p.aggressionLevel ?? 0) > 0.5 ? "sharp" : "sharp";
+
+    const spineRng = makeRng((fixedSeed ?? 42) + 7777);
+    const spines: SpineData[] = [];
     if (p.spineCount > 0) {
       for (let i = 0; i < p.spineCount; i++) {
         const frac = (i + 0.5) / p.spineCount;
@@ -795,12 +953,82 @@ export function CreatureRenderer({
           baseY = torsoTopY + torsoH * backFrac * 0.7;
           angle = -Math.PI * 0.5 - Math.PI * 0.15 * (1 - backFrac);
         }
-        spines.push(drawSpine(baseX, baseY, p.spineLength, angle));
+        // Vary angle slightly for organic look
+        angle += (spineRng() - 0.5) * 0.2;
+        spines.push(drawSpine(baseX, baseY, p.spineLength, angle, spineTypeForCreature, spineRng));
       }
     }
 
     // ---- Fur ----
     const furTufts = drawFurTufts(cx, torsoBaseY, torsoW, torsoH, p.furDensity, rng);
+
+    // ---- Fur undercoat (dense short strokes beneath main fur) ----
+    const furUndercoat: { path: string; width: number; opacity: number }[] = [];
+    if (p.furDensity > 0.15) {
+      const ucRng = makeRng((fixedSeed ?? 42) + 6666);
+      const ucCenterY = torsoBaseY - torsoH * 0.5;
+      const ucCount = Math.round(20 + p.furDensity * 60);
+      for (let i = 0; i < ucCount; i++) {
+        const t = ucRng();
+        const angle = t * Math.PI * 2;
+        const contourX = cx + Math.cos(angle) * torsoW * 0.5;
+        const contourY = ucCenterY + Math.sin(angle) * torsoH * 0.5;
+        const furLen = 3 + ucRng() * 8 * p.furDensity;
+        const furAngle = angle + (ucRng() - 0.5) * 0.5;
+        const endX = contourX + Math.cos(furAngle) * furLen;
+        const endY = contourY + Math.sin(furAngle) * furLen;
+        furUndercoat.push({
+          path: `M ${f1(contourX)} ${f1(contourY)} L ${f1(endX)} ${f1(endY)}`,
+          width: 0.3 + ucRng() * 0.6,
+          opacity: 0.15 + ucRng() * 0.2,
+        });
+      }
+    }
+
+    // ---- Fur whiskers (if furDensity > 0.6) ----
+    const furWhiskers: { path: string }[] = [];
+    if (p.furDensity > 0.6) {
+      const wRng = makeRng((fixedSeed ?? 42) + 6677);
+      const whiskerCount = 2 + Math.floor(wRng() * 3);
+      for (let w = 0; w < whiskerCount; w++) {
+        const side = w % 2 === 0 ? -1 : 1;
+        const sx = headCx + side * headR * 0.7;
+        const sy = headCy + headR * 0.15 + (wRng() - 0.5) * headR * 0.3;
+        const wLen = 12 + wRng() * 18 * p.furDensity;
+        const wAngle = (side > 0 ? 0 : Math.PI) + (wRng() - 0.5) * 0.5;
+        const ex = sx + Math.cos(wAngle) * wLen;
+        const ey = sy + Math.sin(wAngle) * wLen * 0.3;
+        const cpx = (sx + ex) / 2;
+        const cpy = sy + (wRng() - 0.5) * 6;
+        furWhiskers.push({
+          path: `M ${f1(sx)} ${f1(sy)} Q ${f1(cpx)} ${f1(cpy)} ${f1(ex)} ${f1(ey)}`,
+        });
+      }
+    }
+
+    // ---- Fur guard hairs (occasional thick longer strands) ----
+    const furGuardHairs: { path: string; width: number }[] = [];
+    if (p.furDensity > 0.3) {
+      const ghRng = makeRng((fixedSeed ?? 42) + 6688);
+      const ghCount = Math.round(5 + p.furDensity * 15);
+      const ghCenterY = torsoBaseY - torsoH * 0.5;
+      for (let i = 0; i < ghCount; i++) {
+        const t = ghRng();
+        const angle = t * Math.PI * 2;
+        const contourX = cx + Math.cos(angle) * torsoW * 0.52;
+        const contourY = ghCenterY + Math.sin(angle) * torsoH * 0.52;
+        const furLen = 15 + ghRng() * 25 * p.furDensity;
+        const furAngle = angle + (ghRng() - 0.5) * 0.4;
+        const endX = contourX + Math.cos(furAngle) * furLen;
+        const endY = contourY + Math.sin(furAngle) * furLen;
+        const cpx = contourX + Math.cos(furAngle) * furLen * 0.5 + (ghRng() - 0.5) * 5;
+        const cpy = contourY + Math.sin(furAngle) * furLen * 0.5 + (ghRng() - 0.5) * 5;
+        furGuardHairs.push({
+          path: `M ${f1(contourX)} ${f1(contourY)} Q ${f1(cpx)} ${f1(cpy)} ${f1(endX)} ${f1(endY)}`,
+          width: 1.0 + ghRng() * 1.5,
+        });
+      }
+    }
 
     // ---- Synergy helpers ----
     const hasSynergy = (name: string) => p.activeSynergyVisuals.includes(name);
@@ -1118,19 +1346,76 @@ export function CreatureRenderer({
       }
     }
 
-    // Muscle definition lines: curved lines on torso following body contour
-    const muscleLines: string[] = [];
-    if (muscleDefVal > 0.2) {
+    // Muscle definition lines: anatomical muscle groups
+    type MuscleGroup = { path: string; opacity: number; width: number };
+    const muscleLines: MuscleGroup[] = [];
+    if (muscleDefVal > 0.3) {
       const muscRng = makeRng((fixedSeed ?? 42) + 2222);
-      const lineCount2 = Math.round(lerp(3, 5, (muscleDefVal - 0.2) / 0.8));
-      for (let i = 0; i < lineCount2; i++) {
-        const yFrac = 0.2 + (i / lineCount2) * 0.6;
-        const yPos = torsoTopY + torsoH * yFrac;
-        const xSpread = torsoW * lerp(0.2, 0.4, yFrac);
-        const curveMag = (muscRng() - 0.3) * 6;
-        muscleLines.push(
-          `M ${f1(cx - xSpread)} ${f1(yPos)} Q ${f1(cx)} ${f1(yPos + curveMag)} ${f1(cx + xSpread)} ${f1(yPos)}`
-        );
+      const intensity = (muscleDefVal - 0.3) / 0.7; // 0-1
+
+      // Pectoral area: two curved lines in upper torso
+      const pecY = torsoTopY + torsoH * 0.2;
+      const pecW = torsoW * 0.35;
+      // Left pec
+      muscleLines.push({
+        path: `M ${f1(cx - pecW * 0.1)} ${f1(pecY)} Q ${f1(cx - pecW * 0.5)} ${f1(pecY + torsoH * 0.06)} ${f1(cx - pecW * 0.8)} ${f1(pecY + torsoH * 0.02)}`,
+        opacity: lerp(0.08, 0.2, intensity),
+        width: lerp(0.4, 1.0, intensity),
+      });
+      // Right pec
+      muscleLines.push({
+        path: `M ${f1(cx + pecW * 0.1)} ${f1(pecY)} Q ${f1(cx + pecW * 0.5)} ${f1(pecY + torsoH * 0.06)} ${f1(cx + pecW * 0.8)} ${f1(pecY + torsoH * 0.02)}`,
+        opacity: lerp(0.08, 0.2, intensity),
+        width: lerp(0.4, 1.0, intensity),
+      });
+
+      // Center chest division line
+      muscleLines.push({
+        path: `M ${f1(cx)} ${f1(torsoTopY + torsoH * 0.12)} L ${f1(cx)} ${f1(torsoTopY + torsoH * 0.55)}`,
+        opacity: lerp(0.05, 0.15, intensity),
+        width: lerp(0.3, 0.8, intensity),
+      });
+
+      // Abdominal segments: short horizontal lines in center
+      const absCount = Math.round(lerp(2, 4, intensity));
+      for (let a = 0; a < absCount; a++) {
+        const absY = torsoTopY + torsoH * (0.35 + a * 0.08);
+        const absW = torsoW * lerp(0.12, 0.2, 1 - a * 0.15);
+        muscleLines.push({
+          path: `M ${f1(cx - absW)} ${f1(absY)} L ${f1(cx + absW)} ${f1(absY)}`,
+          opacity: lerp(0.06, 0.15, intensity),
+          width: lerp(0.3, 0.7, intensity),
+        });
+      }
+
+      // Shoulder caps: small arc at arm attachment points
+      if (limbs.length > 0) {
+        for (const limb of limbs) {
+          if (limb.isArm) {
+            const shoulderX = limb.side < 0 ? cx - torsoW * 0.42 : cx + torsoW * 0.42;
+            const shoulderY = torsoTopY + torsoH * 0.12;
+            const arcDir = limb.side;
+            muscleLines.push({
+              path: `M ${f1(shoulderX)} ${f1(shoulderY - 4)} Q ${f1(shoulderX + arcDir * 6)} ${f1(shoulderY)} ${f1(shoulderX)} ${f1(shoulderY + 5)}`,
+              opacity: lerp(0.06, 0.18, intensity),
+              width: lerp(0.3, 0.9, intensity),
+            });
+          }
+        }
+      }
+
+      // Limb muscles: curved line along each upper limb
+      for (const limb of limbs) {
+        const mx = (limb.jointX + (limb.side < 0 ? cx - torsoW * 0.3 : cx + torsoW * 0.3)) / 2;
+        const my = (limb.jointY + torsoTopY + torsoH * 0.15) / 2;
+        const cpOff = limb.side * (3 + muscRng() * 3);
+        const lx1 = limb.side < 0 ? cx - torsoW * 0.35 : cx + torsoW * 0.35;
+        const ly1 = torsoTopY + torsoH * 0.18;
+        muscleLines.push({
+          path: `M ${f1(lx1)} ${f1(ly1)} Q ${f1(mx + cpOff)} ${f1(my)} ${f1(limb.jointX)} ${f1(limb.jointY)}`,
+          opacity: lerp(0.05, 0.14, intensity),
+          width: lerp(0.3, 0.8, intensity),
+        });
       }
     }
 
@@ -1232,6 +1517,10 @@ export function CreatureRenderer({
       muscleLines,
       combatDefensePlates,
       speedLinePaths,
+      // Fur extras
+      furUndercoat,
+      furWhiskers,
+      furGuardHairs,
     };
   }, [params, instanceId, fixedSeed]);
 
@@ -1250,6 +1539,8 @@ export function CreatureRenderer({
     combatPhaseVal, attackGlowVal, speedLinesVal,
     muscleDefVal, scarCountVal, specialAuraVal,
     battleScarPaths, muscleLines, combatDefensePlates, speedLinePaths,
+    // Fur extras
+    furUndercoat, furWhiskers, furGuardHairs,
   } = svg;
 
   const anim = animated;
@@ -1498,23 +1789,47 @@ export function CreatureRenderer({
                   fill={bodyColorDark} opacity={p.bodyOpacity * 0.8} />
               )}
 
-              {/* Claws */}
-              {limbClaws[i] && limbClaws[i].paths.map((claw, ci) => (
-                <path key={`claw-${i}-${ci}`} d={claw} fill="none"
-                  stroke={`url(#${id("claw-grad")})`}
-                  strokeWidth={lerp(1.5, 3, p.clawSize / 12)}
-                  strokeLinecap="round" opacity={0.85} />
+              {/* Claws — detailed tapered shapes */}
+              {limbClaws[i] && limbClaws[i].claws.map((claw, ci) => (
+                <g key={`claw-${i}-${ci}`}>
+                  {/* Filled tapered claw shape */}
+                  <path d={claw.outline} fill={`url(#${id("claw-grad")})`}
+                    opacity={0.88} stroke={bodyColorDark} strokeWidth={0.3} />
+                  {/* Dark center ridge */}
+                  <path d={claw.ridge} fill="none" stroke={bodyColorDark}
+                    strokeWidth={0.5} opacity={0.35} strokeLinecap="round" />
+                  {/* Light edge highlight */}
+                  <path d={claw.highlight} fill="none" stroke={bodyColorLight}
+                    strokeWidth={0.4} opacity={0.3} strokeLinecap="round" />
+                </g>
               ))}
             </g>
           ))}
 
           {/* ==================== SPINES ==================== */}
-          {spines.map((spinePath, i) => (
+          {spines.map((spineData, i) => (
             <g key={`spine-${i}`}>
-              <path d={spinePath} fill={glowColor} opacity={0.08}
+              {/* Base shadow/glow where spine meets body */}
+              <circle cx={spineData.baseShadow.cx} cy={spineData.baseShadow.cy}
+                r={spineData.baseShadow.r} fill={bodyColorDark} opacity={0.4} />
+              {/* Spine glow behind */}
+              <path d={spineData.outline} fill={glowColor} opacity={spineData.spineType === "crystal" ? 0.12 : 0.06}
                 filter={`url(#${id("spine-glow")})`} />
-              <path d={spinePath} fill={`url(#${id("spine-grad")})`}
-                opacity={p.bodyOpacity * 0.85} />
+              {/* Main spine fill */}
+              <path d={spineData.outline} fill={`url(#${id("spine-grad")})`}
+                opacity={spineData.spineType === "crystal" ? p.bodyOpacity * 0.6 : p.bodyOpacity * 0.85}
+                stroke={bodyColorDark} strokeWidth={0.3} />
+              {/* Center ridge */}
+              <path d={spineData.ridge} fill="none" stroke={bodyColorDark}
+                strokeWidth={0.5} opacity={0.3} strokeLinecap="round" />
+              {/* Growth rings / facet lines / edge highlights */}
+              {spineData.rings.map((ring, ri) => (
+                <path key={`spine-ring-${i}-${ri}`} d={ring} fill="none"
+                  stroke={spineData.spineType === "crystal" ? glowColor : bodyColorLight}
+                  strokeWidth={spineData.spineType === "crystal" ? 0.4 : 0.5}
+                  opacity={spineData.spineType === "crystal" ? 0.4 : 0.25}
+                  strokeLinecap="round" />
+              ))}
             </g>
           ))}
 
@@ -1649,17 +1964,49 @@ export function CreatureRenderer({
               </g>
             )}
 
-            {/* ==================== TOXICITY: pustules ==================== */}
+            {/* ==================== TOXICITY: pustules (grotesque alien boils) ==================== */}
             {toxPustules.length > 0 && (
               <g clipPath={`url(#${id("torso-clip")})`}>
                 {toxPustules.map((pust, i) => (
                   <g key={`pust-${i}`}>
-                    <circle cx={pust.cx} cy={pust.cy} r={pust.r}
-                      fill="hsl(90, 60%, 30%)" opacity={0.6 + toxiLvl * 0.2} />
-                    <circle cx={pust.cx} cy={pust.cy} r={pust.r * 0.6}
-                      fill="hsl(80, 70%, 45%)" opacity={0.5} />
-                    <circle cx={pust.cx - pust.r * 0.2} cy={pust.cy - pust.r * 0.2} r={pust.r * 0.2}
-                      fill="hsl(90, 40%, 60%)" opacity={0.5} />
+                    {/* Shadow beneath pustule */}
+                    <ellipse cx={pust.cx} cy={pust.cy + pust.r * 0.4} rx={pust.r * 0.9} ry={pust.r * 0.5}
+                      fill={bodyColorDark} opacity={0.3} />
+                    {/* Overlapping bumps forming lumpy organic mass */}
+                    {pust.bumps.map((bump, bi) => (
+                      <ellipse key={`pust-bump-${i}-${bi}`}
+                        cx={pust.cx + bump.dx} cy={pust.cy + bump.dy}
+                        rx={bump.rx} ry={bump.ry}
+                        transform={`rotate(${bump.rot}, ${pust.cx + bump.dx}, ${pust.cy + bump.dy})`}
+                        fill={`hsl(${85 + pust.hueShift}, ${55 + bi * 5}%, ${28 + bi * 4}%)`}
+                        opacity={0.55 + toxiLvl * 0.25} />
+                    ))}
+                    {/* Inner sickly yellow-green highlight */}
+                    <circle cx={pust.cx} cy={pust.cy} r={pust.r * 0.45}
+                      fill={`hsl(${75 + pust.hueShift}, 70%, 45%)`} opacity={0.5} />
+                    {/* Dark crater/opening at center */}
+                    <circle cx={pust.cx} cy={pust.cy} r={pust.craterR}
+                      fill={`hsl(${90 + pust.hueShift}, 40%, 12%)`} opacity={0.7} />
+                    {/* Crater rim highlight */}
+                    <circle cx={pust.cx} cy={pust.cy} r={pust.craterR * 1.3}
+                      fill="none" stroke={`hsl(${80 + pust.hueShift}, 50%, 50%)`}
+                      strokeWidth={0.4} opacity={0.4} />
+                    {/* Wet shiny highlight at top-left */}
+                    {pust.hasHighlight && (
+                      <circle cx={pust.cx - pust.r * 0.25} cy={pust.cy - pust.r * 0.25}
+                        r={pust.r * 0.15} fill="hsl(70, 20%, 75%)" opacity={0.55} />
+                    )}
+                    {/* Leaking drip path */}
+                    {pust.drip && (
+                      <g>
+                        <line x1={pust.cx + pust.drip.dx} y1={pust.cy + pust.r * 0.3}
+                          x2={pust.cx + pust.drip.dx * 1.5} y2={pust.cy + pust.r * 0.3 + pust.drip.length}
+                          stroke={`hsl(${90 + pust.hueShift}, 65%, 38%)`}
+                          strokeWidth={1 + pust.r * 0.12} strokeLinecap="round" opacity={0.5} />
+                        <circle cx={pust.cx + pust.drip.dx * 1.5} cy={pust.cy + pust.r * 0.3 + pust.drip.length}
+                          r={1 + pust.r * 0.1} fill={`hsl(${90 + pust.hueShift}, 70%, 40%)`} opacity={0.5} />
+                      </g>
+                    )}
                   </g>
                 ))}
               </g>
