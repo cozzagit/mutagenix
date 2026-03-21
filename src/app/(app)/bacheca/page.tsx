@@ -1,7 +1,7 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
 import { creatures } from '@/lib/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, desc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { ExperimentGallery } from '@/components/lab/experiment-gallery';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
@@ -18,11 +18,12 @@ export default async function BachecaPage() {
   }
 
   // Fetch ALL creatures for this user (active + archived), ordered by creation date
+  // Active first, then archived by most recent (generation descending)
   const allCreatures = await db
     .select()
     .from(creatures)
     .where(eq(creatures.userId, session.userId))
-    .orderBy(asc(creatures.createdAt));
+    .orderBy(asc(creatures.isArchived), desc(creatures.generation));
 
   if (allCreatures.length === 0) redirect('/lab');
 
