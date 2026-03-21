@@ -1,11 +1,35 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, dailySnapshots, mutationLog } from '@/lib/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { creatures, dailySnapshots } from '@/lib/db/schema';
+import { eq, and, asc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
-import { EvolutionLog } from '@/components/lab/evolution-log';
+import { EvolutionDiary } from '@/components/lab/evolution-diary';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Pick which day numbers to sample for the visual timeline.
+ * Returns a set of day numbers (1-indexed) to keep from total days.
+ * Strategy: day 1, 5, 10, 20, 30, 50, 75, 100, then every 50, plus last.
+ */
+function pickKeyDayNumbers(totalDays: number): Set<number> {
+  const milestones = [1, 5, 10, 20, 30, 50, 75, 100];
+  const set = new Set<number>();
+
+  for (const d of milestones) {
+    if (d <= totalDays) set.add(d);
+  }
+
+  // Every 50 after 100
+  for (let d = 150; d <= totalDays; d += 50) {
+    set.add(d);
+  }
+
+  // Always include last
+  set.add(totalDays);
+
+  return set;
+}
 
 export default async function EvolutionLogPage() {
   let session;
@@ -22,35 +46,75 @@ export default async function EvolutionLogPage() {
 
   if (!creature) redirect('/login');
 
-  const snapshots = await db
-    .select()
+  // Fetch ALL snapshots but only select minimal columns for milestone detection.
+  // Then fetch full data only for key snapshots.
+  // Step 1: Get all snapshot days + trait values for milestone detection (lightweight)
+  const allSnapshots = await db
+    .select({
+      id: dailySnapshots.id,
+      day: dailySnapshots.day,
+      traitValues: dailySnapshots.traitValues,
+      visualParams: dailySnapshots.visualParams,
+      elementLevels: dailySnapshots.elementLevels,
+      stabilityScore: dailySnapshots.stabilityScore,
+    })
     .from(dailySnapshots)
     .where(eq(dailySnapshots.creatureId, creature.id))
-    .orderBy(desc(dailySnapshots.day));
+    .orderBy(asc(dailySnapshots.day));
 
-  const mutations = await db
-    .select()
-    .from(mutationLog)
-    .where(eq(mutationLog.creatureId, creature.id))
-    .orderBy(desc(mutationLog.day));
+  const totalDays = allSnapshots.length;
 
-  const mutationsByDay = new Map<string, typeof mutations>();
-  for (const entry of mutations) {
-    const existing = mutationsByDay.get(entry.day) ?? [];
-    existing.push(entry);
-    mutationsByDay.set(entry.day, existing);
+  if (totalDays === 0) {
+    return (
+      <EvolutionDiary
+        creatureName={creature.name}
+        totalDays={0}
+        elementLevels={creature.elementLevels}
+        keySnapshots={[]}
+        allSnapshotsForMilestones={[]}
+      />
+    );
   }
 
-  const timelineData = snapshots.map((snapshot, index) => ({
-    snapshot,
-    mutations: mutationsByDay.get(snapshot.day) ?? [],
-    dayNumber: snapshots.length - index,
-  }));
+  // Step 2: Pick key day numbers for visual timeline
+  const keyDayNumbers = pickKeyDayNumbers(totalDays);
+
+  // Step 3: Filter key snapshots (with full visual params for rendering)
+  const keySnapshots = allSnapshots
+    .map((snap, index) => ({
+      dayNumber: index + 1,
+      day: snap.day,
+      visualParams: snap.visualParams,
+      elementLevels: snap.elementLevels,
+      traitValues: snap.traitValues,
+      stabilityScore: snap.stabilityScore,
+    }))
+    .filter((snap) => keyDayNumbers.has(snap.dayNumber));
+
+  // Step 4: Prepare lightweight milestone data (every 10th day + first + last)
+  const milestoneCheckDays = new Set<number>();
+  milestoneCheckDays.add(1);
+  for (let d = 5; d <= totalDays; d += 5) {
+    milestoneCheckDays.add(d);
+  }
+  milestoneCheckDays.add(totalDays);
+
+  const milestoneCandidates = allSnapshots
+    .map((snap, index) => ({
+      dayNumber: index + 1,
+      traitValues: snap.traitValues as Record<string, number>,
+      elementLevels: snap.elementLevels as Record<string, number>,
+      stabilityScore: snap.stabilityScore,
+    }))
+    .filter((snap) => milestoneCheckDays.has(snap.dayNumber));
 
   return (
-    <EvolutionLog
-      timelineData={timelineData}
+    <EvolutionDiary
       creatureName={creature.name}
+      totalDays={totalDays}
+      elementLevels={creature.elementLevels}
+      keySnapshots={keySnapshots}
+      allSnapshotsForMilestones={milestoneCandidates}
     />
   );
 }
