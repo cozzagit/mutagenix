@@ -187,17 +187,7 @@ export default async function ArenaMainPage() {
     visualParams: creature.visualParams as Record<string, unknown>,
   };
 
-  // Count recent battles where user was defender (last 24h)
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const [unseenCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(battles)
-    .where(
-      and(
-        eq(battles.defenderUserId, session.userId),
-        gte(battles.createdAt, twentyFourHoursAgo),
-      ),
-    );
-
-  return <ArenaPage warrior={warriorData} unseenDefenderBattles={unseenCount?.count ?? 0} />;
+  // lastArenaVisit was already set to now() at the top of this function,
+  // so there are no "unseen" battles by definition when viewing the arena.
+  return <ArenaPage warrior={warriorData} unseenDefenderBattles={0} />;
 }

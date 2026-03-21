@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CreatureRenderer } from "@/components/creature/creature-renderer";
 import { DEFAULT_VISUAL_PARAMS } from "@/components/creature/creature-renderer";
 import type { VisualParams } from "@/lib/game-engine/visual-mapper";
+import { InstallButton } from "@/components/pwa/install-button";
 
 /* ------------------------------------------------------------------ */
 /* Creature showcase data                                              */
@@ -240,6 +241,11 @@ export default function LandingPage() {
           >
             Accedi
           </Link>
+        </div>
+
+        {/* PWA Install button — appears on mobile when installable */}
+        <div className="mt-4">
+          <InstallButton variant="landing" />
         </div>
 
         {/* Scroll hint */}

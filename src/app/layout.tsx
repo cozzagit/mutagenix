@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,19 @@ export const metadata: Metadata = {
   title: "Mutagenix",
   description:
     "Evolvi. Muta. Domina. La tua creatura parte come un blob informe — ogni giorno decidi tu cosa diventerà.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Mutagenix",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+  icons: [
+    { rel: "icon", url: "/icon.svg", type: "image/svg+xml" },
+    { rel: "apple-touch-icon", url: "/icon-192.png" },
+  ],
 };
 
 export const viewport: Viewport = {
@@ -38,6 +52,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Providers>{children}</Providers>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
