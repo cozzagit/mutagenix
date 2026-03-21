@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { users, creatures, allocations, creatureRankings } from '@/lib/db/schema';
-import { eq, sql, desc } from 'drizzle-orm';
+import { users, creatures, creatureRankings } from '@/lib/db/schema';
+import { sql, desc, asc } from 'drizzle-orm';
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
 
 export default async function AdminPage() {
@@ -17,101 +17,111 @@ export default async function AdminPage() {
     redirect('/lab');
   }
 
-  // Fetch all users with their creatures (LEFT JOIN)
-  const usersWithCreatures = await db
-    .select({
-      user: users,
-      creature: creatures,
-    })
+  // 1. Fetch all users
+  const allUsers = await db
+    .select()
     .from(users)
-    .leftJoin(creatures, eq(creatures.userId, users.id))
     .orderBy(desc(users.createdAt));
 
-  // Fetch allocation counts per creature
-  const allocationCounts = await db
+  // 2. Fetch ALL creatures (active + archived), ordered: active first, then archived by archivedAt DESC
+  const allCreatures = await db
+    .select()
+    .from(creatures)
+    .orderBy(asc(creatures.isArchived), desc(creatures.archivedAt), desc(creatures.createdAt));
+
+  // 3. Fetch all rankings
+  const allRankings = await db.select().from(creatureRankings);
+  const rankingsMap = new Map(
+    allRankings.map((r) => [r.creatureId, r]),
+  );
+
+  // 4. Count battles per user (as challenger or defender)
+  const battleCounts = await db
     .select({
-      creatureId: allocations.creatureId,
+      userId: sql<string>`user_id`,
       count: sql<number>`count(*)::int`,
     })
-    .from(allocations)
-    .groupBy(allocations.creatureId);
+    .from(
+      sql`(
+        SELECT challenger_user_id AS user_id FROM battles
+        UNION ALL
+        SELECT defender_user_id AS user_id FROM battles
+      ) AS user_battles`,
+    )
+    .groupBy(sql`user_id`);
 
-  const allocationMap = new Map(
-    allocationCounts.map((a) => [a.creatureId, a.count]),
+  const battleCountMap = new Map(
+    battleCounts.map((b) => [b.userId, b.count]),
   );
 
-  // Fetch rankings for all creatures
-  const rankingsData = await db.select().from(creatureRankings);
-  const rankingsMap = new Map(
-    rankingsData.map((r) => [r.creatureId, r]),
-  );
+  // 5. Group creatures by userId
+  const creaturesByUser = new Map<string, typeof allCreatures>();
+  for (const creature of allCreatures) {
+    const list = creaturesByUser.get(creature.userId) ?? [];
+    list.push(creature);
+    creaturesByUser.set(creature.userId, list);
+  }
 
-  // Build the data structure for the client component
-  const data = usersWithCreatures.map((row) => {
-    const ranking = row.creature ? rankingsMap.get(row.creature.id) : null;
+  // 6. Build structured data
+  const data = allUsers.map((user) => {
+    const userCreatures = creaturesByUser.get(user.id) ?? [];
+
     return {
-      user: {
-        id: row.user.id,
-        email: row.user.email,
-        displayName: row.user.displayName,
-        streak: row.user.streak ?? 0,
-        lastLoginAt: row.user.lastLoginAt?.toISOString() ?? null,
-        isAdmin: row.user.isAdmin ?? false,
-        createdAt: row.user.createdAt.toISOString(),
-      },
-      creature: row.creature
-        ? {
-            id: row.creature.id,
-            name: row.creature.name,
-            generation: row.creature.generation ?? 1,
-            ageDays: row.creature.ageDays ?? 0,
-            stability: row.creature.stability ?? 0.5,
-            elementLevels: row.creature.elementLevels,
-            traitValues: row.creature.traitValues,
-            visualParams: row.creature.visualParams as Record<string, unknown>,
-            ranking: ranking
-              ? {
-                  eloRating: ranking.eloRating,
-                  wins: ranking.wins,
-                  losses: ranking.losses,
-                  draws: ranking.draws,
-                  winStreak: ranking.winStreak,
-                  tier: ranking.rankTier,
-                  recoveryUntil: ranking.recoveryUntil?.toISOString() ?? null,
-                  traumaActive: ranking.traumaActive,
-                  consecutiveLosses: ranking.consecutiveLosses,
-                }
-              : null,
-          }
-        : null,
-      allocationCount: row.creature
-        ? (allocationMap.get(row.creature.id) ?? 0)
-        : 0,
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      isAdmin: user.isAdmin ?? false,
+      lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+      createdAt: user.createdAt.toISOString(),
+      totalBattles: battleCountMap.get(user.id) ?? 0,
+      creatures: userCreatures.map((c) => {
+        const ranking = rankingsMap.get(c.id);
+        return {
+          id: c.id,
+          name: c.name,
+          ageDays: c.ageDays ?? 0,
+          generation: c.generation ?? 1,
+          stability: c.stability ?? 0.5,
+          isArchived: c.isArchived,
+          archiveReason: c.archiveReason,
+          archivedAt: c.archivedAt?.toISOString() ?? null,
+          elementLevels: c.elementLevels,
+          traitValues: c.traitValues,
+          visualParams: c.visualParams as Record<string, unknown>,
+          ranking: ranking
+            ? {
+                eloRating: ranking.eloRating,
+                wins: ranking.wins,
+                losses: ranking.losses,
+                draws: ranking.draws,
+                winStreak: ranking.winStreak,
+                tier: ranking.rankTier,
+                recoveryUntil: ranking.recoveryUntil?.toISOString() ?? null,
+                traumaActive: ranking.traumaActive,
+                consecutiveLosses: ranking.consecutiveLosses,
+              }
+            : null,
+        };
+      }),
     };
   });
 
-  // Compute stats
-  const totalUsers = data.length;
-  const totalCreatures = data.filter((d) => d.creature !== null).length;
-  const totalInjections = allocationCounts.reduce(
-    (sum, a) => sum + a.count,
-    0,
-  );
-  const mostEvolved = data.reduce<(typeof data)[number] | null>((best, d) => {
-    if (!d.creature) return best;
-    if (!best || !best.creature) return d;
-    return d.creature.ageDays > best.creature.ageDays ? d : best;
-  }, null);
+  // 7. Compute stats
+  const totalUsers = allUsers.length;
+  const activeCreatures = allCreatures.filter((c) => !c.isArchived).length;
+  const archivedCreatures = allCreatures.filter((c) => c.isArchived).length;
+  const totalBattles = battleCounts.reduce((sum, b) => sum + b.count, 0) / 2; // each battle counted twice (challenger + defender)
+  const warriorsInArena = allRankings.length;
 
   return (
     <AdminDashboard
       data={data}
       stats={{
         totalUsers,
-        totalCreatures,
-        totalInjections,
-        mostEvolvedName: mostEvolved?.creature?.name ?? null,
-        mostEvolvedDays: mostEvolved?.creature?.ageDays ?? 0,
+        activeCreatures,
+        archivedCreatures,
+        totalBattles: Math.round(totalBattles),
+        warriorsInArena,
       }}
     />
   );
