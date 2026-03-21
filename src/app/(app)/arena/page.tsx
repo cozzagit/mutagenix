@@ -1,7 +1,7 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, creatureRankings } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { creatures, creatureRankings, battles } from '@/lib/db/schema';
+import { eq, and, gte, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { ArenaPage } from '@/components/arena/arena-page';
 import { ArenaRegistration } from '@/components/arena/arena-registration';
@@ -184,5 +184,17 @@ export default async function ArenaMainPage() {
     visualParams: creature.visualParams as Record<string, unknown>,
   };
 
-  return <ArenaPage warrior={warriorData} />;
+  // Count recent battles where user was defender (last 24h)
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const [unseenCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(battles)
+    .where(
+      and(
+        eq(battles.defenderUserId, session.userId),
+        gte(battles.createdAt, twentyFourHoursAgo),
+      ),
+    );
+
+  return <ArenaPage warrior={warriorData} unseenDefenderBattles={unseenCount?.count ?? 0} />;
 }

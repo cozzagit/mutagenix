@@ -97,20 +97,20 @@ function BattleResultModal({
   const oVp = { ...DEFAULT_VISUAL_PARAMS, ...(opponentVisualParams as Partial<VisualParams>) } as VisualParams;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl border border-border/50 bg-surface p-6">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm p-0 md:p-4">
+      <div className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-border/50 bg-surface p-5 md:p-6">
         {/* Creatures side by side */}
-        <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
           <div className="text-center">
-            <CreatureRenderer params={wVp} size={100} animated />
-            <p className="text-xs text-muted mt-1 truncate max-w-[100px]">{warrior.name}</p>
+            <CreatureRenderer params={wVp} size={80} animated />
+            <p className="text-[10px] md:text-xs text-muted mt-1 truncate max-w-[80px] md:max-w-[100px]">{warrior.name}</p>
           </div>
-          <span className="text-lg font-black text-muted">VS</span>
+          <span className="text-base md:text-lg font-black text-muted">VS</span>
           <div className="text-center">
             <div style={{ transform: "scaleX(-1)" }}>
-              <CreatureRenderer params={oVp} size={100} animated />
+              <CreatureRenderer params={oVp} size={80} animated />
             </div>
-            <p className="text-xs text-muted mt-1 truncate max-w-[100px]">{opponentName}</p>
+            <p className="text-[10px] md:text-xs text-muted mt-1 truncate max-w-[80px] md:max-w-[100px]">{opponentName}</p>
           </div>
         </div>
 
@@ -286,7 +286,7 @@ function SfidaTab({ warrior }: { warrior: WarriorData }) {
               <p className="text-[10px] text-muted mt-1">Torna piu tardi o aspetta che altri guerrieri si registrino.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
               {opponents.map((opp) => (
                 <OpponentCard
                   key={opp.creatureId}
@@ -574,13 +574,45 @@ function CronologiaTab() {
 
 interface ArenaPageProps {
   warrior: WarriorData;
+  unseenDefenderBattles?: number;
 }
 
-export function ArenaPage({ warrior }: ArenaPageProps) {
+export function ArenaPage({ warrior, unseenDefenderBattles = 0 }: ArenaPageProps) {
   const [activeTab, setActiveTab] = useState<Tab>("sfida");
+  const [showUnseenBanner, setShowUnseenBanner] = useState(unseenDefenderBattles > 0);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
+      {/* Unseen defender battles banner */}
+      {showUnseenBanner && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-danger/30 bg-danger/10 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 shrink-0 text-danger">
+              <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="text-xs font-bold text-danger">
+                Hai subito {unseenDefenderBattles} sfid{unseenDefenderBattles === 1 ? 'a' : 'e'} mentre eri assente!
+              </p>
+              <button
+                onClick={() => { setActiveTab("cronologia"); setShowUnseenBanner(false); }}
+                className="text-[10px] text-danger/80 underline hover:text-danger"
+              >
+                Guarda la cronologia
+              </button>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowUnseenBanner(false)}
+            className="shrink-0 rounded p-1 text-danger/60 hover:text-danger"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Title */}
       <div className="mb-6">
         <h1 className="text-lg font-black text-foreground tracking-tight">
@@ -592,12 +624,12 @@ export function ArenaPage({ warrior }: ArenaPageProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-border/30">
+      <div className="flex gap-0 mb-6 border-b border-border/30 overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+            className={`shrink-0 px-3 py-2 text-[11px] md:text-xs font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
               activeTab === tab.id
                 ? "text-danger border-danger"
                 : "text-muted border-transparent hover:text-foreground"

@@ -39,6 +39,7 @@ interface Props {
   dayKey: string;
   isDevMode: boolean;
   cooldownRemaining?: number;
+  unseenBattles?: number;
 }
 
 type Phase = 'idle' | 'allocating' | 'mutating' | 'waiting';
@@ -112,6 +113,7 @@ export function LabDashboard({
   dayKey: initialDayKey,
   isDevMode,
   cooldownRemaining: initialCooldown = 0,
+  unseenBattles = 0,
 }: Props) {
   const router = useRouter();
 
@@ -145,6 +147,9 @@ export function LabDashboard({
 
   // --- Mobile stats panel ---
   const [statsOpen, setStatsOpen] = useState(false);
+
+  // --- Battle notification banner ---
+  const [showBattleBanner, setShowBattleBanner] = useState(unseenBattles > 0);
 
   const _phase: Phase = mutationActive
     ? 'mutating'
@@ -638,6 +643,32 @@ export function LabDashboard({
       {/* RIGHT AREA — Name/day ABOVE creature, countdown/button BELOW   */}
       {/* ============================================================= */}
       <div className="flex flex-1 flex-col items-center overflow-hidden">
+        {/* Battle notification banner */}
+        {showBattleBanner && (
+          <div className="w-full shrink-0 px-4 pt-2">
+            <div className="flex items-center justify-between rounded-lg border border-danger/30 bg-danger/10 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-danger">
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                </svg>
+                <p className="text-[11px] text-danger">
+                  Il tuo guerriero ha combattuto!{' '}
+                  <Link href="/arena" className="font-bold underline hover:text-danger/80">
+                    Vai all&apos;Arena per vedere i risultati.
+                  </Link>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBattleBanner(false)}
+                className="shrink-0 rounded p-0.5 text-danger/60 hover:text-danger"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
         {/* NAME + DAY — above the creature (desktop) */}
         <div className="hidden shrink-0 flex-col items-center gap-0.5 pt-4 md:flex">
           <div className="flex items-center gap-2">
@@ -816,61 +847,6 @@ export function LabDashboard({
             )}
 
           </div>
-        </div>
-
-        {/* Mobile: element pills + synergy pills */}
-        <div className="shrink-0 px-4 pb-1 md:hidden">
-          {/* Compact element pills — 2 rows */}
-          <div className="flex flex-wrap items-center justify-center gap-1">
-            {ELEMENTS.map((el) => {
-              const level = Math.round(elementLevels[el] ?? 0);
-              const color = ELEMENT_COLORS[el];
-              if (level === 0) return null;
-              return (
-                <span
-                  key={el}
-                  className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-                  style={{
-                    backgroundColor: `${color}18`,
-                    border: `1px solid ${color}33`,
-                    color,
-                  }}
-                >
-                  {el}
-                  <span className="text-[8px] font-medium opacity-70">{level}</span>
-                </span>
-              );
-            })}
-            {ELEMENTS.every((el) => (elementLevels[el] ?? 0) === 0) && (
-              <span className="text-[10px] text-muted">Nessun elemento attivo</span>
-            )}
-          </div>
-
-          {/* Mobile synergy pills */}
-          {activeSynergies.length > 0 && (
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
-              {activeSynergies.map((name) => {
-                const color = SYNERGY_COLORS[name] ?? '#6b6d7b';
-                return (
-                  <span
-                    key={name}
-                    className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                    style={{
-                      border: `1px solid ${color}33`,
-                      color,
-                      backgroundColor: `${color}11`,
-                    }}
-                  >
-                    <span
-                      className="h-1 w-1 rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                    {name}
-                  </span>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {/* Mobile: Guide link */}

@@ -1,7 +1,7 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { creatures, battles } from '@/lib/db/schema';
+import { eq, and, gte, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { LabDashboard } from '@/components/lab/lab-dashboard';
 import { interpolateCreatureState } from '@/lib/game-engine/interpolation';
@@ -47,6 +47,24 @@ export default async function LabPage() {
     cooldownRemaining = Math.max(0, TIME_CONFIG.COOLDOWN_MS - (Date.now() - creature.updatedAt.getTime()));
   }
 
+  // Count recent battles where user was defender (last 24h)
+  let unseenBattles = 0;
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [unseenCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(battles)
+      .where(
+        and(
+          eq(battles.defenderUserId, session.userId),
+          gte(battles.createdAt, twentyFourHoursAgo),
+        ),
+      );
+    unseenBattles = unseenCount?.count ?? 0;
+  } catch {
+    // Arena tables may not exist yet — ignore
+  }
+
   return (
     <LabDashboard
       creature={creature}
@@ -60,6 +78,7 @@ export default async function LabPage() {
       dayKey={String(creature.ageDays ?? 0)}
       isDevMode={TIME_CONFIG.isDevMode}
       cooldownRemaining={cooldownRemaining}
+      unseenBattles={unseenBattles}
     />
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ToastProvider } from "@/components/ui/toast";
@@ -12,6 +13,7 @@ interface NavItem {
 
 interface NavItemExt extends NavItem {
   activeColor?: 'red' | 'blue';
+  badgeKey?: string; // key for badge counter
 }
 
 const NAV_ITEMS: NavItemExt[] = [
@@ -45,6 +47,7 @@ const NAV_ITEMS: NavItemExt[] = [
     href: "/arena",
     label: "Arena",
     activeColor: 'red',
+    badgeKey: 'arena',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 3l6 6 6-6" />
@@ -86,7 +89,7 @@ const NAV_ITEMS: NavItemExt[] = [
   },
 ];
 
-function NavLink({ item, isActive }: { item: NavItemExt; isActive: boolean }) {
+function NavLink({ item, isActive, badge }: { item: NavItemExt; isActive: boolean; badge?: number }) {
   const isRed = item.activeColor === 'red';
   const activeClass = isRed
     ? "text-danger [&_svg]:drop-shadow-[0_0_6px_#ff3d3d88]"
@@ -95,17 +98,22 @@ function NavLink({ item, isActive }: { item: NavItemExt; isActive: boolean }) {
   return (
     <Link
       href={item.href}
-      className={`focus-ring flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+      className={`focus-ring relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
         isActive ? activeClass : "text-muted hover:text-foreground"
       }`}
     >
       {item.icon}
       {item.label && <span className="hidden md:inline">{item.label}</span>}
+      {badge !== undefined && badge > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold text-white">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
     </Link>
   );
 }
 
-function MobileNavLink({ item, isActive }: { item: NavItemExt; isActive: boolean }) {
+function MobileNavLink({ item, isActive, badge }: { item: NavItemExt; isActive: boolean; badge?: number }) {
   const isRed = item.activeColor === 'red';
   const activeClass = isRed
     ? "text-danger [&_svg]:drop-shadow-[0_0_6px_#ff3d3d88]"
@@ -114,12 +122,17 @@ function MobileNavLink({ item, isActive }: { item: NavItemExt; isActive: boolean
   return (
     <Link
       href={item.href}
-      className={`focus-ring flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-[10px] font-medium transition-colors ${
+      className={`focus-ring relative flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-1 text-[9px] font-medium transition-colors [&_svg]:h-4 [&_svg]:w-4 ${
         isActive ? activeClass : "text-muted hover:text-foreground"
       }`}
     >
       {item.icon}
       <span>{item.label || "Settings"}</span>
+      {badge !== undefined && badge > 0 && (
+        <span className="absolute -right-1 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-danger px-0.5 text-[8px] font-bold text-white">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -130,9 +143,37 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [arenaBadge, setArenaBadge] = useState(0);
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
+  }
+
+  // Fetch unread arena battles on mount and when not on arena page
+  useEffect(() => {
+    if (isActive("/arena")) {
+      setArenaBadge(0);
+      return;
+    }
+
+    let cancelled = false;
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/arena/unread");
+        if (!res.ok || cancelled) return;
+        const json = await res.json();
+        setArenaBadge(json.data?.unseenBattles ?? 0);
+      } catch {
+        // silently ignore
+      }
+    }
+    fetchUnread();
+    return () => { cancelled = true; };
+  }, [pathname]);
+
+  function getBadge(item: NavItemExt): number | undefined {
+    if (item.badgeKey === 'arena') return arenaBadge;
+    return undefined;
   }
 
   return (
@@ -148,7 +189,7 @@ export default function AppLayout({
         </Link>
         <nav className="flex items-center gap-1">
           {NAV_ITEMS.map((item) => (
-            <NavLink key={item.href} item={item} isActive={isActive(item.href)} />
+            <NavLink key={item.href} item={item} isActive={isActive(item.href)} badge={getBadge(item)} />
           ))}
         </nav>
       </header>
@@ -161,7 +202,7 @@ export default function AppLayout({
       {/* Mobile: slim bottom nav (48px) */}
       <nav className="flex h-12 shrink-0 items-center justify-around border-t border-border/50 bg-surface/80 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] md:hidden">
         {NAV_ITEMS.map((item) => (
-          <MobileNavLink key={item.href} item={item} isActive={isActive(item.href)} />
+          <MobileNavLink key={item.href} item={item} isActive={isActive(item.href)} badge={getBadge(item)} />
         ))}
       </nav>
     </div>

@@ -7,6 +7,8 @@ import {
 } from '@/components/creature/creature-renderer';
 import type { VisualParams } from '@/lib/game-engine/visual-mapper';
 import type { ElementLevels, TraitValues } from '@/lib/db/schema/creatures';
+import { PersonalityRadar } from '@/components/lab/personality-radar';
+import { COMBAT_TRAITS, GAME_CONFIG } from '@/lib/game-engine/constants';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,6 +24,18 @@ interface UserData {
   createdAt: string;
 }
 
+interface RankingData {
+  eloRating: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winStreak: number;
+  tier: string;
+  recoveryUntil: string | null;
+  traumaActive: boolean;
+  consecutiveLosses: number;
+}
+
 interface CreatureData {
   id: string;
   name: string;
@@ -31,6 +45,7 @@ interface CreatureData {
   elementLevels: ElementLevels;
   traitValues: TraitValues;
   visualParams: Record<string, unknown>;
+  ranking?: RankingData | null;
 }
 
 interface AdminEntry {
@@ -93,21 +108,23 @@ const ELEMENT_LABELS: Record<string, string> = {
   Cl: 'Cloro',
 };
 
-const TRAIT_LABELS: Record<string, string> = {
-  aggression: 'Aggressione',
-  luminosity: 'Luminosita',
-  toxicity: 'Tossicita',
-  intelligence: 'Intelligenza',
-  armoring: 'Corazza',
+const COMBAT_TRAIT_LABELS: Record<string, string> = {
+  attackPower: 'Attacco',
+  defense: 'Difesa',
+  speed: 'Velocità',
+  stamina: 'Resistenza',
+  specialAttack: 'Speciale',
+  battleScars: 'Cicatrici',
 };
 
-const PERSONALITY_TRAITS = [
-  'aggression',
-  'luminosity',
-  'toxicity',
-  'intelligence',
-  'armoring',
-] as const;
+const COMBAT_TRAIT_COLORS: Record<string, string> = {
+  attackPower: '#ff3d3d',
+  defense: '#4488ff',
+  speed: '#00e5e5',
+  stamina: '#ff9100',
+  specialAttack: '#b26eff',
+  battleScars: '#8a8a8a',
+};
 
 // ---------------------------------------------------------------------------
 // Stat Card
@@ -310,13 +327,10 @@ function DetailDrawer({
       )
     : [];
 
-  const personalityTraits = creature
-    ? PERSONALITY_TRAITS.map((t) => ({
-        key: t,
-        label: TRAIT_LABELS[t] ?? t,
-        value: creature.traitValues[t] ?? 0,
-      }))
-    : [];
+  const isWarrior = creature ? creature.ageDays >= GAME_CONFIG.WARRIOR_PHASE_START : false;
+  const hasCombatStats = creature
+    ? COMBAT_TRAITS.some((ct) => (creature.traitValues[ct] ?? 0) > 0.5)
+    : false;
 
   const activeSynergies = creature
     ? ((creature.visualParams as Record<string, unknown>)
@@ -431,32 +445,100 @@ function DetailDrawer({
                 </div>
               </div>
 
-              {/* Personality traits */}
-              <div>
-                <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted">
-                  Personalita
-                </p>
-                <div className="space-y-1">
-                  {personalityTraits.map((t) => (
-                    <div key={t.key} className="flex items-center gap-2">
-                      <span className="w-20 text-[10px] text-foreground/70">
-                        {t.label}
-                      </span>
-                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-surface-2">
-                        <div
-                          className="h-full rounded-full bg-accent/60"
-                          style={{
-                            width: `${Math.min(100, t.value)}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="w-6 text-right text-[10px] text-muted">
-                        {Math.round(t.value)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              {/* Personality radar (element-based) */}
+              <div className="flex justify-center">
+                <PersonalityRadar elementLevels={creature.elementLevels as Record<string, number>} size={160} />
               </div>
+
+              {/* Warrior badge */}
+              {isWarrior && (
+                <div className="flex justify-center">
+                  <span
+                    className="rounded-sm bg-red-500/15 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-red-400"
+                    style={{ textShadow: '0 0 8px #ff3d3d33' }}
+                  >
+                    Fase Guerriero
+                  </span>
+                </div>
+              )}
+
+              {/* Combat traits */}
+              {hasCombatStats && (
+                <div>
+                  <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted">
+                    Statistiche Combattimento
+                  </p>
+                  <div className="space-y-0.5">
+                    {COMBAT_TRAITS.map((ct) => {
+                      const value = Math.round(creature.traitValues[ct] ?? 0);
+                      const color = COMBAT_TRAIT_COLORS[ct];
+                      const label = COMBAT_TRAIT_LABELS[ct];
+                      return (
+                        <div key={ct} className="flex h-[20px] items-center gap-2">
+                          <span
+                            className="w-[52px] shrink-0 text-right text-[9px] font-bold"
+                            style={{ color }}
+                          >
+                            {label}
+                          </span>
+                          <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-surface-2">
+                            <div
+                              className="h-full rounded-sm transition-all duration-700 ease-out"
+                              style={{
+                                width: `${value}%`,
+                                backgroundColor: color,
+                                boxShadow: value > 0 ? `0 0 6px ${color}44` : undefined,
+                                opacity: value > 0 ? 1 : 0.2,
+                              }}
+                            />
+                          </div>
+                          <span
+                            className="w-5 shrink-0 text-right text-[9px] font-semibold tabular-nums"
+                            style={{ color: value > 0 ? color : 'var(--color-muted)' }}
+                          >
+                            {value}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Battle record */}
+              {creature.ranking && (
+                <div>
+                  <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted">
+                    Record Arena
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    <div className="text-foreground/80">
+                      <span className="text-muted">ELO: </span>
+                      <span className="font-bold">{creature.ranking.eloRating}</span>
+                    </div>
+                    <div className="text-foreground/80">
+                      <span className="text-muted">Tier: </span>
+                      <span className="font-bold capitalize">{creature.ranking.tier}</span>
+                    </div>
+                    <div className="text-foreground/80">
+                      <span className="text-accent font-bold">{creature.ranking.wins}V</span>
+                      {' / '}
+                      <span className="text-red-400 font-bold">{creature.ranking.losses}S</span>
+                      {' / '}
+                      <span className="text-muted font-bold">{creature.ranking.draws}P</span>
+                    </div>
+                    <div className="text-foreground/80">
+                      <span className="text-muted">Streak: </span>
+                      <span className="font-bold text-warning">{creature.ranking.winStreak}</span>
+                    </div>
+                    {creature.ranking.traumaActive && (
+                      <div className="col-span-2 mt-1 rounded bg-red-500/10 px-2 py-1 text-[10px] text-red-400">
+                        Trauma attivo ({creature.ranking.consecutiveLosses} sconfitte consecutive)
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Active synergies */}
               {activeSynergies.length > 0 && (

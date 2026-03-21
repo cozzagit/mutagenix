@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { users, creatures, allocations } from '@/lib/db/schema';
+import { users, creatures, allocations, creatureRankings } from '@/lib/db/schema';
 import { eq, sql, desc } from 'drizzle-orm';
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
 
@@ -40,33 +40,55 @@ export default async function AdminPage() {
     allocationCounts.map((a) => [a.creatureId, a.count]),
   );
 
+  // Fetch rankings for all creatures
+  const rankingsData = await db.select().from(creatureRankings);
+  const rankingsMap = new Map(
+    rankingsData.map((r) => [r.creatureId, r]),
+  );
+
   // Build the data structure for the client component
-  const data = usersWithCreatures.map((row) => ({
-    user: {
-      id: row.user.id,
-      email: row.user.email,
-      displayName: row.user.displayName,
-      streak: row.user.streak ?? 0,
-      lastLoginAt: row.user.lastLoginAt?.toISOString() ?? null,
-      isAdmin: row.user.isAdmin ?? false,
-      createdAt: row.user.createdAt.toISOString(),
-    },
-    creature: row.creature
-      ? {
-          id: row.creature.id,
-          name: row.creature.name,
-          generation: row.creature.generation ?? 1,
-          ageDays: row.creature.ageDays ?? 0,
-          stability: row.creature.stability ?? 0.5,
-          elementLevels: row.creature.elementLevels,
-          traitValues: row.creature.traitValues,
-          visualParams: row.creature.visualParams as Record<string, unknown>,
-        }
-      : null,
-    allocationCount: row.creature
-      ? (allocationMap.get(row.creature.id) ?? 0)
-      : 0,
-  }));
+  const data = usersWithCreatures.map((row) => {
+    const ranking = row.creature ? rankingsMap.get(row.creature.id) : null;
+    return {
+      user: {
+        id: row.user.id,
+        email: row.user.email,
+        displayName: row.user.displayName,
+        streak: row.user.streak ?? 0,
+        lastLoginAt: row.user.lastLoginAt?.toISOString() ?? null,
+        isAdmin: row.user.isAdmin ?? false,
+        createdAt: row.user.createdAt.toISOString(),
+      },
+      creature: row.creature
+        ? {
+            id: row.creature.id,
+            name: row.creature.name,
+            generation: row.creature.generation ?? 1,
+            ageDays: row.creature.ageDays ?? 0,
+            stability: row.creature.stability ?? 0.5,
+            elementLevels: row.creature.elementLevels,
+            traitValues: row.creature.traitValues,
+            visualParams: row.creature.visualParams as Record<string, unknown>,
+            ranking: ranking
+              ? {
+                  eloRating: ranking.eloRating,
+                  wins: ranking.wins,
+                  losses: ranking.losses,
+                  draws: ranking.draws,
+                  winStreak: ranking.winStreak,
+                  tier: ranking.rankTier,
+                  recoveryUntil: ranking.recoveryUntil?.toISOString() ?? null,
+                  traumaActive: ranking.traumaActive,
+                  consecutiveLosses: ranking.consecutiveLosses,
+                }
+              : null,
+          }
+        : null,
+      allocationCount: row.creature
+        ? (allocationMap.get(row.creature.id) ?? 0)
+        : 0,
+    };
+  });
 
   // Compute stats
   const totalUsers = data.length;
