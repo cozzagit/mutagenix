@@ -436,7 +436,7 @@ function ClassificaTab({ myCreatureId }: { myCreatureId: string }) {
                 <span className="hidden md:block text-muted truncate">{entry.ownerName}</span>
                 <span className="font-mono text-foreground">{entry.eloRating}</span>
                 <span className="hidden md:block text-muted">
-                  <span className="text-accent">{entry.wins}</span>/<span className="text-danger">{entry.losses}</span>
+                  <span className="text-accent">{entry.wins}V</span> <span className="text-danger">{entry.losses}S</span>{entry.draws > 0 && <> <span className="text-warning">{entry.draws}P</span></>}
                 </span>
                 <span className="hidden md:block text-muted">{entry.winStreak}</span>
                 <span className="hidden md:block"><TierBadge tier={entry.tier} /></span>
