@@ -714,7 +714,7 @@ export function LabDashboard({
       {/* ============================================================= */}
       {/* RIGHT AREA — Name/day ABOVE creature, countdown/button BELOW   */}
       {/* ============================================================= */}
-      <div className="flex flex-1 flex-col items-center overflow-hidden">
+      <div className="flex flex-1 flex-col items-center overflow-y-auto overflow-x-hidden">
         {/* Battle notification banner */}
         {showBattleBanner && (
           <div className="w-full shrink-0 px-4 pt-2">
@@ -742,7 +742,7 @@ export function LabDashboard({
           </div>
         )}
         {/* NAME + DAY — above the creature (desktop) */}
-        <div className="hidden shrink-0 flex-col items-center gap-0.5 pt-4 md:flex">
+        <div className="hidden shrink-0 flex-col items-center gap-1 pt-5 pb-1 md:flex">
           <div className="flex items-center gap-2">
             <EditableCreatureName
               creatureId={creature.id}
@@ -770,7 +770,7 @@ export function LabDashboard({
         </div>
 
         {/* CREATURE IN LAB CHAMBER — centered */}
-        <div className="relative flex flex-1 items-center justify-center px-2 -mt-2 md:-mt-4">
+        <div className="relative flex flex-1 items-center justify-center px-2">
           <div className="relative">
             {/* Mobile chamber */}
             <div className="md:hidden">
@@ -783,8 +783,8 @@ export function LabDashboard({
             {/* Desktop chamber */}
             <div className="hidden md:block">
               <LabChamber
-                width={Math.min(460, typeof window !== 'undefined' ? window.innerHeight - 260 : 460)}
-                height={Math.min(520, typeof window !== 'undefined' ? window.innerHeight - 180 : 520)}
+                width={Math.min(420, typeof window !== 'undefined' ? window.innerHeight - 320 : 420)}
+                height={Math.min(480, typeof window !== 'undefined' ? window.innerHeight - 240 : 480)}
                 mutating={mutationActive}
                 glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`}
                 stability={stability}
@@ -814,7 +814,7 @@ export function LabDashboard({
         </div>
 
         {/* BELOW CREATURE — countdown / progress / button */}
-        <div className="shrink-0 w-full px-4 pb-2 pt-0">
+        <div className="shrink-0 w-full px-4 pb-4 pt-2">
           <div className="flex flex-col items-center gap-2">
             {/* Mutation progress bar + phase */}
             {mutationActive && (
