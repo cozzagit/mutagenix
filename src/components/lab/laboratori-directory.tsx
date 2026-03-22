@@ -149,7 +149,7 @@ function CreatureCard({
       <div className="flex items-center justify-center py-2">
         <CreatureRenderer
           params={visualParams}
-          size={120}
+          size={160}
           animated={false}
           seed={42}
         />
@@ -293,7 +293,7 @@ function CreatureDetailDrawer({
           <div className="flex justify-center">
             <CreatureRenderer
               params={visualParams}
-              size={200}
+              size={280}
               animated
               seed={42}
             />

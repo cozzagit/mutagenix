@@ -37,7 +37,7 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
       {/* Creature + name */}
       <div className="flex items-center gap-2.5 mb-2">
         <div className="shrink-0">
-          <CreatureRenderer params={vp} size={60} animated={false} seed={42} />
+          <CreatureRenderer params={vp} size={90} animated={false} seed={42} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-foreground truncate">{opponent.name}</p>

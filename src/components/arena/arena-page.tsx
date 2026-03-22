@@ -102,15 +102,15 @@ function BattleResultModal({
         {/* Creatures side by side */}
         <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
           <div className="text-center">
-            <CreatureRenderer params={wVp} size={80} animated />
-            <p className="text-[10px] md:text-xs text-muted mt-1 truncate max-w-[80px] md:max-w-[100px]">{warrior.name}</p>
+            <CreatureRenderer params={wVp} size={120} animated />
+            <p className="text-[10px] md:text-xs text-muted mt-1 truncate max-w-[100px] md:max-w-[120px]">{warrior.name}</p>
           </div>
           <span className="text-base md:text-lg font-black text-muted">VS</span>
           <div className="text-center">
             <div style={{ transform: "scaleX(-1)" }}>
-              <CreatureRenderer params={oVp} size={80} animated />
+              <CreatureRenderer params={oVp} size={120} animated />
             </div>
-            <p className="text-[10px] md:text-xs text-muted mt-1 truncate max-w-[80px] md:max-w-[100px]">{opponentName}</p>
+            <p className="text-[10px] md:text-xs text-muted mt-1 truncate max-w-[100px] md:max-w-[120px]">{opponentName}</p>
           </div>
         </div>
 

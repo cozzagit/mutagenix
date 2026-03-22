@@ -105,7 +105,7 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-surface/80 px-3 py-2">
         <div className="shrink-0">
-          <CreatureRenderer params={vp} size={48} animated={false} />
+          <CreatureRenderer params={vp} size={64} animated={false} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
       {/* Header: creature + name */}
       <div className="flex items-start gap-3">
         <div className="shrink-0">
-          <CreatureRenderer params={vp} size={80} animated />
+          <CreatureRenderer params={vp} size={120} animated />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-bold text-foreground truncate">{warrior.name}</h3>

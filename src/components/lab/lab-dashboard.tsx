@@ -745,17 +745,17 @@ export function LabDashboard({
           <div className="relative">
             {/* Mobile chamber */}
             <div className="md:hidden">
-              <LabChamber width={220} height={280} mutating={mutationActive} glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`} stability={stability} dayNumber={ageDays}>
+              <LabChamber width={260} height={320} mutating={mutationActive} glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`} stability={stability} dayNumber={ageDays}>
                 <div style={mutationActive ? { animation: 'mutation-morph 2s ease-in-out infinite' } : { animation: 'breathe 4s ease-in-out infinite' }}>
-                  <CreatureRenderer params={visualParams} size={200} animated seed={42} />
+                  <CreatureRenderer params={visualParams} size={240} animated seed={42} />
                 </div>
               </LabChamber>
             </div>
             {/* Desktop chamber */}
             <div className="hidden md:block">
               <LabChamber
-                width={Math.min(380, typeof window !== 'undefined' ? window.innerHeight - 300 : 380)}
-                height={Math.min(440, typeof window !== 'undefined' ? window.innerHeight - 220 : 440)}
+                width={Math.min(460, typeof window !== 'undefined' ? window.innerHeight - 260 : 460)}
+                height={Math.min(520, typeof window !== 'undefined' ? window.innerHeight - 180 : 520)}
                 mutating={mutationActive}
                 glowColor={`hsl(${visualParams.glowHue ?? 210}, 70%, 55%)`}
                 stability={stability}
@@ -765,7 +765,7 @@ export function LabDashboard({
                   style={mutationActive ? { animation: 'mutation-morph 2s ease-in-out infinite' } : { animation: 'breathe 4s ease-in-out infinite' }}
                   className="[&>svg]:h-auto [&>svg]:w-full"
                 >
-                  <CreatureRenderer params={visualParams} size={380} animated seed={42} />
+                  <CreatureRenderer params={visualParams} size={460} animated seed={42} />
                 </div>
               </LabChamber>
             </div>

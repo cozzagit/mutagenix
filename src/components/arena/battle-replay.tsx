@@ -292,7 +292,7 @@ export function BattleReplay({ battle }: { battle: BattleReplayData }) {
           {/* Challenger */}
           <div className="flex-1 text-center relative">
             <div className="relative inline-block">
-              <CreatureRenderer params={challengerVp} size={120} animated />
+              <CreatureRenderer params={challengerVp} size={160} animated />
               <FlashOverlay type={challengerFlash ?? ""} visible={!!challengerFlash} />
             </div>
             <p className="text-sm font-bold text-foreground mt-1 truncate">{battle.challenger.name}</p>
@@ -307,7 +307,7 @@ export function BattleReplay({ battle }: { battle: BattleReplayData }) {
           {/* Defender */}
           <div className="flex-1 text-center relative">
             <div className="relative inline-block" style={{ transform: "scaleX(-1)" }}>
-              <CreatureRenderer params={defenderVp} size={120} animated />
+              <CreatureRenderer params={defenderVp} size={160} animated />
               <FlashOverlay type={defenderFlash ?? ""} visible={!!defenderFlash} />
             </div>
             <p className="text-sm font-bold text-foreground mt-1 truncate">{battle.defender.name}</p>
