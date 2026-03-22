@@ -7,6 +7,8 @@ import { ArenaPage } from '@/components/arena/arena-page';
 import { ArenaRegistration } from '@/components/arena/arena-registration';
 import { creatureToBattleCreature } from '@/lib/game-engine/battle-helpers';
 import { getRankTier } from '@/lib/game-engine/battle-engine';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,7 +122,7 @@ export default async function ArenaMainPage() {
     return (
       <ArenaRegistration
         creatureName={creature.name}
-        visualParams={creature.visualParams as Record<string, unknown>}
+        visualParams={mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>}
       />
     );
   }
@@ -184,7 +186,7 @@ export default async function ArenaMainPage() {
     },
     battlesToday,
     battlesRemaining: Math.max(0, 5 - battlesToday),
-    visualParams: creature.visualParams as Record<string, unknown>,
+    visualParams: mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,
   };
 
   // lastArenaVisit was already set to now() at the top of this function,
