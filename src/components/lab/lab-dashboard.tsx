@@ -151,7 +151,7 @@ export function LabDashboard({
   const [mutationPhase, setMutationPhase] = useState<string | null>(null);
   const [mutationComplete, setMutationComplete] = useState(false);
   const [tierCelebration, setTierCelebration] = useState<string | null>(null);
-  const prevTierRef = useRef(getLevelBadge(creature.ageDays ?? 0, ranking?.tier).label);
+  const prevDayRef = useRef(creature.ageDays ?? 0);
   const [dayKey, setDayKey] = useState(initialDayKey);
 
   // --- Phase ---
@@ -227,12 +227,19 @@ export function LabDashboard({
         if (d.ageDays !== undefined) {
           setDayKey(String(d.ageDays));
 
-          // Check for tier change
-          const newTierLabel = getLevelBadge(d.ageDays).label;
-          if (newTierLabel !== prevTierRef.current) {
-            const tierKey = d.ageDays >= 500 ? 'divine' : d.ageDays >= 300 ? 'immortal' : d.ageDays > 150 ? 'legend' : d.ageDays > 100 ? 'veteran' : d.ageDays > 60 ? 'intermediate' : d.ageDays >= 40 ? 'novice' : '';
-            if (tierKey) setTierCelebration(tierKey);
-            prevTierRef.current = newTierLabel;
+          // Check for tier change — only when day actually advances during mutation
+          const prevDay = prevDayRef.current;
+          const newDay = d.ageDays;
+          if (newDay > prevDay) {
+            const thresholds = [500, 300, 151, 101, 61, 40];
+            const tierKeys = ['divine', 'immortal', 'legend', 'veteran', 'intermediate', 'novice'];
+            for (let i = 0; i < thresholds.length; i++) {
+              if (newDay >= thresholds[i] && prevDay < thresholds[i]) {
+                setTierCelebration(tierKeys[i]);
+                break;
+              }
+            }
+            prevDayRef.current = newDay;
           }
         }
 
