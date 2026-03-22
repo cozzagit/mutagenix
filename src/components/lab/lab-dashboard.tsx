@@ -104,8 +104,8 @@ function getLevelBadge(ageDays: number, tier?: string): { label: string; color: 
   if (ageDays < GAME_CONFIG.WARRIOR_PHASE_START) {
     return { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' };
   }
-  // Use ranking tier if available, otherwise derive from age
-  const effectiveTier = tier ?? (ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice');
+  // Always derive tier from age (DB ranking tier may be stale)
+  const effectiveTier = ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice';
   if (effectiveTier === 'divine') return { label: 'Divinità', color: 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400', bg: 'bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15' };
   if (effectiveTier === 'immortal') return { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15' };
   if (effectiveTier === 'legend') return { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' };
