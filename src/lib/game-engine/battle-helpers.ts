@@ -117,6 +117,7 @@ export function creatureToBattleCreature(
   return {
     id: creature.id,
     name: creature.name,
+    ageDays: creature.ageDays ?? 0,
 
     // Body traits
     bodySize: traitValues.bodySize ?? 0,

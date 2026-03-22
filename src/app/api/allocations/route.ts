@@ -16,6 +16,7 @@ import {
   GAME_CONFIG,
   type ElementId,
 } from '@/lib/game-engine/constants';
+import { getRankTier } from '@/lib/game-engine/battle-engine';
 import {
   processDailyMutation,
   type CreatureInput,
@@ -86,12 +87,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (totalCredits > GAME_CONFIG.DAILY_CREDITS) {
-    return NextResponse.json(
-      { error: { code: 'VALIDATION_ERROR', message: `Massimo ${GAME_CONFIG.DAILY_CREDITS} crediti al giorno` } },
-      { status: 400 },
-    );
-  }
+  // Credit limit check is deferred until after creature is loaded (tier bonus)
 
   // Fetch creature and verify ownership
   let [creature] = await db
@@ -117,6 +113,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: { code: 'CONFLICT', message: 'Questa creatura e archiviata' } },
       { status: 409 },
+    );
+  }
+
+  // Tier-based credit bonus (Immortale +5, Divinità +10)
+  const creatureTier = getRankTier(creature.ageDays ?? 0);
+  const bonusCredits = creatureTier === 'divine'
+    ? GAME_CONFIG.DIVINE_CREDIT_BONUS
+    : creatureTier === 'immortal'
+      ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
+      : 0;
+  const maxCredits = GAME_CONFIG.DAILY_CREDITS + bonusCredits;
+
+  if (totalCredits > maxCredits) {
+    return NextResponse.json(
+      { error: { code: 'VALIDATION_ERROR', message: `Massimo ${maxCredits} crediti al giorno` } },
+      { status: 400 },
     );
   }
 

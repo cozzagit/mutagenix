@@ -19,7 +19,9 @@ const ADJACENT_TIERS: Record<RankTier, RankTier[]> = {
   novice: ['novice', 'intermediate'],
   intermediate: ['novice', 'intermediate', 'veteran'],
   veteran: ['intermediate', 'veteran', 'legend'],
-  legend: ['veteran', 'legend'],
+  legend: ['veteran', 'legend', 'immortal'],
+  immortal: ['legend', 'immortal', 'divine'],
+  divine: ['immortal', 'divine', 'legend'],
 };
 
 function roundToNearest10(value: number): number {

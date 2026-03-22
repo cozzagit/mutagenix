@@ -11,6 +11,7 @@ import type {
   BattleResult,
   RankTier,
 } from '@/types/battle';
+import { GAME_CONFIG } from './constants';
 
 // Re-export types for convenience
 export type { BattleCreature, RoundEvent, BattleResult } from '@/types/battle';
@@ -115,7 +116,7 @@ interface FighterState {
 }
 
 function initFighter(creature: BattleCreature): FighterState {
-  const maxHp = calculateMaxHp(creature);
+  let maxHp = calculateMaxHp(creature);
   const maxStamina = creature.stamina * 2 + 50;
 
   // Base effective stats
@@ -147,6 +148,24 @@ function initFighter(creature: BattleCreature): FighterState {
 
   // Sangue synergy: +10% effective stamina
   const staminaMultiplier = hasSynergy(creature, 'sangue') ? 1.10 : 1.0;
+
+  // Tier combat bonuses (Immortale +10%, Divinità +20%)
+  if (creature.ageDays !== undefined) {
+    const tier = getRankTier(creature.ageDays);
+    if (tier === 'divine') {
+      const bonus = 1 + GAME_CONFIG.DIVINE_COMBAT_BONUS;
+      maxHp *= bonus;
+      effectiveAtk *= bonus;
+      effectiveDef *= bonus;
+      effectiveSpd *= bonus;
+    } else if (tier === 'immortal') {
+      const bonus = 1 + GAME_CONFIG.IMMORTAL_COMBAT_BONUS;
+      maxHp *= bonus;
+      effectiveAtk *= bonus;
+      effectiveDef *= bonus;
+      effectiveSpd *= bonus;
+    }
+  }
 
   return {
     creature,
@@ -775,6 +794,8 @@ export function calculateEloChange(
 // ---------------------------------------------------------------------------
 
 export function getRankTier(ageDays: number): RankTier {
+  if (ageDays >= 500) return 'divine';
+  if (ageDays >= 300) return 'immortal';
   if (ageDays <= 60) return 'novice';
   if (ageDays <= 100) return 'intermediate';
   if (ageDays <= 150) return 'veteran';

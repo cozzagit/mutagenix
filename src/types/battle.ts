@@ -27,6 +27,8 @@ export interface BattleCreature {
   activeSynergies: string[];
   // Element levels (for synergy checks)
   elementLevels: Record<string, number>;
+  // Age in days (used for tier combat bonuses)
+  ageDays?: number;
 }
 
 /** A single event that occurred during a battle round. */
@@ -67,4 +69,4 @@ export interface BattleResult {
 export type BattleType = 'ranked' | 'direct' | 'tournament';
 
 /** Rank tiers based on creature age. */
-export type RankTier = 'novice' | 'intermediate' | 'veteran' | 'legend';
+export type RankTier = 'novice' | 'intermediate' | 'veteran' | 'legend' | 'immortal' | 'divine';

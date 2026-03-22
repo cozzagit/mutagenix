@@ -7,6 +7,7 @@ import { CreatureRenderer } from '@/components/creature/creature-renderer';
 import type { VisualParams } from '@/lib/game-engine/visual-mapper';
 import { DEFAULT_VISUAL_PARAMS } from '@/components/creature/creature-renderer';
 import { ELEMENTS, SYNERGIES, COMBAT_TRAITS, GAME_CONFIG, type ElementId } from '@/lib/game-engine/constants';
+import { getRankTier } from '@/lib/game-engine/battle-engine';
 import { StatsBar } from './stats-bar';
 import { AllocationPanel } from './allocation-panel';
 import { ELEMENT_COLORS } from './element-levels-display';
@@ -14,6 +15,7 @@ import { LabChamber } from '@/components/creature/lab-chamber';
 import { PersonalityRadar } from './personality-radar';
 import { EditableCreatureName } from './editable-creature-name';
 import { InstallButton } from '@/components/pwa/install-button';
+import { TierCelebration } from './tier-celebration';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -103,7 +105,9 @@ function getLevelBadge(ageDays: number, tier?: string): { label: string; color: 
     return { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' };
   }
   // Use ranking tier if available, otherwise derive from age
-  const effectiveTier = tier ?? (ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice');
+  const effectiveTier = tier ?? (ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice');
+  if (effectiveTier === 'divine') return { label: 'Divinità', color: 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400', bg: 'bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15' };
+  if (effectiveTier === 'immortal') return { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15' };
   if (effectiveTier === 'legend') return { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' };
   if (effectiveTier === 'veteran') return { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15' };
   if (effectiveTier === 'intermediate') return { label: 'Intermedio', color: 'text-primary', bg: 'bg-primary/15' };
@@ -146,6 +150,8 @@ export function LabDashboard({
   const [cooldown, setCooldown] = useState(initialCooldown);
   const [mutationPhase, setMutationPhase] = useState<string | null>(null);
   const [mutationComplete, setMutationComplete] = useState(false);
+  const [tierCelebration, setTierCelebration] = useState<string | null>(null);
+  const prevTierRef = useRef(getLevelBadge(creature.ageDays ?? 0, ranking?.tier).label);
   const [dayKey, setDayKey] = useState(initialDayKey);
 
   // --- Phase ---
@@ -220,6 +226,14 @@ export function LabDashboard({
 
         if (d.ageDays !== undefined) {
           setDayKey(String(d.ageDays));
+
+          // Check for tier change
+          const newTierLabel = getLevelBadge(d.ageDays).label;
+          if (newTierLabel !== prevTierRef.current) {
+            const tierKey = d.ageDays >= 500 ? 'divine' : d.ageDays >= 300 ? 'immortal' : d.ageDays > 150 ? 'legend' : d.ageDays > 100 ? 'veteran' : d.ageDays > 60 ? 'intermediate' : d.ageDays >= 40 ? 'novice' : '';
+            if (tierKey) setTierCelebration(tierKey);
+            prevTierRef.current = newTierLabel;
+          }
         }
 
         if (!d.mutationActive) {
@@ -303,6 +317,14 @@ export function LabDashboard({
   const stability = creature.stability ?? 0.5;
   const activeSynergies = getActiveSynergies(elementLevels);
   const progressPercent = Math.round(mutationProgress * 100);
+
+  // --- Tier bonus credits ---
+  const creatureTier = getRankTier(ageDays);
+  const bonusCredits = creatureTier === 'divine'
+    ? GAME_CONFIG.DIVINE_CREDIT_BONUS
+    : creatureTier === 'immortal'
+      ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
+      : 0;
 
   // --- Warrior phase detection ---
   const isWarrior = ageDays >= GAME_CONFIG.WARRIOR_PHASE_START;
@@ -914,7 +936,13 @@ export function LabDashboard({
         onAllocated={handleAllocated}
         open={panelOpen}
         onClose={() => setPanelOpen(false)}
+        bonusCredits={bonusCredits}
       />
+
+      {/* Tier celebration overlay */}
+      {tierCelebration && (
+        <TierCelebration tier={tierCelebration} onClose={() => setTierCelebration(null)} />
+      )}
     </div>
   );
 }

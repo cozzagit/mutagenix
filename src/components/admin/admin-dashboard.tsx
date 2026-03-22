@@ -141,6 +141,8 @@ const TIER_LABELS: Record<string, string> = {
   intermediate: 'Intermedio',
   veteran: 'Veterano',
   legend: 'Leggenda',
+  immortal: 'Immortale',
+  divine: 'Divinità',
 };
 
 /** Extract the active creature for a user (first non-archived), or null. */
@@ -233,19 +235,23 @@ function UserGridCard({
 
   // Level badge: based on age (not registration status)
   const ageDays = active?.ageDays ?? 0;
-  const tierFromAge = ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : ageDays >= 40 ? 'novice' : 'embryo';
+  const tierFromAge = ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : ageDays >= 40 ? 'novice' : 'embryo';
   const tierLabel = active?.ranking?.tier ?? tierFromAge;
   const levelBadge: { label: string; color: string; bg: string } = !active
     ? { label: 'Nessuno', color: 'text-muted', bg: 'bg-muted/10' }
     : tierLabel === 'embryo' || tierFromAge === 'embryo'
       ? { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' }
-      : tierLabel === 'legend'
-        ? { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' }
-        : tierLabel === 'veteran'
-          ? { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15' }
-          : tierLabel === 'intermediate'
-            ? { label: 'Intermedio', color: 'text-primary', bg: 'bg-primary/15' }
-            : { label: 'Novizio', color: 'text-muted', bg: 'bg-muted/15' };
+      : tierLabel === 'divine'
+        ? { label: 'Divinità', color: 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400', bg: 'bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15' }
+        : tierLabel === 'immortal'
+          ? { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15' }
+          : tierLabel === 'legend'
+            ? { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' }
+            : tierLabel === 'veteran'
+              ? { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15' }
+              : tierLabel === 'intermediate'
+                ? { label: 'Intermedio', color: 'text-primary', bg: 'bg-primary/15' }
+                : { label: 'Novizio', color: 'text-muted', bg: 'bg-muted/15' };
 
   const visualParams: VisualParams | null = active
     ? ({

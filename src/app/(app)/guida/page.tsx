@@ -320,10 +320,12 @@ export default function GuidaPage() {
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { name: 'Novizio', range: 'Giorno 40-60', color: '#8a8a8a', bg: '#8a8a8a' },
-                  { name: 'Intermedio', range: 'Giorno 61-100', color: '#4488ff', bg: '#4488ff' },
-                  { name: 'Veterano', range: 'Giorno 101-150', color: '#b26eff', bg: '#b26eff' },
-                  { name: 'Leggenda', range: 'Giorno 151+', color: '#ffd600', bg: '#ffd600' },
+                  { name: 'Novizio', range: 'Giorno 40-60', color: '#8a8a8a', bg: '#8a8a8a', desc: null },
+                  { name: 'Intermedio', range: 'Giorno 61-100', color: '#4488ff', bg: '#4488ff', desc: null },
+                  { name: 'Veterano', range: 'Giorno 101-150', color: '#b26eff', bg: '#b26eff', desc: null },
+                  { name: 'Leggenda', range: 'Giorno 151-299', color: '#ffd600', bg: '#ffd600', desc: null },
+                  { name: 'Immortale', range: 'Giorno 300-499', color: '#f87171', bg: '#f87171', desc: '+10% stats combattimento, +5 crediti bonus' },
+                  { name: 'Divinità', range: 'Giorno 500+', color: '#ec4899', bg: '#ec4899', desc: '+20% stats combattimento, +10 crediti bonus, immune al Trauma' },
                 ].map((tier) => (
                   <div
                     key={tier.name}
@@ -345,12 +347,15 @@ export default function GuidaPage() {
                         {tier.name}
                       </span>
                       <p className="text-[10px] text-muted">{tier.range}</p>
+                      {tier.desc && (
+                        <p className="text-[9px] text-muted/80 italic">{tier.desc}</p>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
               <p className="mt-3 text-[11px] italic text-muted">
-                Puoi sfidare avversari nella tua fascia o in quella adiacente.
+                Puoi sfidare avversari nella tua fascia o in quella adiacente. Le fasce elite (Immortale e Divinità) conferiscono vantaggi competitivi in battaglia.
               </p>
             </div>
           </div>

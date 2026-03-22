@@ -12,6 +12,7 @@ interface AllocationPanelProps {
   onAllocated: (recipe?: Record<string, number>) => void;
   open: boolean;
   onClose: () => void;
+  bonusCredits?: number;
 }
 
 interface MutationResult {
@@ -21,7 +22,8 @@ interface MutationResult {
   triggerDetails?: string;
 }
 
-const MAX_PER_VIAL = GAME_CONFIG.DAILY_CREDITS;
+// MAX_PER_VIAL is the maximum that can go into a single vial (equal to max total credits)
+const BASE_MAX_PER_VIAL = GAME_CONFIG.DAILY_CREDITS;
 
 export function AllocationPanel({
   creatureId,
@@ -29,6 +31,7 @@ export function AllocationPanel({
   onAllocated,
   open,
   onClose,
+  bonusCredits = 0,
 }: AllocationPanelProps) {
   const { toast } = useToast();
   const [credits, setCredits] = useState<Record<ElementId, number>>(() => {
@@ -40,8 +43,9 @@ export function AllocationPanel({
   const [activeVial, setActiveVial] = useState<ElementId | null>(null);
   const [glowingVial, setGlowingVial] = useState<ElementId | null>(null);
 
+  const maxCredits = GAME_CONFIG.DAILY_CREDITS + bonusCredits;
   const totalUsed = ELEMENTS.reduce((sum, el) => sum + credits[el], 0);
-  const remaining = GAME_CONFIG.DAILY_CREDITS - totalUsed;
+  const remaining = maxCredits - totalUsed;
 
   // Reset credits when panel opens
   useEffect(() => {
@@ -74,18 +78,18 @@ export function AllocationPanel({
       const rect = vialEl.getBoundingClientRect();
       const relativeY = rect.bottom - clientY;
       const ratio = Math.max(0, Math.min(1, relativeY / rect.height));
-      return Math.round(ratio * MAX_PER_VIAL);
+      return Math.round(ratio * maxCredits);
     },
-    [],
+    [maxCredits],
   );
 
   const clampCredit = useCallback(
     (el: ElementId, desired: number): number => {
       const otherUsed = totalUsed - credits[el];
-      const maxAllowed = GAME_CONFIG.DAILY_CREDITS - otherUsed;
-      return Math.max(0, Math.min(desired, maxAllowed, MAX_PER_VIAL));
+      const maxAllowed = maxCredits - otherUsed;
+      return Math.max(0, Math.min(desired, maxAllowed, maxCredits));
     },
-    [totalUsed, credits],
+    [totalUsed, credits, maxCredits],
   );
 
   const handlePointerDown = useCallback(
@@ -172,7 +176,7 @@ export function AllocationPanel({
 
   // ---- Render ----
 
-  const progressPercent = (totalUsed / GAME_CONFIG.DAILY_CREDITS) * 100;
+  const progressPercent = (totalUsed / maxCredits) * 100;
 
   return (
     <>
@@ -205,7 +209,10 @@ export function AllocationPanel({
                     remaining > 0 ? '0 0 8px #3d5afe66' : '0 0 8px #00e5a066',
                 }}
               >
-                {totalUsed}/{GAME_CONFIG.DAILY_CREDITS}
+                {totalUsed}/{maxCredits}
+                {bonusCredits > 0 && (
+                  <span className="text-[10px] text-accent ml-1">(+{bonusCredits} bonus)</span>
+                )}
               </span>
               <button
                 onClick={onClose}
@@ -248,7 +255,7 @@ export function AllocationPanel({
               const color = ELEMENT_COLORS[el];
               const shortName = ELEMENT_SHORT_NAMES[el];
               const allocated = credits[el];
-              const fillPercent = (allocated / MAX_PER_VIAL) * 100;
+              const fillPercent = (allocated / maxCredits) * 100;
               const isActive = activeVial === el;
               const isGlowing = glowingVial === el;
               const isEmpty = allocated === 0 && remaining === 0 && totalUsed > 0;

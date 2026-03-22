@@ -8,6 +8,8 @@ const TIER_STYLES: Record<string, { label: string; color: string; bg: string }> 
   intermediate: { label: "Intermedio", color: "text-primary", bg: "bg-primary/20" },
   veteran: { label: "Veterano", color: "text-bio-purple", bg: "bg-bio-purple/20" },
   legend: { label: "Leggenda", color: "text-warning", bg: "bg-warning/20" },
+  immortal: { label: "Immortale", color: "text-red-400", bg: "bg-red-500/20" },
+  divine: { label: "Divinità", color: "text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400", bg: "bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15" },
 };
 
 const PERSONALITY_LABELS: Record<string, { label: string; color: string }> = {

@@ -30,7 +30,7 @@ export const creatureRankings = pgTable('creature_rankings', {
   recoveryUntil: timestamp('recovery_until', { withTimezone: true }),
   traumaActive: boolean('trauma_active').notNull().default(false),
   consecutiveLosses: integer('consecutive_losses').notNull().default(0),
-  rankTier: text('rank_tier').notNull().default('novice'), // novice, intermediate, veteran, legend
+  rankTier: text('rank_tier').notNull().default('novice'), // novice, intermediate, veteran, legend, immortal, divine
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

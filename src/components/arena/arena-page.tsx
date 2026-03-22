@@ -416,6 +416,8 @@ function ClassificaTab({ myCreatureId }: { myCreatureId: string }) {
             <option value="intermediate">Intermedio</option>
             <option value="veteran">Veterano</option>
             <option value="legend">Leggenda</option>
+            <option value="immortal">Immortale</option>
+            <option value="divine">Divinità</option>
           </select>
         </div>
         {myPosition && (

@@ -20,7 +20,7 @@ export interface LaboratoriCreature {
   ageDays: number;
   generation: number;
   stability: number;
-  level: string; // 'embryo' | 'novice' | 'intermediate' | 'veteran' | 'legend'
+  level: string; // 'embryo' | 'novice' | 'intermediate' | 'veteran' | 'legend' | 'immortal' | 'divine'
   potenza: number;
   visualParams: Record<string, unknown>;
   elementLevels: Record<string, number>;
@@ -52,6 +52,8 @@ const LEVEL_BADGES: Record<string, { label: string; color: string; bg: string; d
   intermediate: { label: 'Intermedio', color: 'text-primary', bg: 'bg-primary/15', dot: '#3d5afe' },
   veteran: { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15', dot: '#b26eff' },
   legend: { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15', dot: '#fbbf24' },
+  immortal: { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15', dot: '#f87171' },
+  divine: { label: 'Divinità', color: 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400', bg: 'bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15', dot: '#ec4899' },
 };
 
 function getPotenzaTier(potenza: number): { color: string; glow: string; textColor: string } {
@@ -112,6 +114,8 @@ const TIER_LABELS: Record<string, string> = {
   intermediate: 'Intermedio',
   veteran: 'Veterano',
   legend: 'Leggenda',
+  immortal: 'Immortale',
+  divine: 'Divinità',
 };
 
 // ---------------------------------------------------------------------------

@@ -154,6 +154,18 @@ export const GAME_CONFIG = {
   WARRIOR_PHASE_FULL: 80,
   /** Trait value above which physical growth slows dramatically */
   GROWTH_CAP_THRESHOLD: 80,
+  /** Day when Immortale tier starts */
+  IMMORTAL_TIER_START: 300,
+  /** Day when Divinità tier starts */
+  DIVINE_TIER_START: 500,
+  /** Bonus credits per injection for Immortale tier */
+  IMMORTAL_CREDIT_BONUS: 5,
+  /** Bonus credits per injection for Divinità tier */
+  DIVINE_CREDIT_BONUS: 10,
+  /** Combat stat multiplier for Immortale tier */
+  IMMORTAL_COMBAT_BONUS: 0.10,
+  /** Combat stat multiplier for Divinità tier */
+  DIVINE_COMBAT_BONUS: 0.20,
 } as const;
 
 // ---------------------------------------------------------------------------

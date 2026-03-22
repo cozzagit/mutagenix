@@ -26,7 +26,9 @@ const ADJACENT_TIERS: Record<RankTier, RankTier[]> = {
   novice: ['novice', 'intermediate'],
   intermediate: ['novice', 'intermediate', 'veteran'],
   veteran: ['intermediate', 'veteran', 'legend'],
-  legend: ['veteran', 'legend'],
+  legend: ['veteran', 'legend', 'immortal'],
+  immortal: ['legend', 'immortal', 'divine'],
+  divine: ['immortal', 'divine', 'legend'],
 };
 
 export async function POST(request: NextRequest) {
@@ -299,7 +301,10 @@ export async function POST(request: NextRequest) {
   const challengerNewConsecutiveLosses = challengerWon || isDraw
     ? 0
     : challengerRanking.consecutiveLosses + 1;
-  const challengerTraumaActive = challengerNewConsecutiveLosses >= 5;
+  // Divinità tier is immune to Trauma
+  const challengerTraumaActive = challengerTier === 'divine'
+    ? false
+    : challengerNewConsecutiveLosses >= 5;
   const challengerNewWinStreak = challengerWon
     ? challengerRanking.winStreak + 1
     : 0;
@@ -329,7 +334,10 @@ export async function POST(request: NextRequest) {
   const defenderNewConsecutiveLosses = defenderWon || isDraw
     ? 0
     : defenderRanking.consecutiveLosses + 1;
-  const defenderTraumaActive = defenderNewConsecutiveLosses >= 5;
+  // Divinità tier is immune to Trauma
+  const defenderTraumaActive = defenderTier === 'divine'
+    ? false
+    : defenderNewConsecutiveLosses >= 5;
   const defenderNewWinStreak = defenderWon
     ? defenderRanking.winStreak + 1
     : 0;
