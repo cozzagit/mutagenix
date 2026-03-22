@@ -175,7 +175,7 @@ function CreatureCard({
 
       {/* Owner */}
       <p className="truncate text-center text-[11px] text-muted">
-        Dr. {creature.ownerName}
+        {creature.ownerName}
       </p>
 
       {/* Day + Level badge */}
@@ -264,7 +264,7 @@ function CreatureDetailDrawer({
               {creature.name}
             </h2>
             <p className="text-[10px] text-muted">
-              Dr. {creature.ownerName} &middot; Day {creature.ageDays}
+              {creature.ownerName} &middot; Day {creature.ageDays}
             </p>
           </div>
           <button
