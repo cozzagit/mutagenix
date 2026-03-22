@@ -4,10 +4,12 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { WarriorCard, TierBadge, type WarriorData } from "./warrior-card";
 import { OpponentCard, type OpponentData } from "./opponent-card";
+import { BattleSuspense } from "./battle-suspense";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { CreatureRenderer, DEFAULT_VISUAL_PARAMS } from "@/components/creature/creature-renderer";
 import type { VisualParams } from "@/lib/game-engine/visual-mapper";
+import type { RoundEvent } from "@/types/battle";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -53,6 +55,7 @@ interface ChallengeResult {
     challenger: { before: number; after: number; delta: number };
     defender: { before: number; after: number; delta: number };
   };
+  events: RoundEvent[];
   mvpAction: string;
 }
 
@@ -192,6 +195,11 @@ function SfidaTab({ warrior }: { warrior: WarriorData }) {
   const [loading, setLoading] = useState(true);
   const [challengeTarget, setChallengeTarget] = useState<{ id: string; name: string } | null>(null);
   const [challenging, setChallenging] = useState(false);
+  const [battleSuspense, setBattleSuspense] = useState<{
+    result: ChallengeResult;
+    opponentName: string;
+    opponentVp: Record<string, unknown>;
+  } | null>(null);
   const [battleResult, setBattleResult] = useState<{
     result: ChallengeResult;
     opponentName: string;
@@ -239,7 +247,7 @@ function SfidaTab({ warrior }: { warrior: WarriorData }) {
         return;
       }
       const opp = opponents.find((o) => o.creatureId === challengeTarget.id);
-      setBattleResult({
+      setBattleSuspense({
         result: json.data,
         opponentName: challengeTarget.name,
         opponentVp: opp?.visualParams ?? {},
@@ -307,6 +315,26 @@ function SfidaTab({ warrior }: { warrior: WarriorData }) {
           onConfirm={executeChallenge}
           onCancel={() => setChallengeTarget(null)}
           loading={challenging}
+        />
+      )}
+
+      {/* Battle suspense animation */}
+      {battleSuspense && (
+        <BattleSuspense
+          challengerName={warrior.name}
+          defenderName={battleSuspense.opponentName}
+          challengerVisualParams={warrior.visualParams}
+          defenderVisualParams={battleSuspense.opponentVp}
+          challengerCreatureId={warrior.creatureId}
+          events={battleSuspense.result.events}
+          totalRounds={battleSuspense.result.rounds}
+          result={battleSuspense.result.result}
+          eloDelta={battleSuspense.result.eloChanges.challenger.delta}
+          battleId={battleSuspense.result.battleId}
+          onComplete={() => {
+            setBattleResult(battleSuspense);
+            setBattleSuspense(null);
+          }}
         />
       )}
 

@@ -378,6 +378,7 @@ export async function POST(request: NextRequest) {
           delta: defenderEloDelta,
         },
       },
+      events: battleResult.events,
       mvpAction: battleResult.mvpAction,
       consequences: isDraw
         ? null
