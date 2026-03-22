@@ -6,6 +6,8 @@ import {
 import { db } from '@/lib/db';
 import { battles, creatures } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 export async function GET(
   _request: NextRequest,
@@ -50,16 +52,26 @@ export async function GET(
     );
   }
 
-  // Fetch creature names and visual params
-  const [challengerCreature] = await db
-    .select({ name: creatures.name, visualParams: creatures.visualParams })
+  // Fetch creature data and recalculate visual params
+  const [challengerRaw] = await db
+    .select({ name: creatures.name, traitValues: creatures.traitValues, elementLevels: creatures.elementLevels })
     .from(creatures)
     .where(eq(creatures.id, battle.challengerCreatureId));
 
-  const [defenderCreature] = await db
-    .select({ name: creatures.name, visualParams: creatures.visualParams })
+  const [defenderRaw] = await db
+    .select({ name: creatures.name, traitValues: creatures.traitValues, elementLevels: creatures.elementLevels })
     .from(creatures)
     .where(eq(creatures.id, battle.defenderCreatureId));
+
+  const challengerCreature = challengerRaw ? {
+    name: challengerRaw.name,
+    visualParams: mapTraitsToVisuals(challengerRaw.traitValues as TraitValues, challengerRaw.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,
+  } : null;
+
+  const defenderCreature = defenderRaw ? {
+    name: defenderRaw.name,
+    visualParams: mapTraitsToVisuals(defenderRaw.traitValues as TraitValues, defenderRaw.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,
+  } : null;
 
   const isDraw = battle.winnerCreatureId === null;
   const viewerIsChallenger = battle.challengerUserId === session.userId;

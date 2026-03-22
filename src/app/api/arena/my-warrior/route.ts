@@ -8,6 +8,8 @@ import { creatures, creatureRankings } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getRankTier } from '@/lib/game-engine/battle-engine';
 import { creatureToBattleCreature } from '@/lib/game-engine/battle-helpers';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 type PersonalityTrait = 'aggression' | 'luminosity' | 'toxicity' | 'intelligence' | 'armoring';
 
@@ -164,7 +166,11 @@ export async function GET() {
       },
       battlesToday,
       battlesRemaining: Math.max(0, 5 - battlesToday),
-      visualParams: creature.visualParams,
+      visualParams: mapTraitsToVisuals(
+        creature.traitValues as TraitValues,
+        creature.elementLevels as ElementLevels,
+        [],
+      ) as unknown as Record<string, unknown>,
     },
   });
 }

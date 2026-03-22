@@ -11,6 +11,8 @@ import {
 import { users } from '@/lib/db/schema/users';
 import { eq, and, ne, or, isNull, desc, sql } from 'drizzle-orm';
 import { getRankTier } from '@/lib/game-engine/battle-engine';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 import type { RankTier } from '@/types/battle';
 
 const ADJACENT_TIERS: Record<RankTier, RankTier[]> = {
@@ -116,7 +118,11 @@ export async function GET() {
         ((tv.armoring ?? 0)) * 50 +
         (tv.battleScars ?? 0) * 2,
       ),
-      visualParams: o.creature.visualParams,
+      visualParams: mapTraitsToVisuals(
+        o.creature.traitValues as TraitValues,
+        o.creature.elementLevels as ElementLevels,
+        [],
+      ) as unknown as Record<string, unknown>,
     };
   });
 
