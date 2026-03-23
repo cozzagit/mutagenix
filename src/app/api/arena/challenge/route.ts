@@ -41,7 +41,7 @@ const ADJACENT_TIERS: Record<RankTier, RankTier[]> = {
   veteran: ['intermediate', 'veteran', 'legend'],
   legend: ['veteran', 'legend', 'immortal'],
   immortal: ['legend', 'immortal', 'divine'],
-  divine: ['immortal', 'divine', 'legend'],
+  divine: ['immortal', 'divine'],
 };
 
 export async function POST(request: NextRequest) {
