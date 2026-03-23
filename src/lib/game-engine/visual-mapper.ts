@@ -668,8 +668,8 @@ export function mapTraitsToVisuals(
   const mouthT = t('mouthSize');
 
   // Mouth size depends on trait + personality
-  let mouthWidth = lerp(0, 30, mouthT);
-  let mouthHeight = lerp(0, 15, mouthT);
+  let mouthWidth = lerp(0, 40, mouthT);
+  let mouthHeight = lerp(0, 20, mouthT);
 
   // Personality modifies mouth
   if (aggressionLevel > 0.3) {
@@ -682,7 +682,7 @@ export function mapTraitsToVisuals(
 
   // Teeth based on mouth + elements
   let teethCount = mouthT > 0.2 ? Math.round(lerp(2, 12, mouthT)) : 0;
-  let teethLength = lerp(0, 15, mouthT);
+  let teethLength = lerp(0, 22, mouthT);
   let teethStyle = 0.5; // default pointed
 
   // Fe/Ca dominant: FANGS — long, sharp
