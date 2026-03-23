@@ -84,11 +84,12 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
+  const injectOnly = request.nextUrl.searchParams.get('inject-only') === 'true';
   const log: string[] = [];
   const battleResults: BattleResultSummary[] = [];
   const injectionResults: InjectionSummary[] = [];
 
-  log.push(`[BOT CRON] Avvio ciclo bot — ${now.toISOString()}`);
+  log.push(`[BOT CRON] Avvio ciclo bot${injectOnly ? ' (solo iniezioni)' : ''} — ${now.toISOString()}`);
 
   // =========================================================================
   // 1. Trova tutti gli utenti bot (@mutagenix.io)
@@ -184,8 +185,9 @@ export async function GET(request: NextRequest) {
   }
 
   // =========================================================================
-  // 5. Per ogni bot, decidi se combatte e contro chi
+  // 5. Per ogni bot, decidi se combatte e contro chi (skip if inject-only)
   // =========================================================================
+  if (!injectOnly) {
   // Set per tracciare creature che hanno gia' combattuto in questo ciclo
   const foughtThisCycle = new Set<string>();
 
@@ -308,6 +310,7 @@ export async function GET(request: NextRequest) {
       log.push(`[BOT CRON] ERRORE nella battaglia di ${bot.displayName}: ${errMsg}`);
     }
   }
+  } // end if (!injectOnly)
 
   // =========================================================================
   // 6. Iniezioni: ogni bot inietta la sua ricetta se possibile
