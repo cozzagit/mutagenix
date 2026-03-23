@@ -4,6 +4,8 @@ import { battles, creatures } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { redirect, notFound } from 'next/navigation';
 import { BattleReplay, type BattleReplayData } from '@/components/arena/battle-replay';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,22 +44,34 @@ export default async function BattleReplayPage({
     notFound();
   }
 
-  // Fetch creature data
-  const [challengerCreature] = await db
+  // Fetch creature data and recalculate visual params
+  const [challengerRaw] = await db
     .select({
       name: creatures.name,
-      visualParams: creatures.visualParams,
+      traitValues: creatures.traitValues,
+      elementLevels: creatures.elementLevels,
     })
     .from(creatures)
     .where(eq(creatures.id, battle.challengerCreatureId));
 
-  const [defenderCreature] = await db
+  const [defenderRaw] = await db
     .select({
       name: creatures.name,
-      visualParams: creatures.visualParams,
+      traitValues: creatures.traitValues,
+      elementLevels: creatures.elementLevels,
     })
     .from(creatures)
     .where(eq(creatures.id, battle.defenderCreatureId));
+
+  const challengerCreature = challengerRaw ? {
+    name: challengerRaw.name,
+    visualParams: mapTraitsToVisuals(challengerRaw.traitValues as TraitValues, challengerRaw.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,
+  } : null;
+
+  const defenderCreature = defenderRaw ? {
+    name: defenderRaw.name,
+    visualParams: mapTraitsToVisuals(defenderRaw.traitValues as TraitValues, defenderRaw.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,
+  } : null;
 
   // Determine result from viewer's perspective
   const viewerIsChallenger = battle.challengerUserId === session.userId;
