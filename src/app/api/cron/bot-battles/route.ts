@@ -325,6 +325,11 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
+    // Random skip: 50% chance di iniettare (diversifica crescita tra i bot)
+    if (Math.random() > 0.5) {
+      continue; // skip silenziosamente
+    }
+
     // Auto-finalize mutazioni scadute
     let creature = await finalizeIfExpired(botCreature);
 
