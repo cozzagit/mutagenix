@@ -144,5 +144,8 @@ export function creatureToBattleCreature(
 
     // Element levels (as plain record for battle engine)
     elementLevels: { ...elementLevels },
+
+    // Arena Experience Points
+    axp: _ranking?.axp ?? 0,
   };
 }

@@ -54,6 +54,18 @@ export interface WarriorData {
   battlesToday: number;
   battlesRemaining: number;
   visualParams: Record<string, unknown>;
+  axp: number;
+}
+
+const AXP_TIERS: { min: number; label: string; color: string }[] = [
+  { min: 200, label: 'Maestro', color: 'text-amber-400' },
+  { min: 100, label: 'Veterano', color: 'text-bio-purple' },
+  { min: 50, label: 'Esperto', color: 'text-primary' },
+  { min: 0, label: 'Recluta', color: 'text-muted' },
+];
+
+function getAxpTier(axp: number): { label: string; color: string } {
+  return AXP_TIERS.find((t) => axp >= t.min) ?? AXP_TIERS[AXP_TIERS.length - 1];
 }
 
 interface WarriorCardProps {
@@ -118,6 +130,9 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
             <span className="font-mono" style={{ textShadow: `0 0 8px ${tierStyle.color === 'text-warning' ? '#ff9100' : tierStyle.color === 'text-bio-purple' ? '#b26eff' : tierStyle.color === 'text-primary' ? '#3d5afe' : '#6b6d7b'}44` }}>
               ELO {warrior.eloRating}
             </span>
+            <span className={`font-mono ${getAxpTier(warrior.axp).color}`}>
+              AXP {warrior.axp}
+            </span>
             <span>{warrior.wins}V {warrior.losses}S {warrior.draws}P</span>
             {warrior.recovery.active && <span className="text-warning">IN RECUPERO</span>}
           </div>
@@ -140,9 +155,12 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
             <span className={`text-xs font-mono ${tierStyle.color}`} style={{ textShadow: `0 0 8px currentColor` }}>
               ELO {warrior.eloRating}
             </span>
+            <span className={`text-xs font-mono ${getAxpTier(warrior.axp).color}`}>
+              AXP {warrior.axp}
+            </span>
           </div>
           <p className="text-[10px] text-muted mt-1">
-            Giorno {warrior.ageDays ?? 0} · Picco ELO {warrior.eloPeak}
+            Giorno {warrior.ageDays ?? 0} · Picco ELO {warrior.eloPeak} · {getAxpTier(warrior.axp).label}
           </p>
         </div>
       </div>

@@ -21,7 +21,15 @@ export interface OpponentData {
   stamina: number;
   hp: number;
   visualParams: Record<string, unknown>;
+  axpTier: string; // Recluta, Esperto, Veterano, Maestro
 }
+
+const AXP_TIER_COLORS: Record<string, string> = {
+  Recluta: 'text-muted',
+  Esperto: 'text-primary',
+  Veterano: 'text-bio-purple',
+  Maestro: 'text-amber-400',
+};
 
 interface OpponentCardProps {
   opponent: OpponentData;
@@ -46,6 +54,9 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
             <TierBadge tier={opponent.tier} />
             <span className="text-[10px] font-mono text-muted">
               ELO {opponent.eloRating}
+            </span>
+            <span className={`text-[9px] font-bold ${AXP_TIER_COLORS[opponent.axpTier] ?? 'text-muted'}`}>
+              {opponent.axpTier}
             </span>
           </div>
         </div>

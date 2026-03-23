@@ -167,6 +167,22 @@ function initFighter(creature: BattleCreature): FighterState {
     }
   }
 
+  // AXP combat bonus
+  const axp = creature.axp ?? 0;
+  const axpBonus = axp >= 200 ? 0.15 : axp >= 100 ? 0.10 : axp >= 50 ? 0.05 : 0;
+
+  // Late entry penalty: ageDays > 100, axp < 50 (less than ~10 battles)
+  const ageDays = creature.ageDays ?? 0;
+  const lateEntryPenalty = (ageDays > 100 && axp < 50) ? -0.15 : 0;
+
+  const axpMultiplier = 1 + axpBonus + lateEntryPenalty;
+  if (axpMultiplier !== 1) {
+    maxHp *= axpMultiplier;
+    effectiveAtk *= axpMultiplier;
+    effectiveDef *= axpMultiplier;
+    effectiveSpd *= axpMultiplier;
+  }
+
   return {
     creature,
     hp: maxHp,

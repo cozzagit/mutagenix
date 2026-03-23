@@ -21,6 +21,19 @@ import {
 import { TIME_CONFIG } from '@/lib/game-engine/time-config';
 import type { RankTier } from '@/types/battle';
 
+// ---------------------------------------------------------------------------
+// AXP helpers
+// ---------------------------------------------------------------------------
+
+/** Calculate how much AXP a creature should lose due to inactivity. */
+function calculateAxpDecay(lastBattleAt: Date | null, currentAxp: number): number {
+  if (!lastBattleAt || currentAxp <= 0) return 0;
+  const daysSince = (Date.now() - lastBattleAt.getTime()) / (1000 * 60 * 60 * 24);
+  if (daysSince <= 3) return 0;
+  const decayDays = Math.floor(daysSince - 3);
+  return Math.min(currentAxp, decayDays * 2); // lose 2 per day, min 0
+}
+
 // Adjacent tier map: which tiers can fight each other
 const ADJACENT_TIERS: Record<RankTier, RankTier[]> = {
   novice: ['novice', 'intermediate'],
@@ -202,6 +215,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 8.5. Apply AXP decay before battle
+  const challengerAxpDecay = calculateAxpDecay(challengerRanking.lastBattleAt, challengerRanking.axp);
+  if (challengerAxpDecay > 0) {
+    challengerRanking = {
+      ...challengerRanking,
+      axp: challengerRanking.axp - challengerAxpDecay,
+    };
+    await db.update(creatureRankings)
+      .set({ axp: challengerRanking.axp })
+      .where(eq(creatureRankings.creatureId, challengerCreature.id));
+  }
+
+  const defenderAxpDecay = calculateAxpDecay(defenderRanking.lastBattleAt, defenderRanking.axp);
+  if (defenderAxpDecay > 0) {
+    defenderRanking = {
+      ...defenderRanking,
+      axp: defenderRanking.axp - defenderAxpDecay,
+    };
+    await db.update(creatureRankings)
+      .set({ axp: defenderRanking.axp })
+      .where(eq(creatureRankings.creatureId, defenderCreature.id));
+  }
+
   // 9. Run battle
   const challengerBattle = creatureToBattleCreature(challengerCreature, challengerRanking);
   const defenderBattle = creatureToBattleCreature(defenderCreature, defenderRanking);
@@ -300,6 +336,12 @@ export async function POST(request: NextRequest) {
       .where(eq(creatures.id, winnerId));
   }
 
+  // 12.5. Calculate AXP awards
+  const challengerAxpGain = isDraw ? 7 : challengerWon ? 10 : 5;
+  const defenderAxpGain = isDraw ? 7 : !challengerWon ? 10 : 5;
+  const challengerAxpAfter = challengerRanking.axp + challengerAxpGain;
+  const defenderAxpAfter = defenderRanking.axp + defenderAxpGain;
+
   // 13. Update rankings
   const recoveryHours = TIME_CONFIG.isDevMode ? 0.167 : 6; // 10 min dev, 6h prod
   const recoveryMs = recoveryHours * 60 * 60 * 1000;
@@ -331,6 +373,7 @@ export async function POST(request: NextRequest) {
       recoveryUntil: !challengerWon && !isDraw ? new Date(now.getTime() + recoveryMs) : null,
       consecutiveLosses: challengerNewConsecutiveLosses,
       traumaActive: challengerTraumaActive,
+      axp: challengerAxpAfter,
       rankTier: challengerTier,
       updatedAt: now,
     })
@@ -363,6 +406,7 @@ export async function POST(request: NextRequest) {
       recoveryUntil: !defenderWon && !isDraw ? new Date(now.getTime() + recoveryMs) : null,
       consecutiveLosses: defenderNewConsecutiveLosses,
       traumaActive: defenderTraumaActive,
+      axp: defenderAxpAfter,
       rankTier: defenderTier,
       updatedAt: now,
     })
@@ -391,6 +435,20 @@ export async function POST(request: NextRequest) {
           before: defenderRanking.eloRating,
           after: defenderEloAfter,
           delta: defenderEloDelta,
+        },
+      },
+      axpChanges: {
+        challenger: {
+          before: challengerRanking.axp,
+          after: challengerAxpAfter,
+          delta: challengerAxpGain,
+          decay: challengerAxpDecay,
+        },
+        defender: {
+          before: defenderRanking.axp,
+          after: defenderAxpAfter,
+          delta: defenderAxpGain,
+          decay: defenderAxpDecay,
         },
       },
       events: battleResult.events,

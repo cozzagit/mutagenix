@@ -127,6 +127,24 @@ export default async function ArenaMainPage() {
     );
   }
 
+  // Apply AXP decay on page load
+  const axpDecay = (() => {
+    if (!ranking.lastBattleAt || ranking.axp <= 0) return 0;
+    const daysSince = (Date.now() - ranking.lastBattleAt.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSince <= 3) return 0;
+    const decayDays = Math.floor(daysSince - 3);
+    return Math.min(ranking.axp, decayDays * 2);
+  })();
+
+  if (axpDecay > 0) {
+    const newAxp = ranking.axp - axpDecay;
+    await db.update(creatureRankings)
+      .set({ axp: newAxp })
+      .where(eq(creatureRankings.creatureId, creature.id));
+    // Update local reference for use below
+    (ranking as Record<string, unknown>).axp = newAxp;
+  }
+
   // Registered — build warrior data for the ArenaPage component
   const tier = getRankTier(ageDays);
   const battleCreature = creatureToBattleCreature(creature, ranking);
@@ -184,6 +202,7 @@ export default async function ArenaMainPage() {
       active: ranking.traumaActive,
       consecutiveLosses: ranking.consecutiveLosses,
     },
+    axp: ranking.axp,
     battlesToday,
     battlesRemaining: Math.max(0, 5 - battlesToday),
     visualParams: mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,

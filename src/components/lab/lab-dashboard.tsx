@@ -43,7 +43,7 @@ interface Props {
   isDevMode: boolean;
   cooldownRemaining?: number;
   unseenBattles?: number;
-  ranking?: { eloRating: number; wins: number; losses: number; draws: number; tier: string } | null;
+  ranking?: { eloRating: number; wins: number; losses: number; draws: number; tier: string; axp?: number } | null;
 }
 
 type Phase = 'idle' | 'allocating' | 'mutating' | 'waiting';
@@ -444,17 +444,28 @@ export function LabDashboard({
                 </span>
               </div>
 
-              {/* ELO + Record */}
+              {/* ELO + AXP + Record */}
               {ranking && (
-                <div className="flex items-center justify-center gap-3 mb-1">
-                  <span className="text-[11px] font-mono font-bold text-foreground" style={{ textShadow: '0 0 8px #ff3d3d33' }}>
-                    ELO {ranking.eloRating}
-                  </span>
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold">
-                    <span className="text-accent">{ranking.wins}V</span>
-                    <span className="text-danger">{ranking.losses}S</span>
-                    {ranking.draws > 0 && <span className="text-muted">{ranking.draws}P</span>}
+                <div className="flex flex-col items-center gap-0.5 mb-1">
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-[11px] font-mono font-bold text-foreground" style={{ textShadow: '0 0 8px #ff3d3d33' }}>
+                      ELO {ranking.eloRating}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                      <span className="text-accent">{ranking.wins}V</span>
+                      <span className="text-danger">{ranking.losses}S</span>
+                      {ranking.draws > 0 && <span className="text-muted">{ranking.draws}P</span>}
+                    </div>
                   </div>
+                  {(ranking.axp ?? 0) > 0 && (
+                    <span className={`text-[10px] font-mono font-semibold ${
+                      (ranking.axp ?? 0) >= 200 ? 'text-amber-400' :
+                      (ranking.axp ?? 0) >= 100 ? 'text-bio-purple' :
+                      (ranking.axp ?? 0) >= 50 ? 'text-primary' : 'text-muted'
+                    }`}>
+                      AXP {ranking.axp}
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -618,15 +629,26 @@ export function LabDashboard({
               </div>
 
               {ranking && (
-                <div className="flex items-center justify-center gap-3 mb-1">
-                  <span className="text-[11px] font-mono font-bold text-foreground" style={{ textShadow: '0 0 8px #ff3d3d33' }}>
-                    ELO {ranking.eloRating}
-                  </span>
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold">
-                    <span className="text-accent">{ranking.wins}V</span>
-                    <span className="text-danger">{ranking.losses}S</span>
-                    {ranking.draws > 0 && <span className="text-muted">{ranking.draws}P</span>}
+                <div className="flex flex-col items-center gap-0.5 mb-1">
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-[11px] font-mono font-bold text-foreground" style={{ textShadow: '0 0 8px #ff3d3d33' }}>
+                      ELO {ranking.eloRating}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                      <span className="text-accent">{ranking.wins}V</span>
+                      <span className="text-danger">{ranking.losses}S</span>
+                      {ranking.draws > 0 && <span className="text-muted">{ranking.draws}P</span>}
+                    </div>
                   </div>
+                  {(ranking.axp ?? 0) > 0 && (
+                    <span className={`text-[10px] font-mono font-semibold ${
+                      (ranking.axp ?? 0) >= 200 ? 'text-amber-400' :
+                      (ranking.axp ?? 0) >= 100 ? 'text-bio-purple' :
+                      (ranking.axp ?? 0) >= 50 ? 'text-primary' : 'text-muted'
+                    }`}>
+                      AXP {ranking.axp}
+                    </span>
+                  )}
                 </div>
               )}
 

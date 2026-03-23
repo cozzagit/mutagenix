@@ -11,6 +11,15 @@ import { creatureToBattleCreature } from '@/lib/game-engine/battle-helpers';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import type { TraitValues, ElementLevels } from '@/types/game';
 
+/** Calculate how much AXP a creature should lose due to inactivity. */
+function calculateAxpDecay(lastBattleAt: Date | null, currentAxp: number): number {
+  if (!lastBattleAt || currentAxp <= 0) return 0;
+  const daysSince = (Date.now() - lastBattleAt.getTime()) / (1000 * 60 * 60 * 24);
+  if (daysSince <= 3) return 0;
+  const decayDays = Math.floor(daysSince - 3);
+  return Math.min(currentAxp, decayDays * 2);
+}
+
 type PersonalityTrait = 'aggression' | 'luminosity' | 'toxicity' | 'intelligence' | 'armoring';
 
 function getDominantPersonality(levels: {
@@ -101,6 +110,18 @@ export async function GET() {
       .returning();
   }
 
+  // Apply AXP decay before returning
+  const axpDecay = calculateAxpDecay(ranking.lastBattleAt, ranking.axp);
+  if (axpDecay > 0) {
+    ranking = {
+      ...ranking,
+      axp: ranking.axp - axpDecay,
+    };
+    await db.update(creatureRankings)
+      .set({ axp: ranking.axp })
+      .where(eq(creatureRankings.creatureId, creature.id));
+  }
+
   // Calculate battle stats
   const battleCreature = creatureToBattleCreature(creature, ranking);
   const hp = calculateMaxHp(battleCreature);
@@ -164,6 +185,7 @@ export async function GET() {
         active: ranking.traumaActive,
         consecutiveLosses: ranking.consecutiveLosses,
       },
+      axp: ranking.axp,
       battlesToday,
       battlesRemaining: Math.max(0, 5 - battlesToday),
       visualParams: mapTraitsToVisuals(

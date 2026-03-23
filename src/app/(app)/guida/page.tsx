@@ -361,6 +361,91 @@ export default function GuidaPage() {
           </div>
         </GuideCard>
 
+        {/* Esperienza Arena (AXP) */}
+        <GuideCard title="Esperienza Arena (AXP)">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <p>
+              Combattere nell&apos;Arena fa guadagnare Punti Esperienza (<strong className="text-foreground">AXP</strong>):
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { result: 'Vittoria', axp: '+10 AXP', color: '#00e5a0' },
+                { result: 'Sconfitta', axp: '+5 AXP', color: '#ff3d3d' },
+                { result: 'Pareggio', axp: '+7 AXP', color: '#ff9100' },
+              ].map((item) => (
+                <div
+                  key={item.result}
+                  className="flex flex-col items-center gap-1 rounded-lg border border-border/20 bg-surface-2/40 px-3 py-2.5"
+                >
+                  <span className="text-xs font-semibold" style={{ color: item.color }}>
+                    {item.result}
+                  </span>
+                  <span className="text-[11px] font-bold text-foreground">{item.axp}</span>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">L&apos;AXP potenzia il tuo guerriero in battaglia:</p>
+              <div className="flex flex-col gap-2">
+                {[
+                  { range: '0-49 AXP', label: 'Recluta', desc: 'nessun bonus', color: '#8a8a8a' },
+                  { range: '50-99 AXP', label: 'Esperto', desc: '+5% stats combattimento', color: '#4488ff' },
+                  { range: '100-199 AXP', label: 'Veterano dell\'Arena', desc: '+10% stats combattimento', color: '#b26eff' },
+                  { range: '200+ AXP', label: 'Maestro d\'Armi', desc: '+15% stats combattimento', color: '#ffd600' },
+                ].map((tier) => (
+                  <div key={tier.label} className="flex items-center gap-3">
+                    <span
+                      className="h-1.5 w-8 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor: tier.color,
+                        boxShadow: `0 0 4px ${tier.color}44`,
+                      }}
+                    />
+                    <div className="min-w-0">
+                      <span className="text-xs font-semibold" style={{ color: tier.color }}>
+                        {tier.range} &mdash; {tier.label}
+                      </span>
+                      <span className="text-[11px] text-muted"> &mdash; {tier.desc}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #ff9100',
+                backgroundColor: 'rgba(255, 145, 0, 0.05)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold text-warning mb-1">Attenzione: decadimento AXP!</p>
+              <p>
+                Se non combatti per pi&ugrave; di 3 giorni, perdi <strong>2 AXP al giorno</strong> di inattivit&agrave;.
+                Un guerriero inattivo si arrugginisce!
+              </p>
+            </div>
+
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #ff3d3d',
+                backgroundColor: 'rgba(255, 61, 61, 0.05)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold text-danger mb-1">Penalit&agrave; ingresso tardivo</p>
+              <p>
+                I guerrieri che entrano in Arena dopo il <strong>Giorno 100</strong> senza esperienza
+                subiscono una penalit&agrave; del <strong>15%</strong> a tutti gli stats di combattimento
+                fino alle prime 10 battaglie. Crescere senza combattere ha un prezzo!
+              </p>
+            </div>
+          </div>
+        </GuideCard>
+
         {/* Conseguenze delle Battaglie */}
         <GuideCard title="Conseguenze delle Battaglie">
           <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">

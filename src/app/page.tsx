@@ -416,6 +416,10 @@ export default function LandingPage() {
                 desc: "Cicatrici permanenti, periodi di recupero, boost per i vincitori. Ogni sfida conta.",
               },
               {
+                title: "Esperienza Arena (AXP)",
+                desc: "Combatti per guadagnare AXP e potenziare il tuo guerriero. Chi non combatte arrugginisce.",
+              },
+              {
                 title: "Replay Round-by-Round",
                 desc: "Rivivi ogni battaglia turno per turno con animazioni e effetti speciali.",
               },

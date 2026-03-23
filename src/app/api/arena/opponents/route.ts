@@ -28,6 +28,13 @@ function roundToNearest10(value: number): number {
   return Math.round(value / 10) * 10;
 }
 
+function getAxpTierLabel(axp: number): string {
+  if (axp >= 200) return 'Maestro';
+  if (axp >= 100) return 'Veterano';
+  if (axp >= 50) return 'Esperto';
+  return 'Recluta';
+}
+
 export async function GET() {
   let session;
   try {
@@ -120,6 +127,7 @@ export async function GET() {
         ((tv.armoring ?? 0)) * 50 +
         (tv.battleScars ?? 0) * 2,
       ),
+      axpTier: getAxpTierLabel(o.ranking.axp),
       visualParams: mapTraitsToVisuals(
         o.creature.traitValues as TraitValues,
         o.creature.elementLevels as ElementLevels,

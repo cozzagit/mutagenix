@@ -29,6 +29,8 @@ export interface BattleCreature {
   elementLevels: Record<string, number>;
   // Age in days (used for tier combat bonuses)
   ageDays?: number;
+  // Arena Experience Points (AXP)
+  axp: number;
 }
 
 /** A single event that occurred during a battle round. */
