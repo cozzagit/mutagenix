@@ -91,10 +91,13 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
         {opponent.ownerName} · Giorno {opponent.ageDays ?? 0}
       </p>
 
-      {/* Tier + AXP badges */}
-      <div className="flex items-center justify-center gap-1.5 mb-2">
+      {/* Tier + AXP + stability badges */}
+      <div className="flex items-center justify-center gap-1 mb-2 flex-wrap">
         <TierBadge tier={opponent.tier} />
         <AxpBadge axpTier={opponent.axpTier} />
+        {opponent.stability !== undefined && opponent.stability < 0.4 && (
+          <span className="rounded-sm bg-warning/15 px-1 py-0.5 text-[8px] font-bold text-warning">⚠</span>
+        )}
       </div>
 
       {/* ELO prominent */}
@@ -121,14 +124,6 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
         <span className="flex-1 text-center text-[9px] leading-none text-primary/70">&#128737;</span>
         <span className="flex-1 text-center text-[9px] leading-none text-bio-cyan/70">&#9889;</span>
       </div>
-
-      {/* Stability warning for unstable opponents */}
-      {opponent.stability !== undefined && opponent.stability < 0.4 && (
-        <div className="flex items-center gap-1 rounded-md bg-warning/10 border border-warning/20 px-2 py-1 mb-1">
-          <span className="text-[9px] text-warning font-bold">&#9888; Instabile</span>
-          <span className="text-[8px] text-muted">— avversario imprevedibile</span>
-        </div>
-      )}
 
       {/* Challenge button */}
       <Button
