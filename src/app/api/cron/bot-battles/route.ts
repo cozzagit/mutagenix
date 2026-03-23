@@ -325,8 +325,8 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    // Random skip: 50% chance di iniettare (diversifica crescita tra i bot)
-    if (Math.random() > 0.5) {
+    // Random skip: 70% chance di iniettare, 30% salta (diversifica crescita tra i bot)
+    if (Math.random() > 0.7) {
       continue; // skip silenziosamente
     }
 
