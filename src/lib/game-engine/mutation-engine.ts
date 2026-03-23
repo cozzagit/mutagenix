@@ -175,7 +175,7 @@ export function processDailyMutation(
   const noiseDeltas = {} as Record<TraitId, number>;
   for (const trait of TRAITS) {
     // Noise range: ±NOISE_AMPLITUDE × current trait value (or ±1 minimum)
-    const base = Math.max(creature.traitValues[trait], 1);
+    const base = Math.max(creature.traitValues[trait] ?? 0, 1);
     noiseDeltas[trait] = (rng() * 2 - 1) * GAME_CONFIG.NOISE_AMPLITUDE * base;
   }
 
@@ -187,12 +187,12 @@ export function processDailyMutation(
   const newTraitValues = {} as TraitValues;
 
   for (const trait of TRAITS) {
-    const oldValue = creature.traitValues[trait];
+    const oldValue = creature.traitValues[trait] ?? 0;
 
-    const growthDelta = growthDeltas[trait] * physicalMultiplier;
-    const synergyDelta = traitBonuses[trait];
-    const decayDelta = decayDeltas[trait];
-    const noiseDelta = noiseDeltas[trait];
+    const growthDelta = (growthDeltas[trait] ?? 0) * physicalMultiplier;
+    const synergyDelta = traitBonuses[trait] ?? 0;
+    const decayDelta = decayDeltas[trait] ?? 0;
+    const noiseDelta = noiseDeltas[trait] ?? 0;
 
     const totalDelta = growthDelta + synergyDelta + decayDelta + noiseDelta;
     const rawNew = oldValue + totalDelta;
