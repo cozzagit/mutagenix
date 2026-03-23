@@ -198,8 +198,8 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    // --- 50% chance di combattere questo giro ---
-    if (Math.random() > 0.50) {
+    // --- 70% chance di combattere questo giro ---
+    if (Math.random() > 0.70) {
       log.push(`[BOT CRON] ${bot.displayName}: ha deciso di non combattere questo giro.`);
       continue;
     }
