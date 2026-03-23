@@ -764,20 +764,24 @@ function drawMouth(
       for (let i = 0; i < numFangs; i++) {
         const frac = (i + 0.5) / numFangs;
         const tx = cx - halfW * 0.8 + frac * halfW * 1.6;
-        const tw = effectiveWidth / numFangs * 0.2;
-        // Alternate fang length for variety
-        const fangLen = teethLengthParam * (i % 2 === 0 ? 1.0 : 0.7);
-        // Upper fang pointing down
-        fangs.push(`M ${f1(tx - tw)} ${f1(cy)} L ${f1(tx)} ${f1(cy + fangLen)} L ${f1(tx + tw)} ${f1(cy)} Z`);
+        // Wider base for visible fangs
+        const tw = Math.max(2, effectiveWidth / numFangs * 0.4);
+        // Alternate fang length — some are MUCH longer (canines)
+        const isCanine = (i === 0 || i === numFangs - 1);
+        const fangLen = teethLengthParam * (isCanine ? 1.2 : 0.6);
+        // Upper fang pointing down — curved slightly outward
+        const curveX = isCanine ? (i === 0 ? -2 : 2) : 0;
+        fangs.push(`M ${f1(tx - tw)} ${f1(cy)} Q ${f1(tx + curveX)} ${f1(cy + fangLen * 0.7)} ${f1(tx)} ${f1(cy + fangLen)} Q ${f1(tx - curveX)} ${f1(cy + fangLen * 0.7)} ${f1(tx + tw)} ${f1(cy)} Z`);
       }
       // Lower fangs if mouth is open enough
       if (openness > 3) {
         const lowerY = cy + openness * 0.8;
-        for (let i = 0; i < Math.min(numFangs, 3); i++) {
-          const frac = (i + 0.5) / Math.min(numFangs, 3);
+        const lowerFangs = Math.min(numFangs, 3);
+        for (let i = 0; i < lowerFangs; i++) {
+          const frac = (i + 0.5) / lowerFangs;
           const tx = cx - halfW * 0.6 + frac * halfW * 1.2;
-          const tw = effectiveWidth / numFangs * 0.18;
-          const fangLen = teethLengthParam * 0.6;
+          const tw = Math.max(1.5, effectiveWidth / lowerFangs * 0.3);
+          const fangLen = teethLengthParam * 0.5;
           // Lower fang pointing up
           fangs.push(`M ${f1(tx - tw)} ${f1(lowerY)} L ${f1(tx)} ${f1(lowerY - fangLen)} L ${f1(tx + tw)} ${f1(lowerY)} Z`);
         }
@@ -2246,8 +2250,8 @@ export function CreatureRenderer({
                 ))}
                 {/* Fangs (razor style) */}
                 {fangs.map((fd, i) => (
-                  <path key={`fang-${i}`} d={fd} fill={`url(#${id("tooth-grad")})`}
-                    opacity={0.95} stroke={bodyColorDark} strokeWidth={0.3} />
+                  <path key={`fang-${i}`} d={fd} fill="#f0ece4"
+                    opacity={0.95} stroke="#a09080" strokeWidth={0.5} />
                 ))}
                 {/* Drool */}
                 {droolPaths.map((dp, i) => (
