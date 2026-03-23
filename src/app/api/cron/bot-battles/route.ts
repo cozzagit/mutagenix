@@ -325,8 +325,10 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    // Random skip: 70% chance di iniettare, 30% salta (diversifica crescita tra i bot)
-    if (Math.random() > 0.7) {
+    // Random skip: chance dipende dal livello del bot (rallenta crescita ai livelli alti)
+    const ageDays = creature.ageDays ?? 0;
+    const injectChance = ageDays >= 500 ? 0.10 : ageDays >= 300 ? 0.30 : 0.70;
+    if (Math.random() > injectChance) {
       continue; // skip silenziosamente
     }
 
