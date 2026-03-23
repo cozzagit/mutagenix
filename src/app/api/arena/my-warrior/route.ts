@@ -188,7 +188,7 @@ export async function GET() {
       axp: ranking.axp,
       stability: creature.stability ?? 0.5,
       battlesToday,
-      battlesRemaining: Math.max(0, 5 - battlesToday),
+      battlesRemaining: Math.max(0, 10 - battlesToday),
       visualParams: mapTraitsToVisuals(
         creature.traitValues as TraitValues,
         creature.elementLevels as ElementLevels,

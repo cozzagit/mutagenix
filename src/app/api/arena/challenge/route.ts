@@ -195,9 +195,9 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (battlesToday >= 5) {
+  if (battlesToday >= 10) {
     return NextResponse.json(
-      { error: { code: 'DAILY_LIMIT', message: 'Hai raggiunto il limite di 5 battaglie giornaliere.' } },
+      { error: { code: 'DAILY_LIMIT', message: 'Hai raggiunto il limite di 10 battaglie giornaliere.' } },
       { status: 422 },
     );
   }

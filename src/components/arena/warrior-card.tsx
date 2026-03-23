@@ -326,7 +326,7 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
 
       {/* Battles remaining */}
       <div className="text-[10px] text-muted text-center">
-        Battaglie: {warrior.battlesToday}/5 oggi ({warrior.battlesRemaining} rimanenti)
+        Battaglie: {warrior.battlesToday}/10 oggi ({warrior.battlesRemaining} rimanenti)
       </div>
     </div>
   );
