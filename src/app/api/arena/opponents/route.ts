@@ -133,6 +133,8 @@ export async function GET() {
         o.creature.traitValues as TraitValues,
         o.creature.elementLevels as ElementLevels,
         [],
+        o.creature.foundingElements ?? null,
+        o.creature.growthElements ?? null,
       ) as unknown as Record<string, unknown>,
     };
   });

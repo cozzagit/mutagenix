@@ -54,23 +54,23 @@ export async function GET(
 
   // Fetch creature data and recalculate visual params
   const [challengerRaw] = await db
-    .select({ name: creatures.name, traitValues: creatures.traitValues, elementLevels: creatures.elementLevels })
+    .select({ name: creatures.name, traitValues: creatures.traitValues, elementLevels: creatures.elementLevels, foundingElements: creatures.foundingElements, growthElements: creatures.growthElements })
     .from(creatures)
     .where(eq(creatures.id, battle.challengerCreatureId));
 
   const [defenderRaw] = await db
-    .select({ name: creatures.name, traitValues: creatures.traitValues, elementLevels: creatures.elementLevels })
+    .select({ name: creatures.name, traitValues: creatures.traitValues, elementLevels: creatures.elementLevels, foundingElements: creatures.foundingElements, growthElements: creatures.growthElements })
     .from(creatures)
     .where(eq(creatures.id, battle.defenderCreatureId));
 
   const challengerCreature = challengerRaw ? {
     name: challengerRaw.name,
-    visualParams: mapTraitsToVisuals(challengerRaw.traitValues as TraitValues, challengerRaw.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,
+    visualParams: mapTraitsToVisuals(challengerRaw.traitValues as TraitValues, challengerRaw.elementLevels as ElementLevels, [], challengerRaw.foundingElements ?? null, challengerRaw.growthElements ?? null) as unknown as Record<string, unknown>,
   } : null;
 
   const defenderCreature = defenderRaw ? {
     name: defenderRaw.name,
-    visualParams: mapTraitsToVisuals(defenderRaw.traitValues as TraitValues, defenderRaw.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,
+    visualParams: mapTraitsToVisuals(defenderRaw.traitValues as TraitValues, defenderRaw.elementLevels as ElementLevels, [], defenderRaw.foundingElements ?? null, defenderRaw.growthElements ?? null) as unknown as Record<string, unknown>,
   } : null;
 
   const isDraw = battle.winnerCreatureId === null;

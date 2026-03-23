@@ -121,6 +121,8 @@ export function interpolateCreatureState(
     currentTraitValues as TraitValues,
     currentElementLevels as ElementLevels,
     [],
+    creature.foundingElements ?? null,
+    creature.growthElements ?? null,
   );
 
   // No active mutation — return current state with fresh visuals

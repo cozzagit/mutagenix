@@ -38,7 +38,7 @@ export default async function BachecaPage() {
     traitValues: c.traitValues as Record<string, number>,
     visualParams: (c.isArchived
       ? c.visualParams  // archived: keep historical snapshot
-      : mapTraitsToVisuals(c.traitValues as TraitValues, c.elementLevels as ElementLevels, [])
+      : mapTraitsToVisuals(c.traitValues as TraitValues, c.elementLevels as ElementLevels, [], c.foundingElements ?? null, c.growthElements ?? null)
     ) as Record<string, unknown>,
     isArchived: c.isArchived,
     archivedAt: c.archivedAt?.toISOString() ?? null,

@@ -122,7 +122,7 @@ export default async function ArenaMainPage() {
     return (
       <ArenaRegistration
         creatureName={creature.name}
-        visualParams={mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>}
+        visualParams={mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, [], creature.foundingElements ?? null, creature.growthElements ?? null) as unknown as Record<string, unknown>}
       />
     );
   }
@@ -206,7 +206,7 @@ export default async function ArenaMainPage() {
     stability: creature.stability ?? 0.5,
     battlesToday,
     battlesRemaining: Math.max(0, 5 - battlesToday),
-    visualParams: mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,
+    visualParams: mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, [], creature.foundingElements ?? null, creature.growthElements ?? null) as unknown as Record<string, unknown>,
   };
 
   // lastArenaVisit was already set to now() at the top of this function,

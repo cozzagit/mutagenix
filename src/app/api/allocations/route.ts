@@ -175,6 +175,8 @@ export async function POST(request: NextRequest) {
     ageDays: creature.ageDays ?? 0,
     stability: creature.stability ?? 0.5,
     day: newDay,
+    foundingElements: creature.foundingElements ?? null,
+    growthElements: creature.growthElements ?? null,
   };
 
   const result = processDailyMutation(creatureInput, credits);
@@ -216,6 +218,30 @@ export async function POST(request: NextRequest) {
   const now = new Date();
   const mutationEndsAt = new Date(now.getTime() + TIME_CONFIG.getMutationDurationMs());
 
+  // --- Evolution path memory: accumulate phase snapshots ---
+  const phaseUpdate: Record<string, unknown> = {};
+  if (newDay <= 15) {
+    // Founding phase (days 1-15): accumulate into foundingElements
+    const existing = creature.foundingElements ?? {};
+    const updated: Record<string, number> = { ...existing };
+    for (const [el, val] of Object.entries(credits)) {
+      if (typeof val === 'number' && val > 0) {
+        updated[el] = (updated[el] ?? 0) + val;
+      }
+    }
+    phaseUpdate.foundingElements = updated;
+  } else if (newDay <= 40) {
+    // Growth phase (days 16-40): accumulate into growthElements
+    const existing = creature.growthElements ?? {};
+    const updated: Record<string, number> = { ...existing };
+    for (const [el, val] of Object.entries(credits)) {
+      if (typeof val === 'number' && val > 0) {
+        updated[el] = (updated[el] ?? 0) + val;
+      }
+    }
+    phaseUpdate.growthElements = updated;
+  }
+
   await db
     .update(creatures)
     .set({
@@ -226,6 +252,7 @@ export async function POST(request: NextRequest) {
       mutationStartedAt: now,
       mutationEndsAt,
       updatedAt: now,
+      ...phaseUpdate,
     })
     .where(eq(creatures.id, creatureId));
 

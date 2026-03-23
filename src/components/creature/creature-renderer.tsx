@@ -929,8 +929,18 @@ export function CreatureRenderer({
     // ---- Mouth ----
     const mouthCx = headCx;
     const mouthCy = headCy + headR * lerp(0.3, 0.45, headSizeT);
-    const mouthWidth = headR * lerp(0.5, 1.2, headSizeT);
-    const { mouthPath, teeth } = drawMouth(mouthCx, mouthCy, mouthWidth, headSizeT);
+    const { mouthPath, teeth, fangs, tonguePath, droolPaths, jawPath } = drawMouth(
+      mouthCx, mouthCy,
+      p.mouthWidth ?? 0,
+      p.mouthHeight ?? 0,
+      p.teethCount ?? 0,
+      p.teethLength ?? 0,
+      p.teethStyle ?? 0,
+      p.jawSize ?? 0,
+      p.tongueVisible ?? false,
+      p.droolVisible ?? false,
+      headSizeT,
+    );
 
     // ---- Limbs ----
     type LimbData = {
@@ -1573,6 +1583,10 @@ export function CreatureRenderer({
       eyes,
       mouthPath,
       teeth,
+      fangs,
+      tonguePath,
+      droolPaths,
+      jawPath,
       mouthCy,
       limbs,
       limbClaws,
@@ -1625,7 +1639,7 @@ export function CreatureRenderer({
   const {
     id, p, cx, torsoBaseY, torsoTopY, torsoCenterY, torsoW, torsoH,
     torsoPath, bellyPath, headCx, headCy, headR, headPath, headSizeT,
-    neckPath, eyes, mouthPath, teeth, mouthCy, limbs, limbClaws,
+    neckPath, eyes, mouthPath, teeth, fangs, tonguePath, droolPaths, jawPath, mouthCy, limbs, limbClaws,
     tailPath, tailStartX, tailStartY, spines, furTufts,
     bodyColor, bodyColorLight, bodyColorDark, bellyColor,
     glowColor, glowColorDim, postureT, hasSynergy,
@@ -2212,13 +2226,34 @@ export function CreatureRenderer({
             {/* ==================== MOUTH ==================== */}
             {mouthPath && (
               <g>
+                {/* Jaw outline */}
+                {jawPath && (
+                  <path d={jawPath} fill="none"
+                    stroke={bodyColorDark} strokeWidth={1.2} opacity={0.5} />
+                )}
                 {/* Mouth interior */}
                 <path d={mouthPath} fill="hsl(0, 30%, 15%)" opacity={0.8}
                   stroke={bodyColorDark} strokeWidth={0.5} />
-                {/* Teeth */}
-                {teeth.map((t, i) => (
-                  <path key={`tooth-${i}`} d={t} fill={`url(#${id("tooth-grad")})`}
+                {/* Tongue */}
+                {tonguePath && (
+                  <path d={tonguePath} fill="hsl(350, 65%, 45%)" opacity={0.85}
+                    stroke="hsl(350, 50%, 30%)" strokeWidth={0.3} />
+                )}
+                {/* Regular teeth */}
+                {teeth.map((td, i) => (
+                  <path key={`tooth-${i}`} d={td} fill={`url(#${id("tooth-grad")})`}
                     opacity={0.9} stroke={bodyColorDark} strokeWidth={0.2} />
+                ))}
+                {/* Fangs (razor style) */}
+                {fangs.map((fd, i) => (
+                  <path key={`fang-${i}`} d={fd} fill={`url(#${id("tooth-grad")})`}
+                    opacity={0.95} stroke={bodyColorDark} strokeWidth={0.3} />
+                ))}
+                {/* Drool */}
+                {droolPaths.map((dp, i) => (
+                  <path key={`drool-${i}`} d={dp} fill="none"
+                    stroke={p.toxicityLevel > 0.5 ? "hsl(110, 60%, 45%)" : "hsl(200, 20%, 70%)"}
+                    strokeWidth={1} opacity={0.6} strokeLinecap="round" />
                 ))}
               </g>
             )}

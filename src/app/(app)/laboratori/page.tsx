@@ -94,7 +94,7 @@ export default async function LaboratoriPage() {
       const elementLevels = c.elementLevels as ElementLevels;
 
       // Recalculate visual params from traits (same approach as admin)
-      const visualParams = mapTraitsToVisuals(traitValues, elementLevels, []);
+      const visualParams = mapTraitsToVisuals(traitValues, elementLevels, [], c.foundingElements ?? null, c.growthElements ?? null);
 
       // Calculate potenza
       const potenza = calculatePotenza(traitValues, ranking ?? null);

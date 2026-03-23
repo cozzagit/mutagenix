@@ -105,6 +105,8 @@ export interface CreatureInput {
   ageDays: number;
   stability: number;
   day: number;
+  foundingElements?: Record<string, number> | null;
+  growthElements?: Record<string, number> | null;
 }
 
 /**
@@ -305,6 +307,8 @@ export function processDailyMutation(
     newTraitValues,
     newElementLevels,
     activeSynergies,
+    creature.foundingElements ?? null,
+    creature.growthElements ?? null,
   );
 
   // --- 9. Return ---

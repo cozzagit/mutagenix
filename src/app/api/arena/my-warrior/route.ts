@@ -193,6 +193,8 @@ export async function GET() {
         creature.traitValues as TraitValues,
         creature.elementLevels as ElementLevels,
         [],
+        creature.foundingElements ?? null,
+        creature.growthElements ?? null,
       ) as unknown as Record<string, unknown>,
     },
   });

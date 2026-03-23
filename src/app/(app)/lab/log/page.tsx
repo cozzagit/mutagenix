@@ -88,7 +88,7 @@ export default async function EvolutionLogPage() {
     .map((snap, index) => {
       const tv = snap.traitValues as TraitValues;
       const el = snap.elementLevels as ElementLevels;
-      const freshVisuals = mapTraitsToVisuals(tv, el, []);
+      const freshVisuals = mapTraitsToVisuals(tv, el, [], creature.foundingElements ?? null, creature.growthElements ?? null);
       return {
         dayNumber: index + 1,
         day: snap.day,
@@ -127,6 +127,8 @@ export default async function EvolutionLogPage() {
         creature.traitValues as TraitValues,
         creature.elementLevels as ElementLevels,
         [],
+        creature.foundingElements ?? null,
+        creature.growthElements ?? null,
       ) as unknown as Record<string, number>}
       keySnapshots={keySnapshots}
       allSnapshotsForMilestones={milestoneCandidates}

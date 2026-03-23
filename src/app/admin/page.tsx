@@ -93,6 +93,8 @@ export default async function AdminPage() {
             c.traitValues as TraitValues,
             c.elementLevels as ElementLevels,
             [],
+            c.foundingElements ?? null,
+            c.growthElements ?? null,
           ) as unknown as Record<string, unknown>,
           ranking: ranking
             ? {
