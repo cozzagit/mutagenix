@@ -81,6 +81,7 @@ export interface WarriorData {
   battlesRemaining: number;
   visualParams: Record<string, unknown>;
   axp: number;
+  stability: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -148,6 +149,28 @@ function AxpBadgeFromValue({ axp }: { axp: number }) {
   );
 }
 
+const STABILITY_STATUS = [
+  { min: 0.9, label: 'CRISTALLIZZATO', color: 'text-bio-cyan', bg: 'bg-bio-cyan/15 border border-bio-cyan/30' },
+  { min: 0.7, label: 'STABILE', color: 'text-accent', bg: 'bg-accent/15 border border-accent/30' },
+  { min: 0.3, label: 'VARIABILE', color: 'text-warning', bg: 'bg-warning/15 border border-warning/30' },
+  { min: 0, label: 'INSTABILE', color: 'text-danger', bg: 'bg-danger/15 border border-danger/30' },
+];
+
+function getStabilityStatus(stability: number) {
+  return STABILITY_STATUS.find((s) => stability >= s.min) ?? STABILITY_STATUS[STABILITY_STATUS.length - 1];
+}
+
+function StabilityBadge({ stability }: { stability: number }) {
+  const status = getStabilityStatus(stability);
+  return (
+    <span
+      className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${status.color} ${status.bg}`}
+    >
+      {status.label}
+    </span>
+  );
+}
+
 function RecoveryCountdown({ minutes }: { minutes: number }) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -201,6 +224,7 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
           <div className="flex items-center gap-1.5 mt-0.5">
             <TierBadge tier={warrior.tier} />
             <AxpBadgeFromValue axp={warrior.axp} />
+            <StabilityBadge stability={warrior.stability} />
             {warrior.recovery.active && (
               <span className="text-[9px] text-warning font-bold uppercase">Recupero</span>
             )}
@@ -223,10 +247,11 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
         {warrior.name}
       </h3>
 
-      {/* Tier + AXP badges */}
+      {/* Tier + AXP + Stability badges */}
       <div className="flex items-center justify-center gap-1.5">
         <TierBadge tier={warrior.tier} />
         <AxpBadgeFromValue axp={warrior.axp} />
+        <StabilityBadge stability={warrior.stability} />
       </div>
 
       {/* ELO + record */}
@@ -307,4 +332,4 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
   );
 }
 
-export { TierBadge, AxpBadge };
+export { TierBadge, AxpBadge, StabilityBadge, getStabilityStatus };

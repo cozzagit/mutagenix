@@ -215,25 +215,85 @@ export default function GuidaPage() {
         </GuideCard>
 
         {/* Stability */}
-        <GuideCard title="Stabilità">
-          <p className="text-sm leading-relaxed text-muted">
-            L&apos;equilibrio tra gli elementi determina la stabilità della creatura. Una creatura{' '}
-            <span className="font-semibold text-danger">instabile</span> muta in modi imprevedibili.
-            Una creatura <span className="font-semibold text-accent">stabile</span> consolida i suoi tratti.
-          </p>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-3">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: '60%',
-                  background: 'linear-gradient(90deg, #ff3d3d, #ff9100, #00e5a0)',
-                }}
-              />
+        <GuideCard title="Stabilit&agrave;">
+          <div className="flex flex-col gap-3 text-sm leading-relaxed text-muted">
+            <p>
+              La stabilit&agrave; misura l&apos;equilibrio chimico del tuo organismo. Uno squilibrio troppo
+              grande tra gli elementi causa instabilit&agrave;.
+            </p>
+
+            <div className="mt-1 flex items-center gap-3">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-3">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(90deg, #ff3d3d 0%, #ff9100 30%, #00e5a0 70%, #00f0ff 100%)',
+                  }}
+                />
+              </div>
             </div>
-            <div className="flex gap-3 text-[9px] font-medium">
-              <span className="text-danger">Instabile</span>
-              <span className="text-accent">Stabile</span>
+
+            <p className="font-semibold text-foreground">Effetti della stabilit&agrave;:</p>
+
+            <div className="flex flex-col gap-2.5">
+              {[
+                {
+                  label: 'Instabile',
+                  range: '< 30%',
+                  color: '#ff3d3d',
+                  desc: 'Il tuo guerriero &egrave; caotico e imprevedibile in battaglia. Rischia di fallire gli attacchi, ferirsi da solo o far esplodere i propri attacchi speciali. Durante le iniezioni, pu&ograve; subire regressioni e mutazioni caotiche.',
+                },
+                {
+                  label: 'Variabile',
+                  range: '30-70%',
+                  color: '#ff9100',
+                  desc: 'Occasionali malfunzionamenti in battaglia, ma nulla di grave.',
+                },
+                {
+                  label: 'Stabile',
+                  range: '70-90%',
+                  color: '#00e5a0',
+                  desc: 'Il tuo guerriero combatte con precisione. Bonus alla precisione e all\'efficacia degli attacchi speciali.',
+                },
+                {
+                  label: 'Cristallizzato',
+                  range: '> 90%',
+                  color: '#00f0ff',
+                  desc: 'Perfezione biochimica. Il corpo si rigenera in battaglia e resiste ai veleni.',
+                },
+              ].map((tier) => (
+                <div key={tier.label} className="flex items-start gap-3">
+                  <span
+                    className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: tier.color,
+                      boxShadow: `0 0 6px ${tier.color}66`,
+                    }}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold" style={{ color: tier.color }}>
+                      {tier.label} ({tier.range})
+                    </span>
+                    <p className="text-[11px] text-muted">{tier.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #00f0ff',
+                backgroundColor: 'rgba(0, 240, 255, 0.05)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold text-bio-cyan mb-1">Come aumentare la stabilit&agrave;</p>
+              <p>
+                Distribuisci i crediti in modo pi&ugrave; equilibrato tra gli elementi.
+                Un organismo che riceve sempre gli stessi 2-3 elementi diventa instabile.
+              </p>
             </div>
           </div>
         </GuideCard>

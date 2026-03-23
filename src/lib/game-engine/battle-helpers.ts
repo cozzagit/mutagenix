@@ -147,5 +147,8 @@ export function creatureToBattleCreature(
 
     // Arena Experience Points
     axp: _ranking?.axp ?? 0,
+
+    // Stability
+    stability: creature.stability ?? 0.5,
   };
 }

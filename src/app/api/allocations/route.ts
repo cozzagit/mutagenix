@@ -179,6 +179,39 @@ export async function POST(request: NextRequest) {
 
   const result = processDailyMutation(creatureInput, credits);
 
+  // --- Instability events for low-stability creatures ---
+  const instabilityEvents: string[] = [];
+  const creatureStability = creature.stability ?? 0.5;
+  if (creatureStability < 0.4) {
+    const eventRng = Math.random();
+
+    if (eventRng < 0.15) {
+      // Regression: random physical trait loses 2-5 points
+      const physTraits = ['bodySize', 'headSize', 'limbGrowth', 'eyeDev', 'posture'] as const;
+      const targetTrait = physTraits[Math.floor(Math.random() * physTraits.length)];
+      const loss = 2 + Math.floor(Math.random() * 4);
+      const oldVal = result.newTraitValues[targetTrait] ?? 0;
+      result.newTraitValues[targetTrait] = Math.max(0, oldVal - loss);
+      instabilityEvents.push(`Regressione! ${targetTrait} ha perso ${loss} punti per instabilità.`);
+    } else if (eventRng < 0.25) {
+      // Chaotic mutation: random trait gets big random change
+      const allTraits = Object.keys(result.newTraitValues);
+      const targetTrait = allTraits[Math.floor(Math.random() * allTraits.length)];
+      const change = (Math.random() > 0.5 ? 1 : -1) * (10 + Math.floor(Math.random() * 11));
+      const oldVal = (result.newTraitValues as Record<string, number>)[targetTrait] ?? 0;
+      (result.newTraitValues as Record<string, number>)[targetTrait] = Math.max(0, Math.min(100, oldVal + change));
+      instabilityEvents.push(`Mutazione caotica! ${targetTrait} è cambiato di ${change > 0 ? '+' : ''}${change} punti!`);
+    } else if (eventRng < 0.30) {
+      // Element loss: one random element drops by 10%
+      const elements = Object.keys(result.newElementLevels);
+      const targetEl = elements[Math.floor(Math.random() * elements.length)];
+      const oldVal = (result.newElementLevels as Record<string, number>)[targetEl] ?? 0;
+      const loss = Math.round(oldVal * 0.1);
+      (result.newElementLevels as Record<string, number>)[targetEl] = Math.max(0, oldVal - loss);
+      instabilityEvents.push(`Perdita elementale! ${targetEl} ha perso il 10% (${loss} unità).`);
+    }
+  }
+
   // Set TARGET state — mutation applies gradually
   const now = new Date();
   const mutationEndsAt = new Date(now.getTime() + TIME_CONFIG.getMutationDurationMs());
@@ -243,6 +276,7 @@ export async function POST(request: NextRequest) {
       mutationEndsAt: mutationEndsAt.toISOString(),
       newDay,
       isDevMode: TIME_CONFIG.isDevMode,
+      instabilityEvents: instabilityEvents.length > 0 ? instabilityEvents : undefined,
     },
   });
 }

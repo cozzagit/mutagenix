@@ -13,6 +13,14 @@ import type {
 } from '@/types/battle';
 import { GAME_CONFIG } from './constants';
 
+// ---------------------------------------------------------------------------
+// Stability thresholds
+// ---------------------------------------------------------------------------
+
+const STABILITY_LOW = GAME_CONFIG.STABILITY_THRESHOLD_LOW;   // 0.3
+const STABILITY_HIGH = GAME_CONFIG.STABILITY_THRESHOLD_HIGH;  // 0.7
+const STABILITY_CRYSTAL = 0.9;
+
 // Re-export types for convenience
 export type { BattleCreature, RoundEvent, BattleResult } from '@/types/battle';
 
@@ -106,6 +114,7 @@ interface FighterState {
   maxStamina: number;
   exhausted: boolean;
   poisonLevel: number; // cumulative poison tick % per round
+  poisonImmune: boolean; // cristallizzato stability
   blindedThisRound: boolean;
   totalDamageDealt: number;
   // Effective stats (may be modified by personality/synergies/exhaustion)
@@ -113,6 +122,7 @@ interface FighterState {
   effectiveDef: number;
   effectiveSpd: number;
   dominantPersonality: PersonalityTrait;
+  stability: number;
 }
 
 function initFighter(creature: BattleCreature): FighterState {
@@ -183,6 +193,19 @@ function initFighter(creature: BattleCreature): FighterState {
     effectiveSpd *= axpMultiplier;
   }
 
+  // --- Stability modifiers ---
+  const stability = creature.stability ?? 0.5;
+
+  if (stability < STABILITY_LOW) {
+    // Unstable: -10% all combat stats
+    effectiveAtk *= 0.9;
+    effectiveDef *= 0.9;
+    effectiveSpd *= 0.9;
+  }
+
+  // Poison immunity for cristallizzato (> 0.9)
+  const poisonImmune = stability > STABILITY_CRYSTAL;
+
   return {
     creature,
     hp: maxHp,
@@ -191,12 +214,14 @@ function initFighter(creature: BattleCreature): FighterState {
     maxStamina: maxStamina * staminaMultiplier,
     exhausted: false,
     poisonLevel: 0,
+    poisonImmune,
     blindedThisRound: false,
     totalDamageDealt: 0,
     effectiveAtk,
     effectiveDef,
     effectiveSpd,
     dominantPersonality: dominant,
+    stability,
   };
 }
 
@@ -258,6 +283,26 @@ function exhaustionDescription(targetName: string): string {
   return `${targetName} è esausto! La sua resistenza è al limite, i suoi colpi sono meno potenti.`;
 }
 
+function stabilityGlitchDescription(name: string): string {
+  return `${name} è instabile! Il suo corpo si distorce e l'attacco fallisce!`;
+}
+
+function selfDamageDescription(name: string, damage: number): string {
+  return `L'instabilità di ${name} gli si ritorce contro! Si infligge ${damage.toFixed(1)} danni!`;
+}
+
+function backfireDescription(name: string, damage: number): string {
+  return `L'attacco speciale di ${name} è esploso! L'instabilità gli infligge ${damage.toFixed(1)} danni!`;
+}
+
+function stabilityRegenDescription(name: string, healed: number): string {
+  return `L'armonia cristallina di ${name} rigenera ${healed.toFixed(1)} punti vita.`;
+}
+
+function minorGlitchDescription(name: string): string {
+  return `Un malfunzionamento colpisce ${name}: il suo attacco è meno efficace!`;
+}
+
 function traumaReflectDescription(
   attackerName: string,
   defenderName: string,
@@ -282,10 +327,11 @@ export function calculateBattle(
   const fighterB = initFighter(defender);
 
   // Veleno synergy: opponent starts with poison level 1 (2%)
-  if (hasSynergy(challenger, 'veleno')) {
+  // Cristallizzato creatures are immune to poison
+  if (hasSynergy(challenger, 'veleno') && !fighterB.poisonImmune) {
     fighterB.poisonLevel = 0.02;
   }
-  if (hasSynergy(defender, 'veleno')) {
+  if (hasSynergy(defender, 'veleno') && !fighterA.poisonImmune) {
     fighterA.poisonLevel = 0.02;
   }
 
@@ -306,13 +352,83 @@ export function calculateBattle(
     applyCaotico(first, rng);
     applyCaotico(second, rng);
 
+    // --- Stability: glitch check for first attacker ---
+    let firstSkipped = false;
+    if (first.stability < STABILITY_LOW && rng() < 0.20) {
+      events.push({
+        round,
+        attackerId: first.creature.id,
+        defenderId: second.creature.id,
+        type: 'stability_glitch',
+        damage: 0,
+        attackerHpAfter: first.hp,
+        defenderHpAfter: second.hp,
+        description: stabilityGlitchDescription(first.creature.name),
+      });
+      firstSkipped = true;
+    }
+
+    // --- Stability: self-damage for first attacker ---
+    if (first.stability < STABILITY_LOW && rng() < 0.15) {
+      const selfDmg = Math.round(first.maxHp * 0.05);
+      first.hp -= selfDmg;
+      events.push({
+        round,
+        attackerId: first.creature.id,
+        defenderId: first.creature.id,
+        type: 'self_damage',
+        damage: selfDmg,
+        attackerHpAfter: first.hp,
+        defenderHpAfter: second.hp,
+        description: selfDamageDescription(first.creature.name, selfDmg),
+      });
+      if (first.hp <= 0) break;
+    }
+
     // --- First attacker's turn ---
-    const firstKo = resolveAttack(first, second, round, rng, events);
-    if (firstKo) break;
+    if (!firstSkipped) {
+      const firstKo = resolveAttack(first, second, round, rng, events);
+      if (firstKo) break;
+    }
+
+    // --- Stability: glitch check for second attacker ---
+    let secondSkipped = false;
+    if (second.stability < STABILITY_LOW && rng() < 0.20) {
+      events.push({
+        round,
+        attackerId: second.creature.id,
+        defenderId: first.creature.id,
+        type: 'stability_glitch',
+        damage: 0,
+        attackerHpAfter: second.hp,
+        defenderHpAfter: first.hp,
+        description: stabilityGlitchDescription(second.creature.name),
+      });
+      secondSkipped = true;
+    }
+
+    // --- Stability: self-damage for second attacker ---
+    if (second.stability < STABILITY_LOW && rng() < 0.15) {
+      const selfDmg = Math.round(second.maxHp * 0.05);
+      second.hp -= selfDmg;
+      events.push({
+        round,
+        attackerId: second.creature.id,
+        defenderId: second.creature.id,
+        type: 'self_damage',
+        damage: selfDmg,
+        attackerHpAfter: second.hp,
+        defenderHpAfter: first.hp,
+        description: selfDamageDescription(second.creature.name, selfDmg),
+      });
+      if (second.hp <= 0) break;
+    }
 
     // --- Second attacker's turn ---
-    const secondKo = resolveAttack(second, first, round, rng, events);
-    if (secondKo) break;
+    if (!secondSkipped) {
+      const secondKo = resolveAttack(second, first, round, rng, events);
+      if (secondKo) break;
+    }
 
     // --- End-of-round effects ---
 
@@ -325,6 +441,10 @@ export function calculateBattle(
     // Regen (sangue synergy)
     applyRegen(fighterA, round, events);
     applyRegen(fighterB, round, events);
+
+    // Stability regen (cristallizzato: > 0.9 stability, +3% HP per round)
+    applyStabilityRegen(fighterA, round, events);
+    applyStabilityRegen(fighterB, round, events);
 
     // Stamina consumption
     consumeStamina(fighterA, round, events);
@@ -459,6 +579,12 @@ function resolveAttack(
   const speedRatio = defender.effectiveSpd / Math.max(attacker.effectiveSpd, 1);
   dodgeChance += Math.max(0, (speedRatio - 1) * 0.10);
 
+  // Stability accuracy bonus: stable attacker reduces dodge
+  if (attacker.stability > STABILITY_HIGH) {
+    dodgeChance -= 0.05;
+  }
+  dodgeChance = Math.max(0, dodgeChance);
+
   if (rng() < dodgeChance) {
     events.push({
       round,
@@ -483,8 +609,33 @@ function resolveAttack(
   let isCritical = false;
 
   if (isSpecial) {
+    // --- Stability: backfire check for unstable creatures ---
+    if (attacker.stability < STABILITY_LOW && rng() < 0.30) {
+      const backfireDmg = Math.round(attacker.maxHp * 0.10);
+      attacker.hp -= backfireDmg;
+      events.push({
+        round,
+        attackerId: attacker.creature.id,
+        defenderId: attacker.creature.id,
+        type: 'backfire',
+        damage: backfireDmg,
+        attackerHpAfter: attacker.hp,
+        defenderHpAfter: defender.hp,
+        description: backfireDescription(attackerName, backfireDmg),
+      });
+      if (attacker.hp <= 0) return true;
+      // Backfire: special attack fails, skip the rest
+      return false;
+    }
+
     // Special attack multiplier
-    const specialMultiplier = 1.5 * (1 + attacker.creature.specialAttack / 100);
+    let specialMultiplier = 1.5 * (1 + attacker.creature.specialAttack / 100);
+
+    // Stability bonus: stable creatures have +10% special effectiveness
+    if (attacker.stability > STABILITY_HIGH) {
+      specialMultiplier *= 1.10;
+    }
+
     damage *= specialMultiplier;
 
     // Corazza dominant: -40% special/critical damage received
@@ -526,6 +677,21 @@ function resolveAttack(
       isCritical: true,
     });
   } else {
+    // --- Stability: minor glitch for medium stability ---
+    if (attacker.stability >= STABILITY_LOW && attacker.stability < STABILITY_HIGH && rng() < 0.05) {
+      damage *= 0.75;
+      events.push({
+        round,
+        attackerId: attacker.creature.id,
+        defenderId: defender.creature.id,
+        type: 'stability_glitch_minor',
+        damage: 0,
+        attackerHpAfter: attacker.hp,
+        defenderHpAfter: defender.hp,
+        description: minorGlitchDescription(attackerName),
+      });
+    }
+
     // Normal attack — check for critical (aggression dominant: higher crit)
     let critChance = 0.08;
     if (attacker.dominantPersonality === 'aggression') {
@@ -560,7 +726,8 @@ function resolveAttack(
   if (defender.hp <= 0) return true;
 
   // --- Toxicity dominant: apply poison per attack ---
-  if (attacker.dominantPersonality === 'toxicity') {
+  // Cristallizzato defenders are immune to poison
+  if (attacker.dominantPersonality === 'toxicity' && !defender.poisonImmune) {
     defender.poisonLevel = Math.min(defender.poisonLevel + 0.02, MAX_POISON_STACK);
   }
 
@@ -604,6 +771,12 @@ function applyPoisonTick(
 ): void {
   if (fighter.poisonLevel <= 0) return;
 
+  // Cristallizzato: immune to poison
+  if (fighter.poisonImmune) {
+    fighter.poisonLevel = 0;
+    return;
+  }
+
   const poisonDamage = fighter.maxHp * fighter.poisonLevel;
   fighter.hp -= poisonDamage;
 
@@ -645,6 +818,36 @@ function applyRegen(
       attackerHpAfter: fighter.hp,
       defenderHpAfter: fighter.hp,
       description: regenDescription(fighter.creature.name, actualHeal),
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stability regen (cristallizzato, end of round)
+// ---------------------------------------------------------------------------
+
+function applyStabilityRegen(
+  fighter: FighterState,
+  round: number,
+  events: RoundEvent[],
+): void {
+  if (fighter.stability <= STABILITY_CRYSTAL) return;
+
+  const healAmount = fighter.maxHp * 0.03; // +3% HP per round
+  const oldHp = fighter.hp;
+  fighter.hp = Math.min(fighter.hp + healAmount, fighter.maxHp);
+  const actualHeal = fighter.hp - oldHp;
+
+  if (actualHeal > 0.01) {
+    events.push({
+      round,
+      attackerId: fighter.creature.id,
+      defenderId: fighter.creature.id,
+      type: 'stability_regen',
+      damage: -actualHeal, // negative = healing
+      attackerHpAfter: fighter.hp,
+      defenderHpAfter: fighter.hp,
+      description: stabilityRegenDescription(fighter.creature.name, actualHeal),
     });
   }
 }

@@ -186,6 +186,7 @@ export async function GET() {
         consecutiveLosses: ranking.consecutiveLosses,
       },
       axp: ranking.axp,
+      stability: creature.stability ?? 0.5,
       battlesToday,
       battlesRemaining: Math.max(0, 5 - battlesToday),
       visualParams: mapTraitsToVisuals(

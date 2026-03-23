@@ -203,6 +203,7 @@ export default async function ArenaMainPage() {
       consecutiveLosses: ranking.consecutiveLosses,
     },
     axp: ranking.axp,
+    stability: creature.stability ?? 0.5,
     battlesToday,
     battlesRemaining: Math.max(0, 5 - battlesToday),
     visualParams: mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, []) as unknown as Record<string, unknown>,

@@ -128,6 +128,7 @@ export async function GET() {
         (tv.battleScars ?? 0) * 2,
       ),
       axpTier: getAxpTierLabel(o.ranking.axp),
+      stability: o.creature.stability ?? 0.5,
       visualParams: mapTraitsToVisuals(
         o.creature.traitValues as TraitValues,
         o.creature.elementLevels as ElementLevels,

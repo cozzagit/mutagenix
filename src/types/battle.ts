@@ -31,6 +31,8 @@ export interface BattleCreature {
   ageDays?: number;
   // Arena Experience Points (AXP)
   axp: number;
+  // Stability (0-1, higher = more stable)
+  stability: number;
 }
 
 /** A single event that occurred during a battle round. */
@@ -47,7 +49,12 @@ export interface RoundEvent {
     | 'regen'
     | 'blind'
     | 'trauma_reflect'
-    | 'exhaustion';
+    | 'exhaustion'
+    | 'stability_glitch'
+    | 'self_damage'
+    | 'backfire'
+    | 'stability_regen'
+    | 'stability_glitch_minor';
   damage: number;
   attackerHpAfter: number;
   defenderHpAfter: number;
