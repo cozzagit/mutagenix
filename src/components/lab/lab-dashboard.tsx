@@ -737,6 +737,18 @@ export function LabDashboard({
       {/* RIGHT AREA — Name/day ABOVE creature, countdown/button BELOW   */}
       {/* ============================================================= */}
       <div className="flex flex-1 flex-col items-center overflow-y-auto overflow-x-hidden">
+        {/* Global mutation event banner */}
+        <div className="w-full shrink-0 px-4 pt-2">
+          <div className="flex items-center justify-center gap-2 rounded-lg border border-bio-purple/40 bg-bio-purple/10 px-3 py-2"
+            style={{ animation: 'pulse-glow 3s ease-in-out infinite' }}>
+            <span className="text-base" style={{ animation: 'divine-rainbow 2s ease-in-out infinite' }}>☢</span>
+            <p className="text-[11px] font-bold text-bio-purple" style={{ textShadow: '0 0 8px #b26eff44' }}>
+              Mutazione Genetica Globale in corso
+            </p>
+            <span className="text-base" style={{ animation: 'divine-rainbow 2s ease-in-out infinite' }}>☢</span>
+          </div>
+        </div>
+
         {/* Battle notification banner */}
         {showBattleBanner && (
           <div className="w-full shrink-0 px-4 pt-2">

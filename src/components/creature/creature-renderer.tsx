@@ -43,6 +43,15 @@ export const DEFAULT_VISUAL_PARAMS: VisualParams = {
   toxicityLevel: 0,
   intelligenceLevel: 0,
   armoringLevel: 0,
+  // Mouth & teeth defaults
+  mouthWidth: 0,
+  mouthHeight: 0,
+  teethCount: 0,
+  teethLength: 0,
+  teethStyle: 0,
+  jawSize: 0,
+  tongueVisible: false,
+  droolVisible: false,
   // Color palette defaults (neutral blob)
   furColor: "hsl(210, 20%, 40%)",
   spineColor: "hsl(30, 30%, 35%)",
@@ -692,47 +701,136 @@ function drawFurTufts(
   return tufts;
 }
 
-/** Draw mouth with optional teeth */
+/** Draw mouth with optional teeth, tongue, and drool using VisualParams mouth data */
 function drawMouth(
   cx: number,
   cy: number,
-  mouthWidth: number,
+  mouthWidthParam: number,
+  mouthHeightParam: number,
+  teethCountParam: number,
+  teethLengthParam: number,
+  teethStyleParam: number,
+  jawSizeParam: number,
+  tongueVisibleParam: boolean,
+  droolVisibleParam: boolean,
   headSizeT: number,
-): { mouthPath: string; teeth: string[] } {
-  if (headSizeT < 0.2) {
-    return { mouthPath: "", teeth: [] };
+): { mouthPath: string; teeth: string[]; fangs: string[]; tonguePath: string; droolPaths: string[]; jawPath: string } {
+  if (mouthWidthParam < 1 && headSizeT < 0.2) {
+    return { mouthPath: "", teeth: [], fangs: [], tonguePath: "", droolPaths: [], jawPath: "" };
   }
 
-  // Simple line mouth at low values, open mouth at higher
-  const openness = lerp(0, 4, (headSizeT - 0.2) / 0.8);
-  const halfW = mouthWidth * 0.5;
+  // Use the visual mapper's mouth params when available, fall back to headSizeT-based
+  const effectiveWidth = mouthWidthParam > 1 ? mouthWidthParam : lerp(2, 12, headSizeT);
+  const effectiveHeight = mouthHeightParam > 0.5 ? mouthHeightParam : lerp(0, 4, headSizeT);
+  const halfW = effectiveWidth * 0.5;
+  const openness = effectiveHeight;
 
   let mouthPath: string;
-  if (openness < 1.5) {
-    // Closed/slightly curved mouth
+  if (openness < 2) {
+    // Small mouth: simple curved line
     mouthPath = `M ${f1(cx - halfW)} ${f1(cy)} Q ${f1(cx)} ${f1(cy + openness)} ${f1(cx + halfW)} ${f1(cy)}`;
-  } else {
-    // Open mouth — two curves forming an open shape
+  } else if (openness < 8) {
+    // Medium mouth: oval opening with visible teeth inside
     mouthPath = `M ${f1(cx - halfW)} ${f1(cy)}
       Q ${f1(cx)} ${f1(cy + openness * 1.5)} ${f1(cx + halfW)} ${f1(cy)}
       Q ${f1(cx)} ${f1(cy + openness * 0.3)} ${f1(cx - halfW)} ${f1(cy)} Z`;
+  } else {
+    // Large mouth: wide jaw with pronounced opening
+    const jawDrop = openness * 1.8;
+    mouthPath = `M ${f1(cx - halfW)} ${f1(cy)}
+      Q ${f1(cx - halfW * 0.3)} ${f1(cy + jawDrop)} ${f1(cx)} ${f1(cy + jawDrop * 0.9)}
+      Q ${f1(cx + halfW * 0.3)} ${f1(cy + jawDrop)} ${f1(cx + halfW)} ${f1(cy)}
+      Q ${f1(cx)} ${f1(cy + openness * 0.2)} ${f1(cx - halfW)} ${f1(cy)} Z`;
   }
 
-  // Teeth
+  // Jaw outline (more pronounced at higher jawSize)
+  let jawPath = "";
+  if (jawSizeParam > 0.2) {
+    const jawExtend = halfW * (1 + jawSizeParam * 0.4);
+    const jawDrop = openness * 0.6 + jawSizeParam * 5;
+    jawPath = `M ${f1(cx - jawExtend)} ${f1(cy - 1)}
+      Q ${f1(cx)} ${f1(cy + jawDrop)} ${f1(cx + jawExtend)} ${f1(cy - 1)}`;
+  }
+
+  // Teeth — different styles based on teethStyle
   const teeth: string[] = [];
-  if (headSizeT > 0.35) {
-    const teethCount = Math.round(lerp(2, 8, (headSizeT - 0.35) / 0.65));
-    const teethH = lerp(1.5, 4, (headSizeT - 0.35) / 0.65);
-    for (let i = 0; i < teethCount; i++) {
-      const frac = (i + 0.5) / teethCount;
-      const tx = cx - halfW + frac * mouthWidth;
-      const tw = mouthWidth / teethCount * 0.35;
-      // Triangle tooth pointing down
-      teeth.push(`M ${f1(tx - tw)} ${f1(cy)} L ${f1(tx)} ${f1(cy + teethH)} L ${f1(tx + tw)} ${f1(cy)} Z`);
+  const fangs: string[] = [];
+
+  if (teethCountParam > 0 && teethLengthParam > 0.5) {
+    if (teethStyleParam >= 0.8) {
+      // Razor fangs: long, sharp, upper and lower
+      // Upper fangs (2-4 prominent ones)
+      const numFangs = Math.min(teethCountParam, 4);
+      for (let i = 0; i < numFangs; i++) {
+        const frac = (i + 0.5) / numFangs;
+        const tx = cx - halfW * 0.8 + frac * halfW * 1.6;
+        const tw = effectiveWidth / numFangs * 0.2;
+        // Alternate fang length for variety
+        const fangLen = teethLengthParam * (i % 2 === 0 ? 1.0 : 0.7);
+        // Upper fang pointing down
+        fangs.push(`M ${f1(tx - tw)} ${f1(cy)} L ${f1(tx)} ${f1(cy + fangLen)} L ${f1(tx + tw)} ${f1(cy)} Z`);
+      }
+      // Lower fangs if mouth is open enough
+      if (openness > 3) {
+        const lowerY = cy + openness * 0.8;
+        for (let i = 0; i < Math.min(numFangs, 3); i++) {
+          const frac = (i + 0.5) / Math.min(numFangs, 3);
+          const tx = cx - halfW * 0.6 + frac * halfW * 1.2;
+          const tw = effectiveWidth / numFangs * 0.18;
+          const fangLen = teethLengthParam * 0.6;
+          // Lower fang pointing up
+          fangs.push(`M ${f1(tx - tw)} ${f1(lowerY)} L ${f1(tx)} ${f1(lowerY - fangLen)} L ${f1(tx + tw)} ${f1(lowerY)} Z`);
+        }
+      }
+    } else if (teethStyleParam >= 0.3) {
+      // Pointed teeth: triangular, alternating sizes
+      for (let i = 0; i < teethCountParam; i++) {
+        const frac = (i + 0.5) / teethCountParam;
+        const tx = cx - halfW * 0.85 + frac * halfW * 1.7;
+        const tw = effectiveWidth / teethCountParam * 0.3;
+        // Alternate heights
+        const th = teethLengthParam * (i % 2 === 0 ? 0.8 : 0.5);
+        teeth.push(`M ${f1(tx - tw)} ${f1(cy)} L ${f1(tx)} ${f1(cy + th)} L ${f1(tx + tw)} ${f1(cy)} Z`);
+      }
+    } else {
+      // Rounded teeth: small white bumps along mouth line
+      for (let i = 0; i < teethCountParam; i++) {
+        const frac = (i + 0.5) / teethCountParam;
+        const tx = cx - halfW * 0.8 + frac * halfW * 1.6;
+        const bumpR = teethLengthParam * 0.25;
+        teeth.push(`M ${f1(tx - bumpR)} ${f1(cy)}
+          A ${f1(bumpR)} ${f1(bumpR)} 0 0 1 ${f1(tx + bumpR)} ${f1(cy)} Z`);
+      }
     }
   }
 
-  return { mouthPath, teeth };
+  // Tongue
+  let tonguePath = "";
+  if (tongueVisibleParam && openness > 2) {
+    const tongueLen = openness * 0.8;
+    const tongueW = halfW * 0.3;
+    // Forked tongue shape
+    tonguePath = `M ${f1(cx)} ${f1(cy + openness * 0.4)}
+      Q ${f1(cx + tongueW)} ${f1(cy + openness * 0.6)} ${f1(cx + tongueW * 0.5)} ${f1(cy + openness * 0.4 + tongueLen)}
+      L ${f1(cx)} ${f1(cy + openness * 0.4 + tongueLen * 0.7)}
+      L ${f1(cx - tongueW * 0.5)} ${f1(cy + openness * 0.4 + tongueLen)}
+      Q ${f1(cx - tongueW)} ${f1(cy + openness * 0.6)} ${f1(cx)} ${f1(cy + openness * 0.4)} Z`;
+  }
+
+  // Drool paths
+  const droolPaths: string[] = [];
+  if (droolVisibleParam && openness > 1.5) {
+    // 1-2 drip paths from mouth corners
+    const droolLen = 8 + openness * 2;
+    droolPaths.push(`M ${f1(cx - halfW * 0.6)} ${f1(cy + openness * 0.5)}
+      Q ${f1(cx - halfW * 0.7)} ${f1(cy + openness * 0.5 + droolLen * 0.5)} ${f1(cx - halfW * 0.5)} ${f1(cy + openness * 0.5 + droolLen)}`);
+    if (effectiveWidth > 15) {
+      droolPaths.push(`M ${f1(cx + halfW * 0.4)} ${f1(cy + openness * 0.6)}
+        Q ${f1(cx + halfW * 0.5)} ${f1(cy + openness * 0.6 + droolLen * 0.4)} ${f1(cx + halfW * 0.3)} ${f1(cy + openness * 0.6 + droolLen * 0.8)}`);
+    }
+  }
+
+  return { mouthPath, teeth, fangs, tonguePath, droolPaths, jawPath };
 }
 
 /* ------------------------------------------------------------------ */

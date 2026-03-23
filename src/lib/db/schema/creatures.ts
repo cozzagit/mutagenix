@@ -39,6 +39,7 @@ export type TraitValues = {
   toxicity: number;
   intelligence: number;
   armoring: number;
+  mouthSize: number;
   // Combat traits (Warrior Phase)
   attackPower: number;
   defense: number;
@@ -58,6 +59,7 @@ export const DEFAULT_TRAIT_VALUES: TraitValues = {
   bodySize: 0, headSize: 0, limbGrowth: 0, eyeDev: 0, skinTex: 0,
   furDensity: 0, spininess: 0, tailGrowth: 0, clawDev: 0, posture: 0,
   aggression: 0, luminosity: 0, toxicity: 0, intelligence: 0, armoring: 0,
+  mouthSize: 0,
   // Combat traits
   attackPower: 0, defense: 0, speed: 0, stamina: 0, specialAttack: 0, battleScars: 0,
 };
@@ -83,6 +85,10 @@ export const creatures = pgTable('creatures', {
     .$type<VisualParams>()
     .notNull()
     .default({}),
+  // Evolution path memory — phase snapshots (calculated once, stored permanently)
+  foundingElements: jsonb('founding_elements').$type<Record<string, number>>(),  // sum of allocations days 1-15
+  growthElements: jsonb('growth_elements').$type<Record<string, number>>(),      // sum of allocations days 16-40
+
   // Gradual mutation target state
   targetElementLevels: jsonb('target_element_levels').$type<ElementLevels>(),
   targetTraitValues: jsonb('target_trait_values').$type<TraitValues>(),

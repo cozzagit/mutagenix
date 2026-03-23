@@ -11,6 +11,7 @@ export const TRAITS = [
   'bodySize', 'headSize', 'limbGrowth', 'eyeDev', 'skinTex',
   'furDensity', 'spininess', 'tailGrowth', 'clawDev', 'posture',
   'aggression', 'luminosity', 'toxicity', 'intelligence', 'armoring',
+  'mouthSize',
 ] as const;
 export type TraitId = (typeof TRAITS)[number];
 
@@ -31,6 +32,7 @@ const z = (): Record<TraitId, number> => ({
   bodySize: 0, headSize: 0, limbGrowth: 0, eyeDev: 0, skinTex: 0,
   furDensity: 0, spininess: 0, tailGrowth: 0, clawDev: 0, posture: 0,
   aggression: 0, luminosity: 0, toxicity: 0, intelligence: 0, armoring: 0,
+  mouthSize: 0,
 });
 
 // ---------------------------------------------------------------------------
@@ -55,16 +57,16 @@ export const ELEMENT_COMBAT_WEIGHTS: Record<ElementId, Record<CombatTraitId, num
 };
 
 export const ELEMENT_TRAIT_WEIGHTS: Record<ElementId, Record<TraitId, number>> = {
-  N:  { ...z(), bodySize: 0.3, headSize: 0.1, limbGrowth: 0.2, skinTex: 0.1, posture: 0.3, toxicity: 0.1 },
-  K:  { ...z(), limbGrowth: 0.1, eyeDev: 0.3, posture: 0.6, intelligence: 0.3, luminosity: 0.2 },
-  Na: { ...z(), bodySize: 0.1, eyeDev: 0.2, skinTex: 0.3, spininess: 0.1, posture: 0.3, intelligence: 0.3, luminosity: 0.2 },
-  C:  { ...z(), bodySize: 0.4, headSize: 0.2, limbGrowth: 0.3, spininess: 0.1, armoring: 0.2 },
-  O:  { ...z(), bodySize: 0.2, headSize: 0.1, limbGrowth: 0.2, eyeDev: 0.1, skinTex: 0.2, posture: 0.2, luminosity: 0.2, intelligence: 0.2 },
-  P:  { ...z(), headSize: 0.3, eyeDev: 0.3, furDensity: 0.1, tailGrowth: 0.1, posture: 0.1, luminosity: 0.4, toxicity: 0.2, intelligence: 0.2 },
-  S:  { ...z(), skinTex: 0.3, furDensity: 0.2, spininess: 0.3, tailGrowth: 0.1, clawDev: 0.1, toxicity: 0.4, aggression: 0.3, armoring: 0.1 },
-  Ca: { ...z(), headSize: 0.2, limbGrowth: 0.3, spininess: 0.2, clawDev: 0.2, bodySize: 0.1, armoring: 0.4, aggression: 0.1 },
-  Fe: { ...z(), bodySize: 0.2, limbGrowth: 0.1, eyeDev: 0.1, skinTex: 0.2, clawDev: 0.3, posture: 0.1, aggression: 0.4, armoring: 0.3 },
-  Cl: { ...z(), skinTex: 0.4, furDensity: 0.1, tailGrowth: 0.2, posture: 0.3, toxicity: 0.3, aggression: 0.2 },
+  N:  { ...z(), bodySize: 0.3, headSize: 0.1, limbGrowth: 0.2, skinTex: 0.1, posture: 0.3, toxicity: 0.1, mouthSize: 0.1 },
+  K:  { ...z(), limbGrowth: 0.1, eyeDev: 0.3, posture: 0.6, intelligence: 0.3, luminosity: 0.2, mouthSize: 0.0 },
+  Na: { ...z(), bodySize: 0.1, eyeDev: 0.2, skinTex: 0.3, spininess: 0.1, posture: 0.3, intelligence: 0.3, luminosity: 0.2, mouthSize: 0.0 },
+  C:  { ...z(), bodySize: 0.4, headSize: 0.2, limbGrowth: 0.3, spininess: 0.1, armoring: 0.2, mouthSize: 0.1 },
+  O:  { ...z(), bodySize: 0.2, headSize: 0.1, limbGrowth: 0.2, eyeDev: 0.1, skinTex: 0.2, posture: 0.2, luminosity: 0.2, intelligence: 0.2, mouthSize: 0.1 },
+  P:  { ...z(), headSize: 0.3, eyeDev: 0.3, furDensity: 0.1, tailGrowth: 0.1, posture: 0.1, luminosity: 0.4, toxicity: 0.2, intelligence: 0.2, mouthSize: 0.0 },
+  S:  { ...z(), skinTex: 0.3, furDensity: 0.2, spininess: 0.3, tailGrowth: 0.1, clawDev: 0.1, toxicity: 0.4, aggression: 0.3, armoring: 0.1, mouthSize: 0.2 },
+  Ca: { ...z(), headSize: 0.2, limbGrowth: 0.3, spininess: 0.2, clawDev: 0.2, bodySize: 0.1, armoring: 0.4, aggression: 0.1, mouthSize: 0.2 },
+  Fe: { ...z(), bodySize: 0.2, limbGrowth: 0.1, eyeDev: 0.1, skinTex: 0.2, clawDev: 0.3, posture: 0.1, aggression: 0.4, armoring: 0.3, mouthSize: 0.3 },
+  Cl: { ...z(), skinTex: 0.4, furDensity: 0.1, tailGrowth: 0.2, posture: 0.3, toxicity: 0.3, aggression: 0.2, mouthSize: 0.2 },
 };
 
 // ---------------------------------------------------------------------------

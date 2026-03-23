@@ -69,6 +69,16 @@ export interface VisualParams {
   intelligenceLevel: number;  // 0-1, affects head/eye proportions
   armoringLevel: number;      // 0-1, affects skin thickness/plates
 
+  // Mouth & teeth
+  mouthWidth: number;         // 0-30 (pixel width of mouth opening)
+  mouthHeight: number;        // 0-15 (how open the mouth is)
+  teethCount: number;         // 0-12
+  teethLength: number;        // 0-15 (fang length)
+  teethStyle: number;         // 0=rounded, 0.5=pointed, 1=razor fangs
+  jawSize: number;            // 0-1 (how pronounced the jaw is)
+  tongueVisible: boolean;     // tongue sticking out at high aggression+mouth
+  droolVisible: boolean;      // drool at high toxicity+mouth
+
   // Color palette (contrasting feature colors from color-system)
   furColor: string;
   spineColor: string;
@@ -164,6 +174,47 @@ function dominantElement(elementLevels: ElementLevels): ElementId {
 }
 
 // ---------------------------------------------------------------------------
+// Blended dominance — evolution path memory
+// ---------------------------------------------------------------------------
+
+/**
+ * Calculate blended element influence using phase snapshots.
+ * If founding phase data exists, blend: 50% founding + 30% growth + 20% current.
+ * Otherwise fall back to current element levels (backward compatible).
+ */
+function getBlendedDominance(
+  current: Record<string, number>,
+  founding?: Record<string, number> | null,
+  growth?: Record<string, number> | null,
+): { dom: ElementId; sec: ElementId; blendedLevels: Record<string, number>; sorted: { el: ElementId; val: number }[] } {
+  const blended: Record<string, number> = {};
+
+  for (const el of ELEMENTS) {
+    const currentVal = current[el] ?? 0;
+    const foundingVal = founding?.[el] ?? 0;
+    const growthVal = growth?.[el] ?? 0;
+
+    // If we have phase data, blend: 50% founding + 30% growth + 20% current
+    if (founding && Object.values(founding).some(v => v > 0)) {
+      const foundingTotal = Object.values(founding).reduce((a, b) => a + b, 0) || 1;
+      const growthTotal = growth ? Object.values(growth).reduce((a, b) => a + b, 0) || 1 : 1;
+      const currentTotal = Object.values(current).reduce((a, b) => a + b, 0) || 1;
+
+      // Normalize each phase to percentages, then blend
+      blended[el] = (foundingVal / foundingTotal) * 0.50
+                   + (growthVal / growthTotal) * 0.30
+                   + (currentVal / currentTotal) * 0.20;
+    } else {
+      // No phase data: use current levels as before (backward compatible)
+      blended[el] = currentVal;
+    }
+  }
+
+  const sorted = (ELEMENTS as readonly ElementId[]).map(el => ({ el, val: blended[el] ?? 0 })).sort((a, b) => b.val - a.val);
+  return { dom: sorted[0].el, sec: sorted[1].el, blendedLevels: blended, sorted };
+}
+
+// ---------------------------------------------------------------------------
 // Main mapper
 // ---------------------------------------------------------------------------
 
@@ -171,18 +222,19 @@ export function mapTraitsToVisuals(
   traitValues: TraitValues,
   elementLevels: ElementLevels,
   activeSynergies: Synergy[],
+  foundingElements?: Record<string, number> | null,
+  growthElements?: Record<string, number> | null,
 ): VisualParams {
   // Normalise traits to 0-1 range for interpolation
-  const t = (trait: TraitId): number => clamp(traitValues[trait] / 100, 0, 1);
+  const t = (trait: TraitId): number => clamp((traitValues[trait] ?? 0) / 100, 0, 1);
 
   // ---------------------------------------------------------------------------
-  // Determine dominant and secondary elements
+  // Determine dominant and secondary elements (blended with evolution path memory)
   // ---------------------------------------------------------------------------
-  const sorted = ([...ELEMENTS] as ElementId[]).sort(
-    (a, b) => elementLevels[b] - elementLevels[a],
-  );
-  const dom: ElementId = sorted[0];
-  const sec: ElementId = sorted[1];
+  const blendedDominance = getBlendedDominance(elementLevels, foundingElements, growthElements);
+  const dom: ElementId = blendedDominance.dom;
+  const sec: ElementId = blendedDominance.sec;
+  const top5 = blendedDominance.sorted.slice(0, 5).map(e => e.el);
   const totalElements = ELEMENTS.reduce((sum, el) => sum + elementLevels[el], 0);
   const domRatio = elementLevels[dom] / Math.max(totalElements, 1);
 
@@ -255,6 +307,14 @@ export function mapTraitsToVisuals(
   } else {
     headSize = lerp(0.2, 0.8, t('headSize'));
   }
+
+  // ---------------------------------------------------------------------------
+  // Sub-dominant element effects (top 5 from blended calculation)
+  // ---------------------------------------------------------------------------
+
+  // Element #2 influences head size
+  if (top5[1] === 'P' || top5[1] === 'K') headSize *= 1.2;  // bigger head
+  if (top5[1] === 'Fe' || top5[1] === 'Ca') headSize *= 0.85; // smaller head
 
   const headYOffset = lerp(-20, 20, t('posture'));
 
@@ -338,7 +398,11 @@ export function mapTraitsToVisuals(
   }
 
   const limbLength = lerp(15, 80, t('limbGrowth'));
-  const limbCurve = lerp(0, 1, t('tailGrowth') * 0.3 + t('posture') * 0.7);
+  let limbCurve = lerp(0, 1, t('tailGrowth') * 0.3 + t('posture') * 0.7);
+
+  // Element #3 influences limb style
+  if (top5[2] === 'Na') limbCurve += 0.2;       // more curved limbs
+  if (top5[2] === 'Ca') limbThickness *= 1.3;    // thicker limbs
 
   // ---------------------------------------------------------------------------
   // Tail — element-driven length
@@ -357,6 +421,10 @@ export function mapTraitsToVisuals(
     tailLength = lerp(0, 60, t('tailGrowth'));
   }
   const tailCurve = lerp(0, 1, t('tailGrowth'));
+
+  // Element #4 influences tail
+  if (top5[3] === 'Cl' || top5[3] === 'S') tailLength *= 1.3;
+  if (top5[3] === 'Ca') tailLength *= 0.5; // stumpy
 
   // ---------------------------------------------------------------------------
   // Spines — element-driven count and size
@@ -402,6 +470,9 @@ export function mapTraitsToVisuals(
     clawSize = lerp(0, 12, t('clawDev'));
   }
 
+  // Element #3 influences claws
+  if (top5[2] === 'S') clawSize *= 1.2; // sharper claws
+
   // ---------------------------------------------------------------------------
   // Texture — fur and skin
   // ---------------------------------------------------------------------------
@@ -420,7 +491,11 @@ export function mapTraitsToVisuals(
   }
   // Ca: fur maps to scale-like pattern (keep numeric value, renderer interprets)
 
-  const skinRoughness = lerp(0, 1, t('skinTex'));
+  let skinRoughness = lerp(0, 1, t('skinTex'));
+
+  // Element #5 influences texture
+  if (top5[4] === 'N' || top5[4] === 'O') furDensity *= 1.2;
+  if (top5[4] === 'Fe') skinRoughness *= 1.3;
 
   // ---------------------------------------------------------------------------
   // Posture — element-driven max angle
@@ -588,6 +663,50 @@ export function mapTraitsToVisuals(
   const palette = generateColorPalette(elementLevels, traitValues, stabilityEstimate);
 
   // ---------------------------------------------------------------------------
+  // Mouth & teeth — new trait-driven feature
+  // ---------------------------------------------------------------------------
+  const mouthT = t('mouthSize');
+
+  // Mouth size depends on trait + personality
+  let mouthWidth = lerp(0, 30, mouthT);
+  let mouthHeight = lerp(0, 15, mouthT);
+
+  // Personality modifies mouth
+  if (aggressionLevel > 0.3) {
+    mouthWidth *= 1 + aggressionLevel * 0.3;  // aggressive = wider mouth
+    mouthHeight *= 1 + aggressionLevel * 0.5; // more open/snarling
+  }
+  if (intelligenceLevel > 0.4) {
+    mouthWidth *= 0.7; // smart = smaller, refined mouth
+  }
+
+  // Teeth based on mouth + elements
+  let teethCount = mouthT > 0.2 ? Math.round(lerp(2, 12, mouthT)) : 0;
+  let teethLength = lerp(0, 15, mouthT);
+  let teethStyle = 0.5; // default pointed
+
+  // Fe/Ca dominant: FANGS — long, sharp
+  if (dom === 'Fe' || dom === 'Ca') {
+    teethLength *= 1.5;
+    teethStyle = 1.0; // razor
+  }
+  // K/Na/P dominant: small, refined teeth
+  if (dom === 'K' || dom === 'Na' || dom === 'P') {
+    teethLength *= 0.5;
+    teethStyle = 0; // rounded
+    teethCount = Math.min(teethCount, 4);
+  }
+  // S/Cl dominant: irregular, sharp
+  if (dom === 'S' || dom === 'Cl') {
+    teethStyle = 0.8;
+    // Some teeth longer than others (handled by renderer)
+  }
+
+  const jawSize = lerp(0, 1, mouthT * 0.7 + (dom === 'Fe' || dom === 'Ca' ? 0.3 : 0));
+  const tongueVisible = aggressionLevel > 0.6 && mouthT > 0.4;
+  const droolVisible = toxicityLevel > 0.5 && mouthT > 0.3;
+
+  // ---------------------------------------------------------------------------
   // Combat / Warrior phase visuals
   // ---------------------------------------------------------------------------
   // Derive combatPhase from average physical trait saturation (not age, which
@@ -648,6 +767,16 @@ export function mapTraitsToVisuals(
     toxicityLevel,
     intelligenceLevel,
     armoringLevel,
+
+    // Mouth & teeth
+    mouthWidth,
+    mouthHeight,
+    teethCount,
+    teethLength,
+    teethStyle,
+    jawSize,
+    tongueVisible,
+    droolVisible,
 
     // Color palette fields
     furColor: palette.furColor,
