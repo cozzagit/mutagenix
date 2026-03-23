@@ -166,13 +166,20 @@ export async function POST(request: NextRequest) {
   }
 
   // 7. Validate battles today limit (5 per day)
-  // Reset battlesToday if lastBattleAt is from a previous day
+  // Reset battlesToday if lastBattleAt is from a previous calendar day
   let battlesToday = challengerRanking.battlesToday;
-  if (
-    challengerRanking.lastBattleAt &&
-    challengerRanking.lastBattleAt.toDateString() !== now.toDateString()
-  ) {
-    battlesToday = 0;
+  if (challengerRanking.lastBattleAt) {
+    const lastDate = new Date(challengerRanking.lastBattleAt);
+    const isNewDay = lastDate.getUTCDate() !== now.getUTCDate() ||
+                     lastDate.getUTCMonth() !== now.getUTCMonth() ||
+                     lastDate.getUTCFullYear() !== now.getUTCFullYear();
+    if (isNewDay) {
+      battlesToday = 0;
+      // Persist the reset immediately
+      await db.update(creatureRankings)
+        .set({ battlesToday: 0 })
+        .where(eq(creatureRankings.creatureId, challengerCreature.id));
+    }
   }
 
   if (battlesToday >= 5) {
