@@ -242,7 +242,7 @@ function UserGridCard({
     : tierLabel === 'embryo' || tierFromAge === 'embryo'
       ? { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' }
       : tierLabel === 'divine'
-        ? { label: 'Divinità', color: 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400', bg: 'bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15' }
+        ? { label: 'Divinità', color: 'badge-divine text-amber-400', bg: 'bg-amber-500/20 border border-amber-400/30' }
         : tierLabel === 'immortal'
           ? { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15' }
           : tierLabel === 'legend'

@@ -53,7 +53,7 @@ const LEVEL_BADGES: Record<string, { label: string; color: string; bg: string; d
   veteran: { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15', dot: '#b26eff' },
   legend: { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15', dot: '#fbbf24' },
   immortal: { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15', dot: '#f87171' },
-  divine: { label: 'Divinità', color: 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400', bg: 'bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15', dot: '#ec4899' },
+  divine: { label: 'Divinità', color: 'badge-divine text-amber-400', bg: 'bg-amber-500/20 border border-amber-400/30', dot: '#ec4899' },
 };
 
 function getPotenzaTier(potenza: number): { color: string; glow: string; textColor: string } {

@@ -297,6 +297,20 @@ body {
   }
 }
 
+@keyframes divine-rainbow {
+  0% { color: #fbbf24; text-shadow: 0 0 8px #fbbf2466; }
+  20% { color: #f472b6; text-shadow: 0 0 8px #f472b666; }
+  40% { color: #a78bfa; text-shadow: 0 0 8px #a78bfa66; }
+  60% { color: #22d3ee; text-shadow: 0 0 8px #22d3ee66; }
+  80% { color: #34d399; text-shadow: 0 0 8px #34d39966; }
+  100% { color: #fbbf24; text-shadow: 0 0 8px #fbbf2466; }
+}
+
+.badge-divine {
+  animation: divine-rainbow 3s ease-in-out infinite;
+  font-weight: 900;
+}
+
 @keyframes glitch {
   0% {
     transform: translate(0, 0);

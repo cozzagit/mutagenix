@@ -106,7 +106,7 @@ function getLevelBadge(ageDays: number, tier?: string): { label: string; color: 
   }
   // Always derive tier from age (DB ranking tier may be stale)
   const effectiveTier = ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice';
-  if (effectiveTier === 'divine') return { label: 'Divinità', color: 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400', bg: 'bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15' };
+  if (effectiveTier === 'divine') return { label: 'Divinità', color: 'badge-divine text-amber-400', bg: 'bg-amber-500/20 border border-amber-400/30' };
   if (effectiveTier === 'immortal') return { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15' };
   if (effectiveTier === 'legend') return { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' };
   if (effectiveTier === 'veteran') return { label: 'Veterano', color: 'text-bio-purple', bg: 'bg-bio-purple/15' };

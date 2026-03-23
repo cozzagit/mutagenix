@@ -13,7 +13,7 @@ const TIER_STYLES: Record<string, { label: string; color: string; bg: string }> 
   veteran: { label: "Veterano", color: "text-bio-purple", bg: "bg-bio-purple/20" },
   legend: { label: "Leggenda", color: "text-warning", bg: "bg-warning/20" },
   immortal: { label: "Immortale", color: "text-red-400", bg: "bg-red-500/20" },
-  divine: { label: "Divinità", color: "text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-cyan-400", bg: "bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-cyan-500/15" },
+  divine: { label: "Divinità", color: "badge-divine text-amber-400", bg: "bg-amber-500/20 border border-amber-400/30" },
 };
 
 const AXP_TIER_STYLES: Record<string, { label: string; color: string; bg: string }> = {
