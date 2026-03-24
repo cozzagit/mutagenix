@@ -53,7 +53,7 @@ interface CreatureData {
   stability: number | null;
   visualParams: Record<string, unknown>;
   isActive: boolean;
-  parentNames: string[] | null;
+  parentNames: { parentA: string | null; parentB: string | null } | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -459,10 +459,13 @@ function CreatureCard({
       </div>
 
       {/* Parent names */}
-      {creature.parentNames && creature.parentNames.length > 0 && (
-        <p className="text-[9px] text-muted text-center mb-2">
-          Genitori: {creature.parentNames.join(" + ")}
-        </p>
+      {creature.parentNames && (creature.parentNames.parentA || creature.parentNames.parentB) && (
+        <div className="flex items-center justify-center gap-1 mb-2">
+          <span className="text-[9px] text-bio-purple">&#9829;</span>
+          <p className="text-[9px] text-muted">
+            {[creature.parentNames.parentA, creature.parentNames.parentB].filter(Boolean).join(" + ")}
+          </p>
+        </div>
       )}
 
       {/* Activate button */}

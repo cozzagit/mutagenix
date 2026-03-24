@@ -115,7 +115,19 @@ export default async function LaboratoriPage() {
     }
   }
 
-  // 5. Build creature data with recalculated visuals and potenza
+  // 5. Build parent name lookup
+  const parentIds = new Set<string>();
+  for (const c of allCreatures) {
+    if (c.parentACreatureId) parentIds.add(c.parentACreatureId);
+    if (c.parentBCreatureId) parentIds.add(c.parentBCreatureId);
+  }
+  const parentNameMap = new Map<string, string>();
+  // Most parents are already in allCreatures
+  for (const c of allCreatures) {
+    if (parentIds.has(c.id)) parentNameMap.set(c.id, c.name);
+  }
+
+  // 6. Build creature data with recalculated visuals and potenza
   const creaturesData: LaboratoriCreature[] = allCreatures
     .map((c) => {
       const user = usersMap.get(c.userId);
@@ -176,6 +188,11 @@ export default async function LaboratoriPage() {
           battlesToday: ranking?.battlesToday ?? 0,
           now,
         }),
+        familyGeneration: c.familyGeneration,
+        parentNames: (c.parentACreatureId || c.parentBCreatureId) ? {
+          parentA: c.parentACreatureId ? parentNameMap.get(c.parentACreatureId) ?? null : null,
+          parentB: c.parentBCreatureId ? parentNameMap.get(c.parentBCreatureId) ?? null : null,
+        } : null,
       };
     })
     .filter((c) => c !== null)

@@ -35,6 +35,8 @@ export interface LaboratoriCreature {
     tier: string;
   } | null;
   wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
+  parentNames?: { parentA: string | null; parentB: string | null } | null;
+  familyGeneration?: number;
 }
 
 interface LaboratoriDirectoryProps {
@@ -195,6 +197,20 @@ function CreatureCard({
           {badge.label}
         </span>
       </div>
+
+      {/* Generation + Parents */}
+      {creature.familyGeneration && creature.familyGeneration > 1 && (
+        <div className="mt-1 flex flex-col items-center gap-0.5">
+          <span className="rounded-full bg-bio-purple/15 px-1.5 py-0.5 text-[8px] font-bold text-bio-purple">
+            Gen {creature.familyGeneration}
+          </span>
+          {creature.parentNames && (creature.parentNames.parentA || creature.parentNames.parentB) && (
+            <p className="text-[8px] text-muted">
+              {[creature.parentNames.parentA, creature.parentNames.parentB].filter(Boolean).join(" + ")}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Wellness compact dots */}
       {creature.wellness && (
