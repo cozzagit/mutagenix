@@ -679,16 +679,6 @@ function RichiesteTab() {
     }
   }, [toast, fetchRequests]);
 
-  if (loading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-40 rounded-xl border border-border/30 bg-surface-2 animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
   const handleCancel = useCallback(async (id: string) => {
     setProcessingId(id);
     setProcessingAction("cancel");
