@@ -293,10 +293,11 @@ export function processDailyMutation(
       const normalizedContrib = injectionTotal > 0 ? injectionContrib / injectionTotal : 0;
 
       // Growth: contribution × combatRatio × rate
-      // Aggressive diminishing returns — growth collapses above 70
-      // at 50: 75% | at 70: 51% | at 80: 36% | at 85: 28% | at 90: 19% | at 95: 6%
+      // Hard ceiling: above COMBAT_HARD_CEILING, growth is ZERO
+      // Below that, aggressive diminishing returns — growth collapses above 70
       const t = oldValue / 100;
-      const diminishing = Math.max(0.05, (1 - t) * (1 - t * t));
+      const aboveCeiling = oldValue >= GAME_CONFIG.COMBAT_HARD_CEILING;
+      const diminishing = aboveCeiling ? 0 : Math.max(0.05, (1 - t) * (1 - t * t));
       const combatDelta = normalizedContrib * combatRatio * combatGrowthRate * 100 * diminishing;
 
       // battleScars: tiny constant growth (experience from battle)

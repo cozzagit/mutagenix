@@ -184,7 +184,9 @@ export const GAME_CONFIG = {
   /** Combat trait value above which natural regression kicks in */
   COMBAT_REGRESSION_THRESHOLD: 85,
   /** Rate at which combat traits above threshold regress per day */
-  COMBAT_REGRESSION_RATE: 0.02,
+  COMBAT_REGRESSION_RATE: 0.08,
+  /** Hard ceiling: above this value, growth is completely zeroed out */
+  COMBAT_HARD_CEILING: 90,
   /** Minimum total element levels before overdose kicks in (early game protection) */
   OVERDOSE_MIN_TOTAL: 100,
 } as const;

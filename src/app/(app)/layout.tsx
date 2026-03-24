@@ -6,6 +6,9 @@ import { usePathname } from "next/navigation";
 import { ToastProvider } from "@/components/ui/toast";
 import { BattleNotifier } from "@/components/pwa/battle-notifier";
 
+// Increment this on breaking changes to force client refresh
+const APP_VERSION = 2;
+
 interface NavItem {
   href: string;
   label: string;
@@ -152,6 +155,19 @@ export default function AppLayout({
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
   }
+
+  // Force reload if client has stale version
+  useEffect(() => {
+    const key = 'mx-app-version';
+    const stored = parseInt(localStorage.getItem(key) ?? '0', 10);
+    if (stored < APP_VERSION) {
+      localStorage.setItem(key, String(APP_VERSION));
+      if (stored > 0) {
+        // Only force reload if upgrading from a previous version (not first visit)
+        window.location.reload();
+      }
+    }
+  }, []);
 
   // Fetch unread arena battles on mount and when not on arena page
   useEffect(() => {
