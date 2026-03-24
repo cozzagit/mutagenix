@@ -40,6 +40,7 @@ export interface LaboratoriCreature {
   parentNames?: { parentA: string | null; parentB: string | null } | null;
   familyGeneration?: number;
   cariche?: string[];
+  isDead?: boolean;
 }
 
 interface LaboratoriDirectoryProps {
@@ -151,7 +152,7 @@ function SpecimenCard({
   const badge = LEVEL_BADGES[creature.level] ?? LEVEL_BADGES.embryo;
   const potenzaTier = getPotenzaTier(creature.potenza);
   const bodyColor = getBodyColor(creature.visualParams);
-  const isDead = creature.wellness?.composite === 0;
+  const isDead = creature.isDead === true;
 
   const visualParams: VisualParams = {
     ...DEFAULT_VISUAL_PARAMS,

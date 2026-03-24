@@ -202,6 +202,7 @@ export default async function LaboratoriPage() {
           now,
         }),
         cariche: caricheMap.get(c.id) ?? [],
+        isDead: c.isDead,
         familyGeneration: c.familyGeneration,
         parentNames: (c.parentACreatureId || c.parentBCreatureId) ? {
           parentA: c.parentACreatureId ? parentNameMap.get(c.parentACreatureId) ?? null : null,
