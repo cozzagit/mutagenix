@@ -328,7 +328,7 @@ function CreatureNode({
       >
         {creature.name}
       </p>
-      <p className="text-[8px] text-muted">Dr. {creature.ownerName}</p>
+      <p className="text-[8px] text-muted">{creature.ownerName}</p>
       <span
         className="mt-0.5 rounded-full px-1.5 py-0.5 text-[7px] font-bold"
         style={{

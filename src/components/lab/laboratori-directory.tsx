@@ -241,7 +241,7 @@ function SpecimenCard({
 
           {/* Scientist */}
           <p className="truncate text-center text-[10px] text-muted">
-            Dr. {creature.ownerName}
+            {creature.ownerName}
           </p>
 
           {/* Day + Level badge row */}
@@ -371,7 +371,7 @@ function ScientistGroupHeader({
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-xs font-bold text-foreground">
-            Laboratorio di Dr. {name}
+            Laboratorio di {name}
           </h3>
           <p className="text-[10px] text-muted/60">
             {count} campion{count === 1 ? 'e' : 'i'} &middot; Potenza totale: {totalPotenza}
@@ -425,7 +425,7 @@ function CreatureDetailDrawer({
               {creature.name}
             </h2>
             <p className="text-[10px] text-muted">
-              Proprietario: Dr. {creature.ownerName} &middot; Giorno {creature.ageDays}
+              Proprietario: {creature.ownerName} &middot; Giorno {creature.ageDays}
             </p>
           </div>
           <button
