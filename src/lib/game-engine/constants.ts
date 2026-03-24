@@ -212,3 +212,19 @@ export const MUTATION_PHASES = [
 ] as const;
 
 export type MutationPhase = (typeof MUTATION_PHASES)[number]['name'];
+
+// ---------------------------------------------------------------------------
+// Cariche del Laboratorio (Social Hierarchy)
+// ---------------------------------------------------------------------------
+
+export const CARICHE = [
+  { id: 'primario', name: 'Primario del Laboratorio', bonus: 'Decay benessere -20%', badgeColor: '#4ade80', icon: '\u{1F3E5}' },
+  { id: 'console', name: "Console dell'Arena", bonus: 'AXP +5%', badgeColor: '#dc2626', icon: '\u2694\uFE0F' },
+  { id: 'pontefice', name: 'Pontefice Luminoso', bonus: 'Att. Speciale +3%', badgeColor: '#fbbf24', icon: '\u2728' },
+  { id: 'tossicarca', name: 'Tossicarca', bonus: 'Danno veleno +3%', badgeColor: '#a855f7', icon: '\u2620\uFE0F' },
+  { id: 'patriarca', name: 'Patriarca della Stirpe', bonus: 'Costo breeding -15%', badgeColor: '#3b82f6', icon: '\u{1F451}' },
+  { id: 'custode', name: 'Custode della Stabilit\u00E0', bonus: 'Difesa +3%', badgeColor: '#94a3b8', icon: '\u{1F6E1}\uFE0F' },
+  { id: 'alchimista', name: 'Alchimista Supremo', bonus: '+5 crediti', badgeColor: '#f97316', icon: '\u2697\uFE0F' },
+] as const;
+
+export type CaricaId = (typeof CARICHE)[number]['id'];

@@ -617,6 +617,67 @@ export default function GuidaPage() {
           </div>
         </GuideCard>
 
+        {/* Cariche del Laboratorio */}
+        <GuideCard title="Le Cariche del Laboratorio">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #fbbf24',
+                backgroundColor: 'rgba(251, 191, 36, 0.08)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold mb-1" style={{ color: '#fbbf24' }}>
+                NUOVO &mdash; Gerarchia Sociale
+              </p>
+              <p>
+                Ogni settimana vengono assegnate 7 cariche di prestigio alle creature pi&ugrave; meritevoli.
+                Ogni carica conferisce un bonus unico al detentore.
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-3 font-semibold text-foreground">Le 7 Cariche:</p>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { icon: '\u{1F3E5}', name: 'Primario del Laboratorio', color: '#4ade80', metric: 'Benessere pi\u00F9 alto', bonus: 'Decay benessere -20%' },
+                  { icon: '\u2694\uFE0F', name: "Console dell'Arena", color: '#dc2626', metric: 'ELO settimanale pi\u00F9 alto (min 5 battaglie)', bonus: 'AXP +5%' },
+                  { icon: '\u2728', name: 'Pontefice Luminoso', color: '#fbbf24', metric: 'Luminosit\u00E0 pi\u00F9 alta', bonus: 'Attacco Speciale +3%' },
+                  { icon: '\u2620\uFE0F', name: 'Tossicarca', color: '#a855f7', metric: 'Tossicit\u00E0 pi\u00F9 alta', bonus: 'Danno veleno +3%' },
+                  { icon: '\u{1F451}', name: 'Patriarca della Stirpe', color: '#3b82f6', metric: 'Pi\u00F9 discendenti vivi (min 2)', bonus: 'Costo breeding -15%' },
+                  { icon: '\u{1F6E1}\uFE0F', name: 'Custode della Stabilit\u00E0', color: '#94a3b8', metric: 'Stabilit\u00E0 pi\u00F9 alta (min giorno 40)', bonus: 'Difesa +3%' },
+                  { icon: '\u2697\uFE0F', name: 'Alchimista Supremo', color: '#f97316', metric: 'Pi\u00F9 sinergie attive', bonus: '+5 crediti iniezione' },
+                ].map((c) => (
+                  <div key={c.name} className="flex items-start gap-3 rounded-lg border border-border/20 bg-surface-2/40 px-3 py-2.5">
+                    <span className="mt-0.5 text-base">{c.icon}</span>
+                    <div className="min-w-0">
+                      <span className="text-xs font-semibold" style={{ color: c.color }}>
+                        {c.name}
+                      </span>
+                      <p className="text-[11px] text-muted">{c.metric}</p>
+                      <p className="text-[10px] font-medium" style={{ color: c.color }}>
+                        Bonus: {c.bonus}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Come funziona il ciclo settimanale:</p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; Ogni settimana le cariche vengono ricalcolate automaticamente</li>
+                <li>&bull; La creatura con il punteggio pi&ugrave; alto in ciascuna metrica riceve il titolo</li>
+                <li>&bull; Una creatura pu&ograve; detenere pi&ugrave; cariche contemporaneamente</li>
+                <li>&bull; Anche le creature dei bot sono eligibili</li>
+                <li>&bull; I bonus delle cariche si sommano ad altri bonus (tier, AXP, sinergie)</li>
+              </ul>
+            </div>
+          </div>
+        </GuideCard>
+
         {/* Riproduzione e Clan */}
         <GuideCard title="Riproduzione e Clan">
           <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">

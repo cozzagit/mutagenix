@@ -23,6 +23,7 @@ import {
 } from '@/lib/game-engine/mutation-engine';
 import { TIME_CONFIG } from '@/lib/game-engine/time-config';
 import { finalizeIfExpired } from '@/lib/game-engine/auto-finalize';
+import { getCreatureCariche } from '@/lib/game-engine/cariche-loader';
 
 function isValidElementKey(key: string): key is ElementId {
   return (ELEMENTS as readonly string[]).includes(key);
@@ -123,7 +124,11 @@ export async function POST(request: NextRequest) {
     : creatureTier === 'immortal'
       ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
       : 0;
-  const maxCredits = GAME_CONFIG.DAILY_CREDITS + bonusCredits;
+
+  // Alchimista Supremo bonus: +5 crediti
+  const creatureCariche = await getCreatureCariche(creatureId);
+  const alchimistaBonus = creatureCariche.includes('alchimista') ? 5 : 0;
+  const maxCredits = GAME_CONFIG.DAILY_CREDITS + bonusCredits + alchimistaBonus;
 
   if (totalCredits > maxCredits) {
     return NextResponse.json(

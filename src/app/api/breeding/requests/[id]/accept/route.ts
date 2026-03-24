@@ -26,6 +26,7 @@ import type {
   ElementLevels as SchemaElementLevels,
   TraitValues as SchemaTraitValues,
 } from '@/lib/db/schema/creatures';
+import { getCreatureCariche } from '@/lib/game-engine/cariche-loader';
 
 export async function POST(
   _request: Request,
@@ -180,7 +181,14 @@ export async function POST(
     .from(users)
     .where(eq(users.id, session.userId));
 
-  const energyCost = breedingRequest.energyCost;
+  // Patriarca della Stirpe discount: -15% breeding cost
+  const [requesterCariche, targetCariche] = await Promise.all([
+    getCreatureCariche(requesterCreature.id),
+    getCreatureCariche(targetCreature.id),
+  ]);
+  const hasPatriarca = requesterCariche.includes('patriarca') || targetCariche.includes('patriarca');
+  const patriarcaDiscount = hasPatriarca ? 0.85 : 1;
+  const energyCost = Math.floor(breedingRequest.energyCost * patriarcaDiscount);
 
   if (!requesterUser || requesterUser.energy < energyCost) {
     return NextResponse.json(

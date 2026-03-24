@@ -41,6 +41,8 @@ export interface BattleCreature {
     fatigue: number;
     composite: number;
   };
+  // Cariche held by this creature (optional)
+  caricheIds?: string[];
 }
 
 /** A single event that occurred during a battle round. */

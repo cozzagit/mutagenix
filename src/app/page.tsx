@@ -257,6 +257,46 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ==================== CARICHE DEL LABORATORIO BANNER ==================== */}
+      <section className="relative z-10 border-t border-[#fbbf24]/20 bg-gradient-to-b from-[#fbbf24]/[0.04] to-background px-6 py-8">
+        <div className="mx-auto max-w-2xl">
+          <div
+            className="rounded-2xl border p-5 backdrop-blur-sm"
+            style={{
+              borderColor: 'rgba(251, 191, 36, 0.25)',
+              backgroundColor: 'rgba(251, 191, 36, 0.04)',
+            }}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l2.09 6.26L20.18 9.27l-5.09 3.94L16.18 20 12 16.77 7.82 20l1.09-6.79L3.82 9.27l6.09-1.01L12 2Z" />
+                </svg>
+                Nuovo
+              </span>
+              <span className="text-[10px] text-muted">24 Marzo 2026</span>
+            </div>
+            <h3 className="mb-2 text-sm font-bold text-foreground">
+              Cariche del Laboratorio
+            </h3>
+            <p className="mb-3 text-xs leading-relaxed text-muted">
+              Sette ruoli di prestigio vengono assegnati ogni settimana alle creature pi&ugrave; meritevoli:
+              il guerriero pi&ugrave; forte, la mente pi&ugrave; brillante, il ceppo pi&ugrave; prolifico e molto altro.
+              Ogni carica conferisce un <strong className="text-[#fbbf24]">bonus unico</strong> al suo detentore.
+            </p>
+            <p className="text-[11px] text-muted italic">
+              Scopri tutte le cariche nella{' '}
+              <Link href="/guida" className="text-[#fbbf24] underline underline-offset-2 hover:text-[#fcd34d]">
+                guida completa
+              </Link>.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ==================== BREEDING SYSTEM BANNER ==================== */}
       <section className="relative z-10 border-t border-[#b26eff]/20 bg-gradient-to-b from-[#b26eff]/[0.04] to-background px-6 py-8">
         <div className="mx-auto max-w-2xl">

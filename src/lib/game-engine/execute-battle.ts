@@ -27,6 +27,7 @@ import type { Creature } from '@/lib/db/schema/creatures';
 import type { CreatureRanking } from '@/lib/db/schema/creature-rankings';
 import { loadWellnessInput } from './wellness-loader';
 import { calculateWellness } from './wellness';
+import { getCreatureCariche } from './cariche-loader';
 
 // ---------------------------------------------------------------------------
 // AXP helpers
@@ -138,6 +139,12 @@ export async function executeBattle(
       .where(eq(creatureRankings.creatureId, defenderCreature.id));
   }
 
+  // --- Load cariche for both creatures ---
+  const [challengerCariche, defenderCariche] = await Promise.all([
+    getCreatureCariche(challengerCreature.id),
+    getCreatureCariche(defenderCreature.id),
+  ]);
+
   // --- Load wellness for both creatures ---
   const [challengerWellnessInput, defenderWellnessInput] = await Promise.all([
     loadWellnessInput(challengerCreature.id, {
@@ -153,8 +160,8 @@ export async function executeBattle(
   const defenderWellness = calculateWellness(defenderWellnessInput);
 
   // --- Run battle ---
-  const challengerBattle = creatureToBattleCreature(challengerCreature, challengerRanking, challengerWellness);
-  const defenderBattle = creatureToBattleCreature(defenderCreature, defenderRanking, defenderWellness);
+  const challengerBattle = creatureToBattleCreature(challengerCreature, challengerRanking, challengerWellness, challengerCariche);
+  const defenderBattle = creatureToBattleCreature(defenderCreature, defenderRanking, defenderWellness, defenderCariche);
   const battleResult = calculateBattle(challengerBattle, defenderBattle);
 
   const isDraw = battleResult.winnerId === null;
@@ -249,8 +256,16 @@ export async function executeBattle(
   }
 
   // --- Calculate AXP awards ---
-  const challengerAxpGain = isDraw ? 7 : challengerWon ? 10 : 5;
-  const defenderAxpGain = isDraw ? 7 : !challengerWon ? 10 : 5;
+  let challengerAxpGain = isDraw ? 7 : challengerWon ? 10 : 5;
+  let defenderAxpGain = isDraw ? 7 : !challengerWon ? 10 : 5;
+
+  // Console dell'Arena bonus: +5% AXP
+  if (challengerCariche.includes('console')) {
+    challengerAxpGain = Math.ceil(challengerAxpGain * 1.05);
+  }
+  if (defenderCariche.includes('console')) {
+    defenderAxpGain = Math.ceil(defenderAxpGain * 1.05);
+  }
   const challengerAxpAfter = challengerRanking.axp + challengerAxpGain;
   const defenderAxpAfter = defenderRanking.axp + defenderAxpGain;
 

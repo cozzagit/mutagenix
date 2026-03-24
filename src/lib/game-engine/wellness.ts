@@ -56,32 +56,35 @@ function getWellnessTimeScale(): number {
 }
 
 /** Hunger: decays over 72h in prod (~2.4h in dev) */
-function getHungerWindowMs(): number {
-  return (72 * 60 * 60 * 1000) / getWellnessTimeScale();
+function getHungerWindowMs(hasPrimario?: boolean): number {
+  const base = (72 * 60 * 60 * 1000) / getWellnessTimeScale();
+  return hasPrimario ? base * 1.2 : base;
 }
 
 /** Activity: window of 7 days in prod (~5.6h in dev) */
-function getActivityWindowMs(): number {
-  return (7 * 24 * 60 * 60 * 1000) / getWellnessTimeScale();
+function getActivityWindowMs(hasPrimario?: boolean): number {
+  const base = (7 * 24 * 60 * 60 * 1000) / getWellnessTimeScale();
+  return hasPrimario ? base * 1.2 : base;
 }
 
 /** Boredom: decays over 5 days in prod (~4h in dev) */
-function getBoredomWindowMs(): number {
-  return (5 * 24 * 60 * 60 * 1000) / getWellnessTimeScale();
+function getBoredomWindowMs(hasPrimario?: boolean): number {
+  const base = (5 * 24 * 60 * 60 * 1000) / getWellnessTimeScale();
+  return hasPrimario ? base * 1.2 : base;
 }
 
 // ---------------------------------------------------------------------------
 // Wellness calculation
 // ---------------------------------------------------------------------------
 
-export function calculateWellness(input: WellnessInput): WellnessState {
+export function calculateWellness(input: WellnessInput, hasPrimario?: boolean): WellnessState {
   const { lastInjectionAt, recentInjectionCount, lastBattleAt, battlesToday, now } = input;
 
   // --- Hunger: time since last injection ---
   let hunger = 100;
   if (lastInjectionAt) {
     const elapsed = now.getTime() - lastInjectionAt.getTime();
-    const ratio = Math.min(1, elapsed / getHungerWindowMs());
+    const ratio = Math.min(1, elapsed / getHungerWindowMs(hasPrimario));
     hunger = Math.round(100 * (1 - ratio));
   } else {
     hunger = 0; // never injected = starving
@@ -95,7 +98,7 @@ export function calculateWellness(input: WellnessInput): WellnessState {
   let boredom = 100;
   if (lastBattleAt) {
     const elapsed = now.getTime() - lastBattleAt.getTime();
-    const ratio = Math.min(1, elapsed / getBoredomWindowMs());
+    const ratio = Math.min(1, elapsed / getBoredomWindowMs(hasPrimario));
     boredom = Math.round(100 * (1 - ratio));
   } else {
     // Never fought = moderately bored (not critical since young creatures don't fight)

@@ -216,6 +216,19 @@ function initFighter(creature: BattleCreature): FighterState {
     maxHp *= wm.staminaMul; // stamina affects HP pool
   }
 
+  // --- Carica bonuses ---
+  if (creature.caricheIds) {
+    if (creature.caricheIds.includes('pontefice')) {
+      effectiveAtk *= 1.03; // approximates special attack boost
+    }
+    if (creature.caricheIds.includes('custode')) {
+      effectiveDef *= 1.03;
+    }
+    if (creature.caricheIds.includes('tossicarca')) {
+      effectiveAtk *= 1.03; // approximates poison boost
+    }
+  }
+
   return {
     creature,
     hp: maxHp,

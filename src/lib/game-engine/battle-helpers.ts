@@ -109,6 +109,7 @@ export function creatureToBattleCreature(
   creature: Creature,
   _ranking?: CreatureRanking,
   wellness?: WellnessState,
+  caricheIds?: string[],
 ): BattleCreature {
   const elementLevels = creature.elementLevels as ElementLevels;
   const traitValues = creature.traitValues as TraitValues;
@@ -155,5 +156,8 @@ export function creatureToBattleCreature(
 
     // Wellness (if provided)
     wellness,
+
+    // Cariche (if provided)
+    caricheIds,
   };
 }

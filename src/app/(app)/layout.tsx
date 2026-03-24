@@ -80,6 +80,15 @@ const NAV_ITEMS: NavItemExt[] = [
     badgeKey: 'breeding',
   },
   {
+    href: "/cariche",
+    label: "Cariche",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l2.09 6.26L20.18 9.27l-5.09 3.94L16.18 20 12 16.77 7.82 20l1.09-6.79L3.82 9.27l6.09-1.01L12 2Z" />
+      </svg>
+    ),
+  },
+  {
     href: "/laboratori",
     label: "Biosfera",
     icon: (

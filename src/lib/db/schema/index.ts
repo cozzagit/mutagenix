@@ -78,3 +78,11 @@ export {
   type PlayerRelationship,
   type NewPlayerRelationship,
 } from './player-relationships';
+export {
+  cariche,
+  caricaHistory,
+  type Carica,
+  type NewCarica,
+  type CaricaHistoryEntry,
+  type NewCaricaHistoryEntry,
+} from './cariche';
