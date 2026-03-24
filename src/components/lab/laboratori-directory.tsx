@@ -9,6 +9,7 @@ import type { VisualParams } from '@/lib/game-engine/visual-mapper';
 import { PersonalityRadar } from '@/components/lab/personality-radar';
 import { CaricaBadge } from '@/components/cariche/carica-badge';
 import { COMBAT_TRAITS } from '@/lib/game-engine/constants';
+import { StirpiView } from './stirpi-view';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -709,6 +710,7 @@ function CreatureDetailDrawer({
 // ---------------------------------------------------------------------------
 
 export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
+  const [view, setView] = useState<'grid' | 'stirpi'>('grid');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('potenza');
   const [tierFilter, setTierFilter] = useState<TierFilter>('all');
@@ -804,6 +806,24 @@ export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
               Osserva tutte le creature del laboratorio sotto il microscopio
             </p>
           </div>
+
+          {/* View toggle */}
+          <div className="ml-auto flex items-center gap-1 rounded-lg bg-surface-2/80 p-0.5">
+            <button
+              type="button"
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === 'grid' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+              onClick={() => setView('grid')}
+            >
+              Griglia
+            </button>
+            <button
+              type="button"
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === 'stirpi' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+              onClick={() => setView('stirpi')}
+            >
+              Stirpi
+            </button>
+          </div>
         </div>
       </div>
 
@@ -888,7 +908,12 @@ export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
         </div>
       </div>
 
-      {/* Main grid area */}
+      {/* Main content area */}
+      {view === 'stirpi' ? (
+        <div className="relative z-10">
+          <StirpiView creatures={filtered} />
+        </div>
+      ) : (
       <div className="relative z-10">
         {grouped ? (
           /* Grouped by scientist */
@@ -939,6 +964,7 @@ export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
           </div>
         )}
       </div>
+      )}
 
       {/* Detail Drawer */}
       {selectedCreature && (
