@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequiredSession, unauthorizedResponse } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures } from '@/lib/db/schema';
+import { users, creatures } from '@/lib/db/schema';
 import { DEFAULT_ELEMENT_LEVELS, DEFAULT_TRAIT_VALUES } from '@/lib/db/schema/creatures';
 import { eq, and } from 'drizzle-orm';
 
@@ -25,15 +25,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Find the current active (non-archived) creature
-  const [creature] = await db
-    .select()
-    .from(creatures)
-    .where(
-      and(
-        eq(creatures.userId, session.userId),
-        eq(creatures.isArchived, false),
-      ),
-    );
+  const [activeUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  const [creature] = activeUser?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, activeUser.activeCreatureId))
+    : await db.select().from(creatures)
+        .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   if (!creature) {
     return NextResponse.json(

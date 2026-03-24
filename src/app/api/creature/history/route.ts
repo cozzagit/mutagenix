@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getRequiredSession, unauthorizedResponse } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, dailySnapshots, mutationLog } from '@/lib/db/schema';
+import { users, creatures, dailySnapshots, mutationLog } from '@/lib/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 
 export async function GET() {
@@ -13,10 +13,13 @@ export async function GET() {
       return unauthorizedResponse();
     }
 
-    const [creature] = await db
-      .select()
-      .from(creatures)
-      .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
+    const [activeUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+      .from(users).where(eq(users.id, session.userId));
+
+    const [creature] = activeUser?.activeCreatureId
+      ? await db.select().from(creatures).where(eq(creatures.id, activeUser.activeCreatureId))
+      : await db.select().from(creatures)
+          .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
     if (!creature) {
       return NextResponse.json(

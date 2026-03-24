@@ -1,6 +1,6 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, dailySnapshots } from '@/lib/db/schema';
+import { users, creatures, dailySnapshots } from '@/lib/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { EvolutionTimeline } from '@/components/timeline/evolution-timeline';
@@ -15,10 +15,13 @@ export default async function TimelinePage() {
     redirect('/login');
   }
 
-  const [creature] = await db
-    .select()
-    .from(creatures)
-    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
+  const [activeUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  const [creature] = activeUser?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, activeUser.activeCreatureId))
+    : await db.select().from(creatures)
+        .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   if (!creature) redirect('/login');
 

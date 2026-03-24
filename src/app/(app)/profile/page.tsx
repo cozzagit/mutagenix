@@ -22,10 +22,13 @@ export default async function ProfilePage() {
 
   if (!user) redirect('/login');
 
-  const [creature] = await db
-    .select()
-    .from(creatures)
-    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
+  const [activeUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  const [creature] = activeUser?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, activeUser.activeCreatureId))
+    : await db.select().from(creatures)
+        .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   return (
     <ProfileView

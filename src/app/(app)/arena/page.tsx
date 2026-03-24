@@ -60,15 +60,15 @@ export default async function ArenaMainPage() {
   await db.update(users).set({ lastArenaVisit: new Date() }).where(eq(users.id, session.userId)).catch(() => {});
 
   // Get user's active creature
-  const [creature] = await db
-    .select()
-    .from(creatures)
-    .where(
-      and(
-        eq(creatures.userId, session.userId),
-        eq(creatures.isArchived, false),
-      ),
-    );
+  // Use active_creature_id if set
+  const [arenaUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  const [creature] = arenaUser?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, arenaUser.activeCreatureId))
+    : await db.select().from(creatures).where(
+        and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)),
+      );
 
   if (!creature) {
     redirect('/lab');

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequiredSession, unauthorizedResponse } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, dailySnapshots, mutationLog } from '@/lib/db/schema';
+import { users, creatures, dailySnapshots, mutationLog } from '@/lib/db/schema';
 import { eq, desc, and, count } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
@@ -17,10 +17,13 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '30', 10), 1), 100);
     const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10), 0);
 
-    const [creature] = await db
-      .select()
-      .from(creatures)
-      .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
+    const [activeUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+      .from(users).where(eq(users.id, session.userId));
+
+    const [creature] = activeUser?.activeCreatureId
+      ? await db.select().from(creatures).where(eq(creatures.id, activeUser.activeCreatureId))
+      : await db.select().from(creatures)
+          .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
     if (!creature) {
       return NextResponse.json(
