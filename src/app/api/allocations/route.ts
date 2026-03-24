@@ -304,6 +304,7 @@ export async function POST(request: NextRequest) {
       newDay,
       isDevMode: TIME_CONFIG.isDevMode,
       instabilityEvents: instabilityEvents.length > 0 ? instabilityEvents : undefined,
+      overdoseEvents: result.overdoseEvents.length > 0 ? result.overdoseEvents : undefined,
     },
   });
 }

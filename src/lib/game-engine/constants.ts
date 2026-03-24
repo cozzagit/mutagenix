@@ -168,6 +168,25 @@ export const GAME_CONFIG = {
   IMMORTAL_COMBAT_BONUS: 0.10,
   /** Combat stat multiplier for Divinità tier */
   DIVINE_COMBAT_BONUS: 0.20,
+  // --- Overdose System (Sovradosaggio) ---
+  /** Element dominance threshold: element / total > this → saturation begins */
+  OVERDOSE_MILD_THRESHOLD: 0.25,
+  /** Severe overdose threshold */
+  OVERDOSE_SEVERE_THRESHOLD: 0.35,
+  /** Critical overdose threshold */
+  OVERDOSE_CRITICAL_THRESHOLD: 0.45,
+  /** Credits wasted at mild saturation */
+  OVERDOSE_MILD_WASTE: 0.30,
+  /** Credits wasted at severe saturation */
+  OVERDOSE_SEVERE_WASTE: 0.60,
+  /** Credits wasted at critical saturation */
+  OVERDOSE_CRITICAL_WASTE: 0.80,
+  /** Combat trait value above which natural regression kicks in */
+  COMBAT_REGRESSION_THRESHOLD: 85,
+  /** Rate at which combat traits above threshold regress per day */
+  COMBAT_REGRESSION_RATE: 0.02,
+  /** Minimum total element levels before overdose kicks in (early game protection) */
+  OVERDOSE_MIN_TOTAL: 100,
 } as const;
 
 // ---------------------------------------------------------------------------

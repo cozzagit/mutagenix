@@ -162,7 +162,16 @@ export function AllocationPanel({
         return;
       }
 
-      toast('success', 'Iniezione completata! La creatura sta mutando...');
+      const responseData = await res.json().catch(() => null);
+
+      // Show overdose warnings if present
+      const overdoseEvents = responseData?.data?.overdoseEvents as string[] | undefined;
+      if (overdoseEvents && overdoseEvents.length > 0) {
+        toast('warning', overdoseEvents.join(' '));
+      } else {
+        toast('success', 'Iniezione completata! La creatura sta mutando...');
+      }
+
       // Pass the recipe so dashboard can use it for auto-inject
       const recipe: Record<string, number> = {};
       for (const el of ELEMENTS) { if (credits[el] > 0) recipe[el] = credits[el]; }

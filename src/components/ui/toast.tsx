@@ -13,7 +13,7 @@ import {
 /* Types                                                              */
 /* ------------------------------------------------------------------ */
 
-type ToastVariant = "success" | "error" | "info";
+type ToastVariant = "success" | "error" | "info" | "warning";
 
 interface Toast {
   id: string;
@@ -47,6 +47,7 @@ const VARIANT_BORDER: Record<ToastVariant, string> = {
   success: "border-l-accent",
   error: "border-l-danger",
   info: "border-l-primary",
+  warning: "border-l-amber-400",
 };
 
 const VARIANT_ICON: Record<ToastVariant, React.ReactNode> = {
@@ -77,9 +78,23 @@ const VARIANT_ICON: Record<ToastVariant, React.ReactNode> = {
       />
     </svg>
   ),
+  warning: (
+    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-amber-400">
+      <path
+        fillRule="evenodd"
+        d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  ),
 };
 
-const AUTO_DISMISS_MS = 4000;
+const AUTO_DISMISS_MS: Record<ToastVariant, number> = {
+  success: 4000,
+  error: 5000,
+  info: 4000,
+  warning: 6000,
+};
 
 function ToastItem({
   toast: t,
@@ -95,7 +110,7 @@ function ToastItem({
     timerRef.current = setTimeout(() => {
       setExiting(true);
       setTimeout(() => onDismiss(t.id), 200);
-    }, AUTO_DISMISS_MS);
+    }, AUTO_DISMISS_MS[t.variant]);
     return () => clearTimeout(timerRef.current);
   }, [t.id, onDismiss]);
 

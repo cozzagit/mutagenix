@@ -38,6 +38,7 @@ export interface MutationResult {
   newStability: number;
   mutations: MutationEntry[];
   activeSynergies: string[];
+  overdoseEvents: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -128,12 +129,35 @@ export function processDailyMutation(
 ): MutationResult {
   const { id: creatureId, ageDays, day } = creature;
 
-  // --- 1. Apply allocation to element levels ---
+  // --- 1. Apply allocation to element levels (with overdose penalty) ---
   const newElementLevels = { ...creature.elementLevels };
+
+  // Calculate element saturation BEFORE applying new credits
+  const totalElementsPre = ELEMENTS.reduce((s, el) => s + creature.elementLevels[el], 0);
+  const overdoseEvents: string[] = [];
+
   for (const el of ELEMENTS) {
     const credits = allocation[el];
     if (credits !== undefined && credits > 0) {
-      newElementLevels[el] += credits;
+      let effectiveCredits = credits;
+
+      // Overdose: if this element is already dominant, waste part of credits
+      if (totalElementsPre >= GAME_CONFIG.OVERDOSE_MIN_TOTAL) {
+        const dominance = creature.elementLevels[el] / totalElementsPre;
+
+        if (dominance > GAME_CONFIG.OVERDOSE_CRITICAL_THRESHOLD) {
+          effectiveCredits = credits * (1 - GAME_CONFIG.OVERDOSE_CRITICAL_WASTE);
+          overdoseEvents.push(`Sovradosaggio critico di ${el}! ${Math.round(GAME_CONFIG.OVERDOSE_CRITICAL_WASTE * 100)}% crediti sprecati.`);
+        } else if (dominance > GAME_CONFIG.OVERDOSE_SEVERE_THRESHOLD) {
+          effectiveCredits = credits * (1 - GAME_CONFIG.OVERDOSE_SEVERE_WASTE);
+          overdoseEvents.push(`Sovradosaggio severo di ${el}! ${Math.round(GAME_CONFIG.OVERDOSE_SEVERE_WASTE * 100)}% crediti sprecati.`);
+        } else if (dominance > GAME_CONFIG.OVERDOSE_MILD_THRESHOLD) {
+          effectiveCredits = credits * (1 - GAME_CONFIG.OVERDOSE_MILD_WASTE);
+          overdoseEvents.push(`Saturazione di ${el}: ${Math.round(GAME_CONFIG.OVERDOSE_MILD_WASTE * 100)}% crediti assorbiti male.`);
+        }
+      }
+
+      newElementLevels[el] += effectiveCredits;
     }
   }
 
@@ -269,8 +293,10 @@ export function processDailyMutation(
       const normalizedContrib = injectionTotal > 0 ? injectionContrib / injectionTotal : 0;
 
       // Growth: contribution × combatRatio × rate
-      // With diminishing returns: grows slower as it gets higher
-      const diminishing = 1 - (oldValue / 100) * 0.5; // at 80, still 60% effective
+      // Aggressive diminishing returns — growth collapses above 70
+      // at 50: 75% | at 70: 51% | at 80: 36% | at 85: 28% | at 90: 19% | at 95: 6%
+      const t = oldValue / 100;
+      const diminishing = Math.max(0.05, (1 - t) * (1 - t * t));
       const combatDelta = normalizedContrib * combatRatio * combatGrowthRate * 100 * diminishing;
 
       // battleScars: tiny constant growth (experience from battle)
@@ -279,7 +305,15 @@ export function processDailyMutation(
       // Decay: traits not fed by this injection slowly decrease
       const decayRate = normalizedContrib < 0.1 ? -0.02 * oldValue * combatRatio : 0;
 
-      const totalCombatDelta = combatDelta + scarBonus + decayRate;
+      // Natural regression: combat traits above threshold degrade spontaneously
+      // The body can't sustain extreme combat stats indefinitely
+      let regressionDelta = 0;
+      if (oldValue > GAME_CONFIG.COMBAT_REGRESSION_THRESHOLD) {
+        const excess = oldValue - GAME_CONFIG.COMBAT_REGRESSION_THRESHOLD;
+        regressionDelta = -excess * GAME_CONFIG.COMBAT_REGRESSION_RATE;
+      }
+
+      const totalCombatDelta = combatDelta + scarBonus + decayRate + regressionDelta;
       const rawNew = oldValue + totalCombatDelta;
       const clampedNew = clamp(rawNew, GAME_CONFIG.MIN_TRAIT_VALUE, GAME_CONFIG.MAX_TRAIT_VALUE);
 
@@ -319,5 +353,6 @@ export function processDailyMutation(
     newStability,
     mutations,
     activeSynergies: activeSynergies.map((s) => s.id),
+    overdoseEvents,
   };
 }
