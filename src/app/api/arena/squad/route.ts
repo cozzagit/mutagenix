@@ -8,6 +8,8 @@ import { squads, creatures } from '@/lib/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { loadWellnessInput } from '@/lib/game-engine/wellness-loader';
 import { calculateWellness } from '@/lib/game-engine/wellness';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 // ---------------------------------------------------------------------------
 // GET — Return user's current squad
@@ -36,10 +38,18 @@ export async function GET() {
       id: c.id,
       name: c.name,
       ageDays: c.ageDays,
-      attackPower: tv.attackPower ?? 0,
-      defense: tv.defense ?? 0,
-      speed: tv.speed ?? 0,
-      visualParams: c.visualParams ?? {},
+      attackPower: Math.round(tv.attackPower ?? 0),
+      defense: Math.round(tv.defense ?? 0),
+      speed: Math.round(tv.speed ?? 0),
+      stamina: Math.round(tv.stamina ?? 0),
+      specialAttack: Math.round(tv.specialAttack ?? 0),
+      visualParams: mapTraitsToVisuals(
+        c.traitValues as unknown as TraitValues,
+        c.elementLevels as unknown as ElementLevels,
+        [],
+        c.foundingElements,
+        c.growthElements,
+      ) as unknown as Record<string, unknown>,
       wellness,
     };
   }

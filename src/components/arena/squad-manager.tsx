@@ -17,6 +17,8 @@ interface SquadCreature {
   attackPower: number;
   defense: number;
   speed: number;
+  stamina?: number;
+  specialAttack?: number;
   visualParams: Record<string, unknown>;
   wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
@@ -126,17 +128,21 @@ function CreatureSlot({
         {creature.name}
       </p>
 
-      {/* Key stats */}
-      <div className="flex items-center gap-2 mt-1">
-        <span className="text-[9px] text-danger font-mono">
-          ATK {creature.attackPower}
-        </span>
-        <span className="text-[9px] text-primary font-mono">
-          DEF {creature.defense}
-        </span>
-        <span className="text-[9px] text-bio-cyan font-mono">
-          SPD {creature.speed}
-        </span>
+      {/* Key stats as mini bars */}
+      <div className="flex flex-col gap-0.5 mt-1 w-full">
+        {[
+          { label: 'ATK', value: Math.round(creature.attackPower), color: '#ff3d3d' },
+          { label: 'DEF', value: Math.round(creature.defense), color: '#3d5afe' },
+          { label: 'SPD', value: Math.round(creature.speed), color: '#00e5e5' },
+        ].map(s => (
+          <div key={s.label} className="flex items-center gap-1">
+            <span className="text-[7px] font-bold w-5" style={{ color: s.color }}>{s.label}</span>
+            <div className="flex-1 h-1.5 rounded-full bg-surface-3 overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${Math.min(100, s.value)}%`, backgroundColor: s.color, boxShadow: `0 0 4px ${s.color}44` }} />
+            </div>
+            <span className="text-[7px] font-mono text-muted w-4 text-right">{s.value}</span>
+          </div>
+        ))}
       </div>
 
       {/* Wellness */}
@@ -223,16 +229,17 @@ function CreatureSelector({
                     <p className="text-[10px] text-muted">
                       Giorno {c.ageDays ?? 0}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[9px] text-danger font-mono">
-                        ATK {c.attackPower}
-                      </span>
-                      <span className="text-[9px] text-primary font-mono">
-                        DEF {c.defense}
-                      </span>
-                      <span className="text-[9px] text-bio-cyan font-mono">
-                        SPD {c.speed}
-                      </span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {[
+                        { l: 'ATK', v: Math.round(c.attackPower), col: '#ff3d3d' },
+                        { l: 'DEF', v: Math.round(c.defense), col: '#3d5afe' },
+                        { l: 'SPD', v: Math.round(c.speed), col: '#00e5e5' },
+                      ].map(s => (
+                        <div key={s.l} className="flex items-center gap-0.5">
+                          <span className="text-[7px] font-bold" style={{ color: s.col }}>{s.l}</span>
+                          <span className="text-[8px] font-mono text-muted">{s.v}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <WellnessDots wellness={c.wellness} />
