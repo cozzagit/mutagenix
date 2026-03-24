@@ -12,6 +12,8 @@ import {
 import { users } from '@/lib/db/schema/users';
 import { eq, and, ne, desc, sql } from 'drizzle-orm';
 import type { BattleFormat } from '@/lib/game-engine/squad-battle-engine';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -123,7 +125,11 @@ export async function GET(request: NextRequest) {
         attackPower: roundToNearest10(tv.attackPower ?? 0),
         defense: roundToNearest10(tv.defense ?? 0),
         speed: roundToNearest10(tv.speed ?? 0),
-        visualParams: o.creature.visualParams ?? {},
+        visualParams: mapTraitsToVisuals(
+          o.creature.traitValues as unknown as TraitValues,
+          o.creature.elementLevels as unknown as ElementLevels,
+          [], o.creature.foundingElements, o.creature.growthElements,
+        ) as unknown as Record<string, unknown>,
       };
     });
 
@@ -204,7 +210,11 @@ export async function GET(request: NextRequest) {
           defense: roundToNearest10(tv.defense ?? 0),
           speed: roundToNearest10(tv.speed ?? 0),
           stamina: roundToNearest10(tv.stamina ?? 0),
-          visualParams: c.visualParams ?? {},
+          visualParams: mapTraitsToVisuals(
+            c.traitValues as unknown as TraitValues,
+            c.elementLevels as unknown as ElementLevels,
+            [], c.foundingElements, c.growthElements,
+          ) as unknown as Record<string, unknown>,
         };
       }),
     });
