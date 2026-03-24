@@ -54,21 +54,19 @@ export async function GET() {
       );
 
       return {
-        requestId: r.request.id,
-        requesterId: r.request.requesterId,
+        id: r.request.id,
         requesterCreatureId: r.request.requesterCreatureId,
         targetCreatureId: r.request.targetCreatureId,
+        status: r.request.status,
         message: r.request.message,
         energyCost: r.request.energyCost,
         expiresAt: r.request.expiresAt.toISOString(),
         createdAt: r.request.createdAt.toISOString(),
-        requesterCreature: {
-          id: r.requesterCreature.id,
-          name: r.requesterCreature.name,
+        requester: {
+          creatureName: r.requesterCreature.name,
+          ownerName: r.requesterName,
           ageDays: r.requesterCreature.ageDays ?? 0,
           stability: r.requesterCreature.stability ?? 0.5,
-          familyGeneration: r.requesterCreature.familyGeneration,
-          ownerName: r.requesterName,
           visualParams,
         },
       };

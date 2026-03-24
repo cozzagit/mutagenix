@@ -10,12 +10,13 @@ import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import type { ElementLevels, TraitValues } from '@/types/game';
 
 interface TreeNode {
-  id: string;
+  creatureId: string;
   name: string;
   ageDays: number;
   familyGeneration: number;
   isFounder: boolean;
   isDead: boolean;
+  isActive: boolean;
   stability: number;
   ownerName: string;
   visualParams: Record<string, unknown>;
@@ -37,6 +38,7 @@ async function getCreatureWithOwner(creatureId: string) {
 function buildTreeNode(
   creature: typeof creatures.$inferSelect,
   ownerName: string,
+  activeCreatureId?: string,
 ): TreeNode {
   const traitValues = creature.traitValues as unknown as TraitValues;
   const elementLevels = creature.elementLevels as unknown as ElementLevels;
@@ -49,12 +51,13 @@ function buildTreeNode(
   );
 
   return {
-    id: creature.id,
+    creatureId: creature.id,
     name: creature.name,
     ageDays: creature.ageDays ?? 0,
     familyGeneration: creature.familyGeneration,
     isFounder: creature.isFounder,
     isDead: creature.isDead,
+    isActive: creature.id === activeCreatureId,
     stability: creature.stability ?? 0.5,
     ownerName,
     visualParams: visualParams as unknown as Record<string, unknown>,
@@ -87,13 +90,13 @@ async function findRoot(creatureId: string): Promise<string> {
 }
 
 /** Recursively build the tree downward from a creature. */
-async function buildTreeDown(creatureId: string, depth: number = 0): Promise<TreeNode | null> {
+async function buildTreeDown(creatureId: string, activeId?: string, depth: number = 0): Promise<TreeNode | null> {
   if (depth > 10) return null; // safety limit
 
   const data = await getCreatureWithOwner(creatureId);
   if (!data) return null;
 
-  const node = buildTreeNode(data.creature, data.ownerName);
+  const node = buildTreeNode(data.creature, data.ownerName, activeId);
 
   // Find children via lineage (where this creature is the primary parent)
   const childLineages = await db
@@ -107,7 +110,7 @@ async function buildTreeDown(creatureId: string, depth: number = 0): Promise<Tre
     );
 
   for (const lineage of childLineages) {
-    const childNode = await buildTreeDown(lineage.childId, depth + 1);
+    const childNode = await buildTreeDown(lineage.childId, activeId, depth + 1);
     if (childNode) {
       node.children.push(childNode);
     }
@@ -153,7 +156,7 @@ export async function GET(
   const rootId = await findRoot(creatureId);
 
   // Build full tree from root downward
-  const tree = await buildTreeDown(rootId);
+  const tree = await buildTreeDown(rootId, creatureId);
 
   if (!tree) {
     return NextResponse.json(
