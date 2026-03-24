@@ -367,7 +367,7 @@ export async function POST(request: NextRequest) {
       draws: isDraw ? challengerRanking.draws + 1 : challengerRanking.draws,
       winStreak: challengerNewWinStreak,
       bestWinStreak: Math.max(challengerRanking.bestWinStreak, challengerNewWinStreak),
-      battlesToday: battlesToday + 1,
+      battlesToday: attacksToday + 1,
       lastBattleAt: now,
       recoveryUntil: !challengerWon && !isDraw ? new Date(now.getTime() + recoveryMs) : null,
       consecutiveLosses: challengerNewConsecutiveLosses,
