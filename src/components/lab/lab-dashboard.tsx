@@ -17,6 +17,7 @@ import { EditableCreatureName } from './editable-creature-name';
 import { InstallButton } from '@/components/pwa/install-button';
 import { TierCelebration } from './tier-celebration';
 import { WellnessPanel } from '@/components/creature/wellness-panel';
+import { CreatureSwitcher } from '@/components/creatures/creature-switcher';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -754,6 +755,7 @@ export function LabDashboard({
           onNameChange={setCreatureName}
           className="text-sm"
         />
+        <CreatureSwitcher currentCreatureId={creature.id} />
         <span className="text-border">·</span>
         <StatsBar ageDays={ageDays} generation={generation} stability={stability} compact isWarrior={isWarrior} />
         <span className={`rounded-sm px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${getLevelBadge(ageDays, ranking?.tier).color} ${getLevelBadge(ageDays, ranking?.tier).bg}`}>
@@ -847,6 +849,7 @@ export function LabDashboard({
               onNameChange={setCreatureName}
               className="text-lg"
             />
+            <CreatureSwitcher currentCreatureId={creature.id} />
             {/* Guide link — desktop */}
             <Link
               href="/guida"
