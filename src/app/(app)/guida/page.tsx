@@ -617,6 +617,121 @@ export default function GuidaPage() {
           </div>
         </GuideCard>
 
+        {/* Riproduzione e Clan */}
+        <GuideCard title="Riproduzione e Clan">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #b26eff',
+                backgroundColor: 'rgba(178, 110, 255, 0.08)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold mb-1" style={{ color: '#b26eff' }}>
+                NUOVO &mdash; Sistema di Riproduzione
+              </p>
+              <p>
+                Le creature possono ora riprodursi e creare discendenti con tratti ereditari unici.
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Come funziona la riproduzione:</p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; Due giocatori si accordano per far accoppiare le proprie creature</li>
+                <li>&bull; Ciascun giocatore riceve <strong className="text-foreground">un figlio</strong> dalla coppia</li>
+                <li>&bull; I figli nascono con tratti ereditati da entrambi i genitori</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Ereditariet&agrave; inversa-dominante (65/35):</p>
+              <p>
+                Ogni figlio eredita il <strong className="text-bio-purple">65%</strong> dei tratti dal genitore
+                dell&apos;altro giocatore e il <strong className="text-bio-purple">35%</strong> dal proprio.
+                Vuoi migliorarti? Accoppiati con qualcuno migliore di te. Ma attento: stai rendendo
+                anche lui pi&ugrave; forte.
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Albero genealogico:</p>
+              <div className="flex flex-col gap-2">
+                {[
+                  { gen: 'Gen 1', label: 'Fondatore', color: '#00f0ff', desc: 'La creatura originale. Pu\u00F2 avere fino a 3 figli.' },
+                  { gen: 'Gen 2', label: 'Discendente', color: '#b26eff', desc: 'Figlio di un fondatore. Pu\u00F2 riprodursi una volta.' },
+                  { gen: 'Gen 3', label: 'Ultimo erede', color: '#ff9100', desc: 'Non pu\u00F2 riprodursi. Fine della linea.' },
+                ].map((g) => (
+                  <div key={g.gen} className="flex items-start gap-3">
+                    <span
+                      className="mt-0.5 flex shrink-0 items-center justify-center rounded-md px-2 py-0.5 text-[10px] font-black"
+                      style={{
+                        color: g.color,
+                        backgroundColor: `${g.color}15`,
+                        border: `1px solid ${g.color}30`,
+                      }}
+                    >
+                      {g.gen}
+                    </span>
+                    <div className="min-w-0">
+                      <span className="text-xs font-semibold" style={{ color: g.color }}>
+                        {g.label}
+                      </span>
+                      <p className="text-[11px] text-muted">{g.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] italic text-muted">
+                Massimo 13 creature per famiglia (1 fondatore + fino a 3 figli + fino a 9 nipoti).
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Costo energetico:</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {[
+                  { gen: 'Gen 1', cost: '30 energia', color: '#00f0ff' },
+                  { gen: 'Gen 2', cost: '45 energia', color: '#b26eff' },
+                  { gen: 'Gen 3', cost: 'Non pu\u00F2', color: '#ff9100' },
+                ].map((g) => (
+                  <div
+                    key={g.gen}
+                    className="flex flex-col items-center rounded-lg border border-border/20 bg-surface-2/40 px-3 py-2"
+                  >
+                    <span className="text-[10px] font-bold" style={{ color: g.color }}>{g.gen}</span>
+                    <span className="text-[11px] font-semibold text-foreground">{g.cost}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Clan:</p>
+              <p>
+                Quando una creatura genera il primo figlio, viene creato automaticamente un
+                clan intitolato al fondatore. Tutti i discendenti appartengono allo stesso clan.
+              </p>
+            </div>
+
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #b26eff',
+                backgroundColor: 'rgba(178, 110, 255, 0.05)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold mb-1" style={{ color: '#b26eff' }}>Consiglio strategico</p>
+              <p>
+                Vuoi migliorarti? Accoppiati con qualcuno migliore di te. Ma attento: stai rendendo anche lui pi&ugrave; forte.
+                La riproduzione &egrave; un&apos;arma a doppio taglio.
+              </p>
+            </div>
+          </div>
+        </GuideCard>
+
         {/* Sovradosaggio */}
         <GuideCard title="Sovradosaggio Elementale">
           <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">

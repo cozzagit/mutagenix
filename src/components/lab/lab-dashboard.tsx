@@ -16,6 +16,7 @@ import { PersonalityRadar } from './personality-radar';
 import { EditableCreatureName } from './editable-creature-name';
 import { InstallButton } from '@/components/pwa/install-button';
 import { TierCelebration } from './tier-celebration';
+import { SenescenceCelebration } from './senescence-celebration';
 import { WellnessPanel } from '@/components/creature/wellness-panel';
 import { CreatureSwitcher } from '@/components/creatures/creature-switcher';
 
@@ -155,6 +156,7 @@ export function LabDashboard({
   const [mutationPhase, setMutationPhase] = useState<string | null>(null);
   const [mutationComplete, setMutationComplete] = useState(false);
   const [tierCelebration, setTierCelebration] = useState<string | null>(null);
+  const [showSenescence, setShowSenescence] = useState(false);
   const prevDayRef = useRef(creature.ageDays ?? 0);
   const [dayKey, setDayKey] = useState(initialDayKey);
 
@@ -244,6 +246,10 @@ export function LabDashboard({
                 setTierCelebration(tierKeys[i]);
                 break;
               }
+            }
+            // Senescence celebration at Day 1000
+            if (newDay >= 1000 && prevDay < 1000) {
+              setShowSenescence(true);
             }
             prevDayRef.current = newDay;
           }
@@ -1080,6 +1086,11 @@ export function LabDashboard({
       {/* Tier celebration overlay */}
       {tierCelebration && (
         <TierCelebration tier={tierCelebration} onClose={() => setTierCelebration(null)} />
+      )}
+
+      {/* Senescence celebration overlay */}
+      {showSenescence && (
+        <SenescenceCelebration creatureName={creatureName} onClose={() => setShowSenescence(false)} />
       )}
 
       {/* Wellness info modal */}

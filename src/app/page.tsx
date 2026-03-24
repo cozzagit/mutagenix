@@ -257,6 +257,51 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ==================== BREEDING SYSTEM BANNER ==================== */}
+      <section className="relative z-10 border-t border-[#b26eff]/20 bg-gradient-to-b from-[#b26eff]/[0.04] to-background px-6 py-8">
+        <div className="mx-auto max-w-2xl">
+          <div
+            className="rounded-2xl border p-5 backdrop-blur-sm"
+            style={{
+              borderColor: 'rgba(178, 110, 255, 0.25)',
+              backgroundColor: 'rgba(178, 110, 255, 0.04)',
+            }}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                style={{ backgroundColor: 'rgba(178, 110, 255, 0.15)', color: '#b26eff' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 3c0 4 6 5 6 9s-6 5-6 9" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 3c0 4-6 5-6 9s6 5 6 9" />
+                  <line x1="8" y1="6" x2="16" y2="6" strokeLinecap="round" />
+                  <line x1="8" y1="12" x2="16" y2="12" strokeLinecap="round" />
+                  <line x1="8" y1="18" x2="16" y2="18" strokeLinecap="round" />
+                </svg>
+                Nuovo
+              </span>
+              <span className="text-[10px] text-muted">24 Marzo 2026</span>
+            </div>
+            <h3 className="mb-2 text-sm font-bold text-foreground">
+              Sistema di Riproduzione e Clan
+            </h3>
+            <p className="mb-3 text-xs leading-relaxed text-muted">
+              Le creature possono ora riprodursi! Trova un partner, genera figli con il meccanismo di
+              ereditariet&agrave; <strong className="text-bio-purple">inversa-dominante (65/35)</strong>,
+              costruisci un albero genealogico fino a 3 generazioni e fonda il tuo clan.
+              L&apos;evoluzione non &egrave; pi&ugrave; un viaggio solitario.
+            </p>
+            <p className="text-[11px] text-muted italic">
+              Scopri tutti i dettagli nella{' '}
+              <Link href="/guida" className="text-bio-purple underline underline-offset-2 hover:text-[#c98eff]">
+                guida completa
+              </Link>.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ==================== PATCH NOTES BANNER ==================== */}
       <section className="relative z-10 border-t border-amber-500/20 bg-gradient-to-b from-amber-500/[0.04] to-background px-6 py-8">
         <div className="mx-auto max-w-2xl">
