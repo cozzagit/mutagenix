@@ -209,7 +209,59 @@ export async function GET(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 3. Tournaments past end date: transition to 'resolving'
+  // 3. Live tournaments: only execute matches when both participants ready
+  // -----------------------------------------------------------------------
+
+  const liveTournaments = await db
+    .select()
+    .from(tournaments)
+    .where(
+      and(
+        eq(tournaments.status, 'active'),
+        eq(tournaments.tournamentType, 'live'),
+      ),
+    );
+
+  for (const t of liveTournaments) {
+    // Get pending matches in the current round
+    const pendingMatches = await db
+      .select()
+      .from(tournamentMatches)
+      .where(
+        and(
+          eq(tournamentMatches.tournamentId, t.id),
+          eq(tournamentMatches.roundNumber, t.currentRound),
+          eq(tournamentMatches.status, 'pending'),
+        ),
+      );
+
+    for (const match of pendingMatches) {
+      // Check if both participants are ready for this match
+      const matchParticipants = await db
+        .select()
+        .from(tournamentParticipants)
+        .where(
+          sql`${tournamentParticipants.id} IN (${sql`${match.participant1Id}`}, ${sql`${match.participant2Id}`})`,
+        );
+
+      const bothReady = matchParticipants.every((p) => {
+        const damage = (p.accumulatedDamage as Record<string, unknown>) ?? {};
+        return (
+          damage.readyForRound === t.currentRound &&
+          damage.readyForMatchId === match.id
+        );
+      });
+
+      if (bothReady) {
+        results.push(
+          `Live ${t.name}: match ${match.id} — both participants ready (will be executed by resolver)`,
+        );
+      }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 4. Tournaments past end date: transition to 'resolving'
   // -----------------------------------------------------------------------
 
   const expiredTournaments = await db
@@ -232,7 +284,7 @@ export async function GET(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 4. Draft tournaments past enrollment start: transition to 'enrollment'
+  // 5. Draft tournaments past enrollment start: transition to 'enrollment'
   // -----------------------------------------------------------------------
 
   const draftsToOpen = await db

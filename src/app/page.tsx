@@ -235,6 +235,14 @@ function TreeIcon({ className = "h-7 w-7" }: { className?: string }) {
   );
 }
 
+function TrophyIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-4.5A3.375 3.375 0 0 0 13.125 10.875h-2.25A3.375 3.375 0 0 0 7.5 14.25v4.5m9-9V3.75H7.5V5.25m9-1.5h1.875A1.875 1.875 0 0 1 20.25 5.625v1.5a3 3 0 0 1-3 3h-.75m-9-4.875H5.625A1.875 1.875 0 0 0 3.75 5.625v1.5a3 3 0 0 0 3 3h.75" />
+    </svg>
+  );
+}
+
 function UsersIcon({ className = "h-7 w-7" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
@@ -266,7 +274,7 @@ const GAME_PHASES = [
     phase: 3,
     title: "Arena",
     icon: <SwordsIcon className="h-8 w-8" />,
-    desc: "Combatti contro i guerrieri degli altri giocatori. Sistema ELO, 10 round automatici, conseguenze reali. Ogni battaglia conta.",
+    desc: "Combatti nell\u2019Arena in modalit\u00E0 1v1, 2v2 o 3v3. Battaglie di farming per risorse, tornei a eliminazione per la gloria. Le tue creature combattono come squadra \u2014 la parentela conta.",
     color: "#ff3d3d",
   },
   {
@@ -318,6 +326,12 @@ const FEATURE_CARDS = [
     title: "Albero Genealogico",
     desc: "Fino a 3 generazioni, 13 creature per giocatore. Ogni figlio porta il DNA di due famiglie.",
     color: "#b26eff",
+  },
+  {
+    icon: <TrophyIcon className="h-6 w-6" />,
+    title: "Squadre e Tornei",
+    desc: "Forma la tua squadra di 3 guerrieri. Tornei a eliminazione automatici, combattimenti 3v3, parentela che conta in battaglia.",
+    color: "#ff3d3d",
   },
 ];
 
@@ -559,8 +573,9 @@ export default function LandingPage() {
             L&apos;evoluzione non si ferma mai.
           </p>
 
-          {/* Clan teaser card */}
-          <div className="mx-auto max-w-lg">
+          {/* Coming soon cards */}
+          <div className="mx-auto grid max-w-2xl grid-cols-1 gap-5 sm:grid-cols-2">
+            {/* Clan teaser card */}
             <div
               className="group relative overflow-hidden rounded-2xl border p-6 backdrop-blur-sm transition-all duration-500 hover:shadow-lg"
               style={{
@@ -603,6 +618,54 @@ export default function LandingPage() {
                 className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                 style={{
                   boxShadow: "inset 0 0 0 1px rgba(251, 191, 36, 0.25), 0 0 30px rgba(251, 191, 36, 0.06)",
+                }}
+              />
+            </div>
+
+            {/* Live Tournaments teaser card */}
+            <div
+              className="group relative overflow-hidden rounded-2xl border p-6 backdrop-blur-sm transition-all duration-500 hover:shadow-lg"
+              style={{
+                borderColor: "rgba(255, 61, 61, 0.2)",
+                backgroundColor: "rgba(255, 61, 61, 0.03)",
+              }}
+            >
+              {/* Shimmer overlay */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.04]"
+                style={{
+                  background: "linear-gradient(110deg, transparent 30%, rgba(255, 61, 61, 0.4) 50%, transparent 70%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 4s ease-in-out infinite",
+                  animationDelay: "-2s",
+                }}
+              />
+
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110"
+                  style={{
+                    backgroundColor: "rgba(255, 61, 61, 0.1)",
+                    color: "#ff3d3d",
+                  }}
+                >
+                  <TrophyIcon className="h-7 w-7" />
+                </div>
+
+                <h3 className="mb-2 text-base font-bold text-foreground">
+                  Tornei Live
+                </h3>
+                <p className="text-sm leading-relaxed text-muted">
+                  Combattimenti in tempo reale con eliminazione diretta.
+                  Premi leggendari per i sopravvissuti.
+                </p>
+              </div>
+
+              {/* Hover border glow */}
+              <div
+                className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                style={{
+                  boxShadow: "inset 0 0 0 1px rgba(255, 61, 61, 0.25), 0 0 30px rgba(255, 61, 61, 0.06)",
                 }}
               />
             </div>
