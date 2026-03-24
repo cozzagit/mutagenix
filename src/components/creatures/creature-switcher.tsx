@@ -101,7 +101,8 @@ export function CreatureSwitcher({ currentCreatureId }: CreatureSwitcherProps) {
       }
       toast("success", "Creatura attivata!");
       setOpen(false);
-      router.refresh();
+      // Hard reload to get fresh server-rendered data for the new active creature
+      window.location.reload();
     } catch {
       toast("error", "Errore di rete.");
     } finally {
