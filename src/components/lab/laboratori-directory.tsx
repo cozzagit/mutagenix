@@ -34,6 +34,7 @@ export interface LaboratoriCreature {
     winStreak: number;
     tier: string;
   } | null;
+  wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
 
 interface LaboratoriDirectoryProps {
@@ -194,6 +195,35 @@ function CreatureCard({
           {badge.label}
         </span>
       </div>
+
+      {/* Wellness compact dots */}
+      {creature.wellness && (
+        <div className="mt-1 flex items-center justify-center gap-1">
+          {([
+            { key: 'activity' as const, icon: '\u26A1' },
+            { key: 'hunger' as const, icon: '\uD83E\uDDEA' },
+            { key: 'boredom' as const, icon: '\u2694\uFE0F' },
+            { key: 'fatigue' as const, icon: '\uD83D\uDCA4' },
+          ] as const).map((ind) => {
+            const val = creature.wellness![ind.key];
+            const col = val >= 70 ? '#00e5a0' : val >= 40 ? '#ff9100' : '#ff3d3d';
+            return (
+              <span
+                key={ind.key}
+                className="h-2 w-2 rounded-full"
+                title={`${ind.icon} ${val}%`}
+                style={{ backgroundColor: col, boxShadow: `0 0 4px ${col}66` }}
+              />
+            );
+          })}
+          <span
+            className="text-[9px] font-bold"
+            style={{ color: creature.wellness.composite >= 60 ? '#00e5a0' : creature.wellness.composite >= 30 ? '#ff9100' : '#ff3d3d' }}
+          >
+            {creature.wellness.composite}%
+          </span>
+        </div>
+      )}
 
       {/* Arena record */}
       {creature.arena && (

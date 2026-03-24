@@ -174,7 +174,8 @@ export function LabDashboard({
 
   // --- Battle notification banner ---
   const [showBattleBanner, setShowBattleBanner] = useState(unseenBattles > 0);
-  const [showMutationEvent, setShowMutationEvent] = useState(false);
+  const [showWellnessModal, setShowWellnessModal] = useState(false);
+  const [liveWellness, setLiveWellness] = useState(wellness);
 
   const _phase: Phase = mutationActive
     ? 'mutating'
@@ -317,6 +318,13 @@ export function LabDashboard({
     setCanAllocate(false);
     // If a recipe is passed, store it for potential auto-inject
     if (recipe) setAutoRecipe(recipe);
+    // Immediately boost hunger + activity in local wellness state
+    setLiveWellness((prev) => prev ? {
+      ...prev,
+      hunger: 100,
+      activity: Math.min(100, prev.activity + 33),
+      composite: Math.round((Math.min(100, prev.activity + 33) + 100 + prev.boredom + prev.fatigue) / 4),
+    } : prev);
   }, []);
 
   // --- Creature name state ---
@@ -758,39 +766,48 @@ export function LabDashboard({
       {/* ============================================================= */}
       <div className="flex flex-1 flex-col items-center overflow-y-auto overflow-x-hidden">
         {/* Wellness status summary banner */}
-        {wellness && (
+        {liveWellness && (
           <div className="w-full shrink-0 px-4 pt-2">
             <div
-              className="flex w-full items-center justify-between rounded-lg border px-3 py-2"
+              className="flex w-full items-center justify-between rounded-xl border px-4 py-3"
               style={{
-                borderColor: wellness.composite >= 60 ? '#00e5a030' : wellness.composite >= 30 ? '#ff910030' : '#ff3d3d30',
-                backgroundColor: wellness.composite >= 60 ? 'rgba(0, 229, 160, 0.06)' : wellness.composite >= 30 ? 'rgba(255, 145, 0, 0.06)' : 'rgba(255, 61, 61, 0.06)',
+                borderColor: liveWellness.composite >= 60 ? '#00e5a030' : liveWellness.composite >= 30 ? '#ff910030' : '#ff3d3d30',
+                backgroundColor: liveWellness.composite >= 60 ? 'rgba(0, 229, 160, 0.06)' : liveWellness.composite >= 30 ? 'rgba(255, 145, 0, 0.06)' : 'rgba(255, 61, 61, 0.06)',
               }}
             >
-              <div className="flex items-center gap-2">
-                <span className="text-sm">{wellness.composite >= 60 ? '💚' : wellness.composite >= 30 ? '🟡' : '🔴'}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-lg md:text-xl">{liveWellness.composite >= 60 ? '\uD83D\uDC9A' : liveWellness.composite >= 30 ? '\uD83D\uDFE1' : '\uD83D\uDD34'}</span>
                 <div>
-                  <p className="text-[11px] font-bold" style={{ color: wellness.composite >= 60 ? '#00e5a0' : wellness.composite >= 30 ? '#ff9100' : '#ff3d3d' }}>
-                    {wellness.composite >= 80 ? 'In forma perfetta' : wellness.composite >= 60 ? 'Condizioni buone' : wellness.composite >= 40 ? 'Necessita attenzione' : wellness.composite >= 20 ? 'Condizioni critiche' : 'Stato di emergenza'}
+                  <p className="text-sm font-bold md:text-base" style={{ color: liveWellness.composite >= 60 ? '#00e5a0' : liveWellness.composite >= 30 ? '#ff9100' : '#ff3d3d' }}>
+                    {liveWellness.composite >= 80 ? 'In forma perfetta' : liveWellness.composite >= 60 ? 'Condizioni buone' : liveWellness.composite >= 40 ? 'Necessita attenzione' : liveWellness.composite >= 20 ? 'Condizioni critiche' : 'Stato di emergenza'}
                   </p>
-                  <p className="text-[9px] text-muted">
-                    {wellness.hunger < 30 && 'Ha fame — inietta! '}
-                    {wellness.boredom < 30 && 'Si annoia — combatti! '}
-                    {wellness.fatigue < 30 && 'Stanca — falla riposare! '}
-                    {wellness.activity < 30 && 'Inattiva — torna più spesso! '}
-                    {wellness.composite >= 70 && 'Nutrimento, attività e stimoli nella norma.'}
+                  <p className="text-xs text-muted md:text-sm">
+                    {liveWellness.hunger < 30 && 'Ha fame \u2014 inietta! '}
+                    {liveWellness.boredom < 30 && 'Si annoia \u2014 combatti! '}
+                    {liveWellness.fatigue < 30 && 'Stanca \u2014 falla riposare! '}
+                    {liveWellness.activity < 30 && 'Inattiva \u2014 torna pi\u00F9 spesso! '}
+                    {liveWellness.composite >= 70 && 'Nutrimento, attivit\u00E0 e stimoli nella norma.'}
                   </p>
                 </div>
               </div>
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                style={{
-                  color: wellness.composite >= 60 ? '#00e5a0' : wellness.composite >= 30 ? '#ff9100' : '#ff3d3d',
-                  backgroundColor: wellness.composite >= 60 ? '#00e5a015' : wellness.composite >= 30 ? '#ff910015' : '#ff3d3d15',
-                }}
-              >
-                {wellness.composite}%
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className="rounded-full px-2.5 py-1 text-xs font-bold md:text-sm"
+                  style={{
+                    color: liveWellness.composite >= 60 ? '#00e5a0' : liveWellness.composite >= 30 ? '#ff9100' : '#ff3d3d',
+                    backgroundColor: liveWellness.composite >= 60 ? '#00e5a015' : liveWellness.composite >= 30 ? '#ff910015' : '#ff3d3d15',
+                  }}
+                >
+                  {liveWellness.composite}%
+                </span>
+                <button
+                  onClick={() => setShowWellnessModal(true)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-border/50 text-muted transition-colors hover:border-primary/40 hover:text-primary"
+                  title="Cos'\u00E8 lo Stato Vitale?"
+                >
+                  <span className="text-xs font-bold">?</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -948,7 +965,7 @@ export function LabDashboard({
             )}
 
             {/* Wellness Panel */}
-            {wellness && <WellnessPanel wellness={wellness} />}
+            {liveWellness && <WellnessPanel wellness={liveWellness} />}
 
             {/* Overdose warning */}
             {overdoseLevel && !mutationActive && (
@@ -1060,6 +1077,79 @@ export function LabDashboard({
       {/* Tier celebration overlay */}
       {tierCelebration && (
         <TierCelebration tier={tierCelebration} onClose={() => setTierCelebration(null)} />
+      )}
+
+      {/* Wellness info modal */}
+      {showWellnessModal && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-background/90 backdrop-blur-sm p-4"
+          onClick={() => setShowWellnessModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-border/50 bg-surface p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-4 text-center text-xl font-black text-foreground">
+              Stato Vitale
+            </h2>
+            <div className="space-y-4 text-sm leading-relaxed text-muted">
+              <p>
+                La tua creatura ha bisogno di <span className="font-bold text-foreground">cure costanti</span> per restare in forma.
+                Quattro indicatori misurano il suo benessere:
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-base">{'\u26A1'}</span>
+                  <div>
+                    <p className="font-bold text-foreground">Attivit&agrave;</p>
+                    <p className="text-xs">Quanto spesso inietti. Serve iniettare regolarmente nelle ultime 72 ore per mantenerla alta.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-base">{'\uD83E\uDDEA'}</span>
+                  <div>
+                    <p className="font-bold text-foreground">Nutrimento</p>
+                    <p className="text-xs">Quanto tempo &egrave; passato dall&apos;ultima iniezione. Decade completamente in 24 ore. Inietta per sfamarla!</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-base">{'\u2694\uFE0F'}</span>
+                  <div>
+                    <p className="font-bold text-foreground">Stimolo</p>
+                    <p className="text-xs">Quanto tempo &egrave; passato dall&apos;ultima battaglia in Arena. Decade in 48 ore. Combatti per tenerla motivata!</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-base">{'\uD83D\uDCA4'}</span>
+                  <div>
+                    <p className="font-bold text-foreground">Energia</p>
+                    <p className="text-xs">Quante battaglie ha combattuto oggi. Ogni battaglia costa il 12%. Troppi combattimenti la stancano!</p>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="rounded-lg p-3 text-xs"
+                style={{
+                  borderLeft: '3px solid #ff3d3d',
+                  backgroundColor: 'rgba(255, 61, 61, 0.06)',
+                }}
+              >
+                <p className="font-bold text-foreground mb-1">Effetti in battaglia</p>
+                <p>
+                  Una creatura trascurata (fame, noia, inattivit&agrave;) o stremata (troppe battaglie) subisce
+                  penalit&agrave; agli stats di combattimento fino al <strong>40%</strong>. Tieni la tua creatura
+                  in forma per avere il massimo vantaggio!
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowWellnessModal(false)}
+              className="mt-5 w-full rounded-xl border border-primary/30 bg-primary/15 px-4 py-2.5 text-sm font-bold text-primary transition-all hover:bg-primary/25"
+            >
+              Ho capito
+            </button>
+          </div>
+        </div>
       )}
 
     </div>

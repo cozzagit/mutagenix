@@ -14,6 +14,9 @@ import { getRankTier } from '@/lib/game-engine/battle-engine';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import type { TraitValues, ElementLevels } from '@/types/game';
 import type { RankTier } from '@/types/battle';
+import { allocations } from '@/lib/db/schema';
+import { calculateWellness, type WellnessInput } from '@/lib/game-engine/wellness';
+import { TIME_CONFIG } from '@/lib/game-engine/time-config';
 
 const ADJACENT_TIERS: Record<RankTier, RankTier[]> = {
   novice: ['novice', 'intermediate'],
@@ -100,6 +103,37 @@ export async function GET() {
     .filter((o) => allowedTiers.includes(o.ranking.rankTier as RankTier))
     .slice(0, 20);
 
+  // Batch load wellness data for all opponents
+  const creatureIds = filtered.map((o) => o.creature.id);
+  const timeScale = TIME_CONFIG.isDevMode ? 480 : 1;
+  const activityWindowMs = (72 * 60 * 60 * 1000) / timeScale;
+  const windowStart = new Date(now.getTime() - activityWindowMs);
+
+  // Fetch last injection + recent count for all opponents in 2 batch queries
+  const [lastInjections, recentCounts] = creatureIds.length > 0 ? await Promise.all([
+    db.execute(sql`
+      SELECT DISTINCT ON (creature_id) creature_id, created_at
+      FROM allocations
+      WHERE creature_id = ANY(${creatureIds})
+      ORDER BY creature_id, created_at DESC
+    `) as Promise<{ creature_id: string; created_at: Date }[]>,
+    db.execute(sql`
+      SELECT creature_id, count(*) as cnt
+      FROM allocations
+      WHERE creature_id = ANY(${creatureIds}) AND created_at >= ${windowStart}
+      GROUP BY creature_id
+    `) as Promise<{ creature_id: string; cnt: string }[]>,
+  ]) : [[] as { creature_id: string; created_at: Date }[], [] as { creature_id: string; cnt: string }[]];
+
+  const lastInjMap = new Map<string, Date>();
+  for (const row of lastInjections) {
+    lastInjMap.set(row.creature_id, new Date(row.created_at));
+  }
+  const recentCountMap = new Map<string, number>();
+  for (const row of recentCounts) {
+    recentCountMap.set(row.creature_id, Number(row.cnt));
+  }
+
   const traitValues = (c: typeof creatures.$inferSelect) =>
     c.traitValues as Record<string, number>;
 
@@ -129,6 +163,13 @@ export async function GET() {
       ),
       axpTier: getAxpTierLabel(o.ranking.axp),
       stability: o.creature.stability ?? 0.5,
+      wellness: calculateWellness({
+        lastInjectionAt: lastInjMap.get(o.creature.id) ?? null,
+        recentInjectionCount: recentCountMap.get(o.creature.id) ?? 0,
+        lastBattleAt: o.ranking.lastBattleAt,
+        battlesToday: o.ranking.battlesToday,
+        now,
+      } satisfies WellnessInput),
       visualParams: mapTraitsToVisuals(
         o.creature.traitValues as TraitValues,
         o.creature.elementLevels as ElementLevels,

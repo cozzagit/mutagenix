@@ -7,7 +7,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { BattleNotifier } from "@/components/pwa/battle-notifier";
 
 // Increment this on breaking changes to force client refresh
-const APP_VERSION = 2;
+const APP_VERSION = 3;
 
 interface NavItem {
   href: string;

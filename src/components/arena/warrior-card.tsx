@@ -82,6 +82,7 @@ export interface WarriorData {
   visualParams: Record<string, unknown>;
   axp: number;
   stability: number;
+  wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
 
 /* ------------------------------------------------------------------ */
@@ -285,6 +286,38 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
         <StatBar icon="&#10084;" value={warrior.stamina} max={statMax} color="bg-bio-green" />
         <StatBar icon="&#10024;" value={warrior.specialAttack} max={statMax} color="bg-bio-purple" />
       </div>
+
+      {/* Wellness bars */}
+      {warrior.wellness && (
+        <div className="rounded-lg bg-surface-2/60 p-2.5">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-muted">Stato Vitale</span>
+            <span className="text-[10px] font-bold" style={{ color: warrior.wellness.composite >= 60 ? '#00e5a0' : warrior.wellness.composite >= 30 ? '#ff9100' : '#ff3d3d' }}>
+              {warrior.wellness.composite}%
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {([
+              { key: 'activity' as const, icon: '\u26A1', label: 'Attivit\u00E0' },
+              { key: 'hunger' as const, icon: '\uD83E\uDDEA', label: 'Nutrim.' },
+              { key: 'boredom' as const, icon: '\u2694\uFE0F', label: 'Stimolo' },
+              { key: 'fatigue' as const, icon: '\uD83D\uDCA4', label: 'Energia' },
+            ] as const).map((ind) => {
+              const val = warrior.wellness![ind.key];
+              const col = val >= 70 ? '#00e5a0' : val >= 40 ? '#ff9100' : '#ff3d3d';
+              return (
+                <div key={ind.key} className="flex flex-col items-center gap-0.5">
+                  <span className="text-[10px]">{ind.icon}</span>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${val}%`, backgroundColor: col }} />
+                  </div>
+                  <span className="text-[8px] text-muted">{val}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* AXP + Personality + Synergies */}
       <div className="flex flex-wrap items-center gap-1">

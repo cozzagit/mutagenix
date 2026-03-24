@@ -2,13 +2,16 @@ import { redirect } from 'next/navigation';
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
 import { users, creatures, creatureRankings } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql, gte, desc } from 'drizzle-orm';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import { calculateSynergies } from '@/lib/game-engine/synergy-system';
 import { SYNERGIES, COMBAT_TRAITS } from '@/lib/game-engine/constants';
 import type { TraitValues, ElementLevels } from '@/types/game';
 import { LaboratoriDirectory } from '@/components/lab/laboratori-directory';
 import type { LaboratoriCreature } from '@/components/lab/laboratori-directory';
+import { allocations } from '@/lib/db/schema';
+import { calculateWellness } from '@/lib/game-engine/wellness';
+import { TIME_CONFIG } from '@/lib/game-engine/time-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,7 +86,36 @@ export default async function LaboratoriPage() {
   const allRankings = await db.select().from(creatureRankings);
   const rankingsMap = new Map(allRankings.map((r) => [r.creatureId, r]));
 
-  // 4. Build creature data with recalculated visuals and potenza
+  // 4. Batch load wellness data for all creatures
+  const now = new Date();
+  const timeScale = TIME_CONFIG.isDevMode ? 480 : 1;
+  const activityWindowMs = (72 * 60 * 60 * 1000) / timeScale;
+  const windowStart = new Date(now.getTime() - activityWindowMs);
+  const allCreatureIds = allCreatures.map((c) => c.id);
+
+  const [lastInjResults, recentCountResults] = allCreatureIds.length > 0 ? await Promise.all([
+    db.execute(sql`
+      SELECT DISTINCT ON (creature_id) creature_id, created_at
+      FROM allocations WHERE creature_id = ANY(${allCreatureIds})
+      ORDER BY creature_id, created_at DESC
+    `) as Promise<{ creature_id: string; created_at: Date }[]>,
+    db.execute(sql`
+      SELECT creature_id, count(*) as cnt FROM allocations
+      WHERE creature_id = ANY(${allCreatureIds}) AND created_at >= ${windowStart}
+      GROUP BY creature_id
+    `) as Promise<{ creature_id: string; cnt: string }[]>,
+  ]) : [[] as { creature_id: string; created_at: Date }[], [] as { creature_id: string; cnt: string }[]];
+
+  const lastInjMap = new Map<string, Date>();
+  for (const row of lastInjResults) {
+    lastInjMap.set(row.creature_id, new Date(row.created_at));
+  }
+  const recentCountMap = new Map<string, number>();
+  for (const row of recentCountResults) {
+    recentCountMap.set(row.creature_id, Number(row.cnt));
+  }
+
+  // 5. Build creature data with recalculated visuals and potenza
   const creaturesData: LaboratoriCreature[] = allCreatures
     .map((c) => {
       const user = usersMap.get(c.userId);
@@ -137,10 +169,17 @@ export default async function LaboratoriPage() {
               tier: ranking.rankTier,
             }
           : null,
+        wellness: calculateWellness({
+          lastInjectionAt: lastInjMap.get(c.id) ?? null,
+          recentInjectionCount: recentCountMap.get(c.id) ?? 0,
+          lastBattleAt: ranking?.lastBattleAt ?? null,
+          battlesToday: ranking?.battlesToday ?? 0,
+          now,
+        }),
       };
     })
-    .filter((c): c is LaboratoriCreature => c !== null)
-    .sort((a, b) => b.potenza - a.potenza);
+    .filter((c) => c !== null)
+    .sort((a, b) => b!.potenza - a!.potenza) as LaboratoriCreature[];
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-4">

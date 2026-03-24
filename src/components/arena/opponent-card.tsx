@@ -23,6 +23,7 @@ export interface OpponentData {
   visualParams: Record<string, unknown>;
   axpTier: string; // Recluta, Esperto, Veterano, Maestro
   stability?: number; // 0-1, opponent stability
+  wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
 
 interface OpponentCardProps {
@@ -124,6 +125,30 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
         <span className="flex-1 text-center text-[9px] leading-none text-primary/70">&#128737;</span>
         <span className="flex-1 text-center text-[9px] leading-none text-bio-cyan/70">&#9889;</span>
       </div>
+
+      {/* Wellness compact */}
+      {opponent.wellness && (
+        <div className="flex items-center justify-center gap-1 mb-2">
+          {([
+            { key: 'activity' as const, icon: '\u26A1' },
+            { key: 'hunger' as const, icon: '\uD83E\uDDEA' },
+            { key: 'boredom' as const, icon: '\u2694\uFE0F' },
+            { key: 'fatigue' as const, icon: '\uD83D\uDCA4' },
+          ] as const).map((ind) => {
+            const val = opponent.wellness![ind.key];
+            const col = val >= 70 ? '#00e5a0' : val >= 40 ? '#ff9100' : '#ff3d3d';
+            return (
+              <div key={ind.key} className="flex flex-col items-center gap-0.5" title={`${val}%`}>
+                <span className="text-[9px]">{ind.icon}</span>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: col, boxShadow: `0 0 4px ${col}66` }} />
+              </div>
+            );
+          })}
+          <span className="text-[9px] font-bold ml-0.5" style={{ color: opponent.wellness.composite >= 60 ? '#00e5a0' : opponent.wellness.composite >= 30 ? '#ff9100' : '#ff3d3d' }}>
+            {opponent.wellness.composite}%
+          </span>
+        </div>
+      )}
 
       {/* Challenge button */}
       <Button
