@@ -24,9 +24,9 @@ export async function loadWellnessInput(
 ): Promise<WellnessInput> {
   const now = new Date();
 
-  // Activity window: 72h prod / compressed in dev
-  const timeScale = TIME_CONFIG.isDevMode ? 480 : 1;
-  const activityWindowMs = (72 * 60 * 60 * 1000) / timeScale;
+  // Activity window: 7 days prod / gentler compression in dev
+  const timeScale = TIME_CONFIG.isDevMode ? 30 : 1;
+  const activityWindowMs = (7 * 24 * 60 * 60 * 1000) / timeScale;
   const windowStart = new Date(now.getTime() - activityWindowMs);
 
   // Fetch most recent injection and count recent injections in one query batch

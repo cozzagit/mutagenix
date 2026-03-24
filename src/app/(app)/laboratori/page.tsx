@@ -88,8 +88,8 @@ export default async function LaboratoriPage() {
 
   // 4. Batch load wellness data for all creatures using ORM queries
   const now = new Date();
-  const timeScale = TIME_CONFIG.isDevMode ? 480 : 1;
-  const activityWindowMs = (72 * 60 * 60 * 1000) / timeScale;
+  const timeScale = TIME_CONFIG.isDevMode ? 30 : 1;
+  const activityWindowMs = (7 * 24 * 60 * 60 * 1000) / timeScale;
   const windowStart = new Date(now.getTime() - activityWindowMs);
 
   // Fetch all allocations' latest timestamp per creature + recent count

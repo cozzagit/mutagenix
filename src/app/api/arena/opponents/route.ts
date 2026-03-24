@@ -105,8 +105,8 @@ export async function GET() {
 
   // Batch load wellness data for all opponents
   const creatureIds = filtered.map((o) => o.creature.id);
-  const timeScale = TIME_CONFIG.isDevMode ? 480 : 1;
-  const activityWindowMs = (72 * 60 * 60 * 1000) / timeScale;
+  const timeScale = TIME_CONFIG.isDevMode ? 30 : 1;
+  const activityWindowMs = (7 * 24 * 60 * 60 * 1000) / timeScale;
   const windowStart = new Date(now.getTime() - activityWindowMs);
 
   // Fetch allocations for filtered opponents using ORM (reliable Date handling)

@@ -49,24 +49,25 @@ export interface WellnessCombatModifiers {
 // Time windows (adjust for dev mode)
 // ---------------------------------------------------------------------------
 
-function getTimeScale(): number {
-  // In dev mode, compress time windows: 8h mutation becomes 60s → ratio 480x
-  return TIME_CONFIG.isDevMode ? 480 : 1;
+// Wellness uses a gentler time scale than mutations.
+// Mutations compress 480x in dev, but play frequency is only ~30x faster.
+function getWellnessTimeScale(): number {
+  return TIME_CONFIG.isDevMode ? 30 : 1;
 }
 
-/** Hunger: decays over 24h in prod (3 min in dev) */
+/** Hunger: decays over 72h in prod (~2.4h in dev) */
 function getHungerWindowMs(): number {
-  return (24 * 60 * 60 * 1000) / getTimeScale();
+  return (72 * 60 * 60 * 1000) / getWellnessTimeScale();
 }
 
-/** Activity: window of 72h in prod (9 min in dev) */
+/** Activity: window of 7 days in prod (~5.6h in dev) */
 function getActivityWindowMs(): number {
-  return (72 * 60 * 60 * 1000) / getTimeScale();
+  return (7 * 24 * 60 * 60 * 1000) / getWellnessTimeScale();
 }
 
-/** Boredom: decays over 48h in prod (6 min in dev) */
+/** Boredom: decays over 5 days in prod (~4h in dev) */
 function getBoredomWindowMs(): number {
-  return (48 * 60 * 60 * 1000) / getTimeScale();
+  return (5 * 24 * 60 * 60 * 1000) / getWellnessTimeScale();
 }
 
 // ---------------------------------------------------------------------------
@@ -87,8 +88,8 @@ export function calculateWellness(input: WellnessInput): WellnessState {
   }
 
   // --- Activity: injection frequency in recent window ---
-  // 3 injections in window = 100, scales linearly
-  const activity = Math.min(100, Math.round(recentInjectionCount * 33.33));
+  // 5 injections in window = 100, scales linearly
+  const activity = Math.min(100, Math.round(recentInjectionCount * 20));
 
   // --- Boredom: time since last battle ---
   let boredom = 100;

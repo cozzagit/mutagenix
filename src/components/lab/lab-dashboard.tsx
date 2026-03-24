@@ -322,8 +322,8 @@ export function LabDashboard({
     setLiveWellness((prev) => prev ? {
       ...prev,
       hunger: 100,
-      activity: Math.min(100, prev.activity + 33),
-      composite: Math.round((Math.min(100, prev.activity + 33) + 100 + prev.boredom + prev.fatigue) / 4),
+      activity: Math.min(100, prev.activity + 20),
+      composite: Math.round((Math.min(100, prev.activity + 20) + 100 + prev.boredom + prev.fatigue) / 4),
     } : prev);
   }, []);
 
@@ -1102,21 +1102,21 @@ export function LabDashboard({
                   <span className="mt-0.5 text-base">{'\u26A1'}</span>
                   <div>
                     <p className="font-bold text-foreground">Attivit&agrave;</p>
-                    <p className="text-xs">Quanto spesso inietti. Serve iniettare regolarmente nelle ultime 72 ore per mantenerla alta.</p>
+                    <p className="text-xs">Quanto spesso inietti. Serve iniettare regolarmente negli ultimi 7 giorni per mantenerla alta (5 iniezioni = 100%).</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="mt-0.5 text-base">{'\uD83E\uDDEA'}</span>
                   <div>
                     <p className="font-bold text-foreground">Nutrimento</p>
-                    <p className="text-xs">Quanto tempo &egrave; passato dall&apos;ultima iniezione. Decade completamente in 24 ore. Inietta per sfamarla!</p>
+                    <p className="text-xs">Quanto tempo &egrave; passato dall&apos;ultima iniezione. Decade gradualmente in 3 giorni. Inietta almeno ogni 1-2 giorni!</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="mt-0.5 text-base">{'\u2694\uFE0F'}</span>
                   <div>
                     <p className="font-bold text-foreground">Stimolo</p>
-                    <p className="text-xs">Quanto tempo &egrave; passato dall&apos;ultima battaglia in Arena. Decade in 48 ore. Combatti per tenerla motivata!</p>
+                    <p className="text-xs">Quanto tempo &egrave; passato dall&apos;ultima battaglia in Arena. Decade gradualmente in 5 giorni. Una battaglia ogni pochi giorni basta!</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
