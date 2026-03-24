@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { WarriorCard, TierBadge, type WarriorData } from "./warrior-card";
+import { CaricaBadge } from "@/components/cariche/carica-badge";
 import { OpponentCard, type OpponentData } from "./opponent-card";
 import { BattleSuspense } from "./battle-suspense";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ interface RankingEntry {
   winStreak: number;
   bestWinStreak: number;
   tier: string;
+  cariche?: string[];
 }
 
 interface BattleHistoryEntry {
@@ -462,7 +464,12 @@ function ClassificaTab({ myCreatureId }: { myCreatureId: string }) {
                 }`}
               >
                 <span className="font-mono text-muted">{entry.position}</span>
-                <span className="font-bold text-foreground truncate">{entry.name}</span>
+                <span className="font-bold text-foreground truncate flex items-center gap-1">
+                  {entry.name}
+                  {entry.cariche && entry.cariche.map((cId) => (
+                    <CaricaBadge key={cId} caricaId={cId} compact />
+                  ))}
+                </span>
                 <span className="hidden md:block text-muted truncate">{entry.ownerName}</span>
                 <span className="font-mono text-foreground">{entry.eloRating}</span>
                 <span className="hidden md:block text-muted">

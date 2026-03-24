@@ -12,6 +12,7 @@ import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import type { TraitValues, ElementLevels } from '@/types/game';
 import { loadWellnessInput } from '@/lib/game-engine/wellness-loader';
 import { calculateWellness } from '@/lib/game-engine/wellness';
+import { getCreatureCariche } from '@/lib/game-engine/cariche-loader';
 
 /** Calculate how much AXP a creature should lose due to inactivity. */
 function calculateAxpDecay(lastBattleAt: Date | null, currentAxp: number): number {
@@ -195,6 +196,7 @@ export async function GET() {
       stability: creature.stability ?? 0.5,
       battlesToday,
       battlesRemaining: Math.max(0, 10 - battlesToday),
+      cariche: await getCreatureCariche(creature.id),
       wellness: await loadWellnessInput(creature.id, { lastBattleAt: ranking.lastBattleAt, battlesToday })
         .then(calculateWellness),
       visualParams: mapTraitsToVisuals(

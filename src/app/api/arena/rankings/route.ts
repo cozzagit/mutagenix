@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import {
   creatures,
   creatureRankings,
+  cariche as caricheTable,
 } from '@/lib/db/schema';
 import { users } from '@/lib/db/schema/users';
 import { eq, desc, and, sql } from 'drizzle-orm';
@@ -43,6 +44,21 @@ export async function GET(request: NextRequest) {
     .limit(limit)
     .offset(offset);
 
+  // Batch load cariche for all ranked creatures
+  const allCariche = rankings.length > 0
+    ? await db.select({
+        creatureId: caricheTable.creatureId,
+        caricaId: caricheTable.caricaId,
+      }).from(caricheTable).where(sql`${caricheTable.expiresAt} > NOW()`)
+    : [];
+
+  const caricheMap = new Map<string, string[]>();
+  for (const c of allCariche) {
+    const existing = caricheMap.get(c.creatureId) ?? [];
+    existing.push(c.caricaId);
+    caricheMap.set(c.creatureId, existing);
+  }
+
   // Add position (offset-based)
   const rankedList = rankings.map((r, i) => ({
     position: offset + i + 1,
@@ -57,6 +73,7 @@ export async function GET(request: NextRequest) {
     winStreak: r.winStreak,
     bestWinStreak: r.bestWinStreak,
     tier: r.rankTier,
+    cariche: caricheMap.get(r.creatureId) ?? [],
   }));
 
   // Try to get the requesting user's position (if authenticated)

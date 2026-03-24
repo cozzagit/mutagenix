@@ -2,6 +2,7 @@
 
 import { CreatureRenderer, DEFAULT_VISUAL_PARAMS } from "@/components/creature/creature-renderer";
 import type { VisualParams } from "@/lib/game-engine/visual-mapper";
+import { CaricaBadge } from "@/components/cariche/carica-badge";
 
 /* ------------------------------------------------------------------ */
 /* Constants & helpers                                                 */
@@ -82,6 +83,7 @@ export interface WarriorData {
   visualParams: Record<string, unknown>;
   axp: number;
   stability: number;
+  cariche?: string[];
   wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
 
@@ -222,10 +224,13 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
             <span className="text-xs font-black font-mono text-foreground">{warrior.eloRating}</span>
             <span className="text-[10px] font-mono text-accent">{warrior.wins}V</span>
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <TierBadge tier={warrior.tier} />
             <AxpBadgeFromValue axp={warrior.axp} />
             <StabilityBadge stability={warrior.stability} />
+            {warrior.cariche && warrior.cariche.length > 0 && warrior.cariche.map((cId) => (
+              <CaricaBadge key={cId} caricaId={cId} compact />
+            ))}
             {warrior.recovery.active && (
               <span className="text-[9px] text-warning font-bold uppercase">Recupero</span>
             )}
@@ -254,6 +259,15 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
         <AxpBadgeFromValue axp={warrior.axp} />
         <StabilityBadge stability={warrior.stability} />
       </div>
+
+      {/* Cariche badges */}
+      {warrior.cariche && warrior.cariche.length > 0 && (
+        <div className="flex items-center justify-center gap-1 flex-wrap">
+          {warrior.cariche.map((cId) => (
+            <CaricaBadge key={cId} caricaId={cId} compact />
+          ))}
+        </div>
+      )}
 
       {/* ELO + record */}
       <div className="text-center">

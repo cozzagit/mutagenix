@@ -4,6 +4,7 @@ import { CreatureRenderer, DEFAULT_VISUAL_PARAMS } from "@/components/creature/c
 import type { VisualParams } from "@/lib/game-engine/visual-mapper";
 import { Button } from "@/components/ui/button";
 import { TierBadge, AxpBadge } from "./warrior-card";
+import { CaricaBadge } from "@/components/cariche/carica-badge";
 
 export interface OpponentData {
   creatureId: string;
@@ -22,6 +23,7 @@ export interface OpponentData {
   hp: number;
   visualParams: Record<string, unknown>;
   axpTier: string; // Recluta, Esperto, Veterano, Maestro
+  cariche?: string[];
   stability?: number; // 0-1, opponent stability
   wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
@@ -100,6 +102,15 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
           <span className="rounded-sm bg-warning/15 px-1 py-0.5 text-[8px] font-bold text-warning">⚠</span>
         )}
       </div>
+
+      {/* Cariche badges */}
+      {opponent.cariche && opponent.cariche.length > 0 && (
+        <div className="flex items-center justify-center gap-0.5 mb-1">
+          {opponent.cariche.map((cId) => (
+            <CaricaBadge key={cId} caricaId={cId} compact />
+          ))}
+        </div>
+      )}
 
       {/* ELO prominent */}
       <div className="flex items-center justify-center gap-1 mb-2">

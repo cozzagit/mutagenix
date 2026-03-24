@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import {
   creatures,
   creatureRankings,
+  cariche as caricheTable,
 } from '@/lib/db/schema';
 import { users } from '@/lib/db/schema/users';
 import { eq, and, ne, or, isNull, desc, sql } from 'drizzle-orm';
@@ -133,6 +134,21 @@ export async function GET() {
     }
   }
 
+  // Batch load cariche for all opponents
+  const allCariche = creatureIds.length > 0
+    ? await db.select({
+        creatureId: caricheTable.creatureId,
+        caricaId: caricheTable.caricaId,
+      }).from(caricheTable).where(sql`${caricheTable.expiresAt} > NOW()`)
+    : [];
+
+  const caricheMap = new Map<string, string[]>();
+  for (const c of allCariche) {
+    const existing = caricheMap.get(c.creatureId) ?? [];
+    existing.push(c.caricaId);
+    caricheMap.set(c.creatureId, existing);
+  }
+
   const traitValues = (c: typeof creatures.$inferSelect) =>
     c.traitValues as Record<string, number>;
 
@@ -161,6 +177,7 @@ export async function GET() {
         (tv.battleScars ?? 0) * 2,
       ),
       axpTier: getAxpTierLabel(o.ranking.axp),
+      cariche: caricheMap.get(o.creature.id) ?? [],
       stability: o.creature.stability ?? 0.5,
       wellness: calculateWellness({
         lastInjectionAt: lastInjMap.get(o.creature.id) ?? null,
