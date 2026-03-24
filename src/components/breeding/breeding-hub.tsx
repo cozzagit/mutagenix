@@ -867,7 +867,11 @@ function CreatureManagerTab() {
 /* Tab: Albero Genealogico                                            */
 /* ------------------------------------------------------------------ */
 
-interface TreeNode {
+/* ------------------------------------------------------------------ */
+/* Family Tree types (matching API response)                           */
+/* ------------------------------------------------------------------ */
+
+interface TreeCreature {
   creatureId: string;
   name: string;
   ageDays: number;
@@ -875,11 +879,30 @@ interface TreeNode {
   isFounder: boolean;
   isDead: boolean;
   isActive: boolean;
-  stability: number;
+  isMine: boolean;
   ownerName: string;
+  stability: number;
   visualParams: Record<string, unknown>;
-  children: TreeNode[];
 }
+
+interface BreedingEvent {
+  breedingId: string;
+  partnerParent: TreeCreature;
+  myOffspring: TreeCreature | null;
+  partnerOffspring: TreeCreature | null;
+  childBreedings: BreedingEvent[];
+}
+
+interface FamilyTreeData {
+  rootCreatureId: string;
+  requestedCreatureId: string;
+  root: TreeCreature;
+  breedings: BreedingEvent[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared color helpers                                                */
+/* ------------------------------------------------------------------ */
 
 const GEN_COLORS: Record<number, { color: string; glow: string }> = {
   1: { color: "#3d5afe", glow: "rgba(61,90,254,0.35)" },
@@ -897,58 +920,103 @@ function getStabilityColor(stability: number): string {
   return "#ff3d3d";
 }
 
-/* DNA Helix icon used at branch points */
-function DnaHelixIcon({ color }: { color: string }) {
+/* ------------------------------------------------------------------ */
+/* DNA connection between parents                                      */
+/* ------------------------------------------------------------------ */
+
+function DnaConnection() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
-      <path
-        d="M6 3c0 4.97 5.37 8 12 8M18 3c0 4.97-5.37 8-12 8M6 21c0-4.97 5.37-8 12-8M18 21c0-4.97-5.37-8-12-8"
-        stroke={color}
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        opacity={0.7}
-      />
-      <line x1="8" y1="7" x2="16" y2="7" stroke={color} strokeWidth={1} opacity={0.3} />
-      <line x1="8" y1="11" x2="16" y2="11" stroke={color} strokeWidth={1} opacity={0.3} />
-      <line x1="8" y1="13" x2="16" y2="13" stroke={color} strokeWidth={1} opacity={0.3} />
-      <line x1="8" y1="17" x2="16" y2="17" stroke={color} strokeWidth={1} opacity={0.3} />
-    </svg>
+    <div className="flex items-center gap-1 px-2 shrink-0">
+      <div className="h-[2px] w-6 md:w-8 bg-gradient-to-r from-primary/60 to-pink-400/60" />
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
+        <path
+          d="M6 3c0 4.97 5.37 8 12 8M18 3c0 4.97-5.37 8-12 8M6 21c0-4.97 5.37-8 12-8M18 21c0-4.97-5.37-8-12-8"
+          stroke="#e879a0"
+          strokeWidth={1.6}
+          strokeLinecap="round"
+          opacity={0.6}
+        />
+      </svg>
+      <span className="text-pink-400 text-sm">&#9829;</span>
+      <div className="h-[2px] w-6 md:w-8 bg-gradient-to-r from-pink-400/60 to-border/40" />
+    </div>
   );
 }
 
-/* Single tree node specimen card */
-function AlberoNodeCard({
-  node,
-  depth,
+/* ------------------------------------------------------------------ */
+/* Vertical line connecting parent to offspring                        */
+/* ------------------------------------------------------------------ */
+
+function VerticalLine({ mine }: { mine: boolean }) {
+  if (mine) {
+    return (
+      <div
+        className="w-[2px] h-8 mx-auto"
+        style={{
+          background: "linear-gradient(to bottom, rgba(61,90,254,0.6), rgba(178,110,255,0.6))",
+          boxShadow: "0 0 6px rgba(61,90,254,0.3)",
+        }}
+      />
+    );
+  }
+  return (
+    <div className="h-8 mx-auto flex justify-center">
+      <div className="w-[2px] border-l-2 border-dashed border-border/30 h-full" />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Creature card (used for both parents and offspring)                 */
+/* ------------------------------------------------------------------ */
+
+function FamilyCreatureCard({
+  creature,
+  role,
+  size = 65,
 }: {
-  node: TreeNode;
-  depth: number;
+  creature: TreeCreature;
+  role: "mine" | "partner";
+  size?: number;
 }) {
-  const vp = { ...DEFAULT_VISUAL_PARAMS, ...(node.visualParams as Partial<VisualParams>) } as VisualParams;
-  const genC = getGenColor(node.familyGeneration);
-  const size = depth === 0 ? 80 : depth === 1 ? 70 : 60;
+  const vp = { ...DEFAULT_VISUAL_PARAMS, ...(creature.visualParams as Partial<VisualParams>) } as VisualParams;
+  const genC = getGenColor(creature.familyGeneration);
+  const isMine = role === "mine";
+
+  const borderColor = creature.isActive
+    ? "#00e5a0"
+    : creature.isDead
+      ? "rgba(255,255,255,0.06)"
+      : isMine
+        ? genC.color
+        : "rgba(255,255,255,0.12)";
 
   return (
     <div
-      className="relative rounded-xl border p-3 transition-all"
+      className="relative rounded-xl border p-2.5 transition-all"
       style={{
-        borderColor: node.isActive ? "#00e5a0" : node.isDead ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.12)",
-        background: node.isActive
+        borderColor,
+        borderStyle: isMine ? "solid" : "dashed",
+        background: creature.isActive
           ? "rgba(0,229,160,0.05)"
-          : node.isDead
+          : creature.isDead
             ? "rgba(255,255,255,0.02)"
-            : "rgba(255,255,255,0.04)",
-        boxShadow: node.isActive
+            : isMine
+              ? "rgba(255,255,255,0.04)"
+              : "rgba(255,255,255,0.02)",
+        boxShadow: creature.isActive
           ? "0 0 16px rgba(0,229,160,0.25), inset 0 0 20px rgba(0,229,160,0.03)"
-          : "none",
-        opacity: node.isDead ? 0.4 : 1,
-        filter: node.isDead ? "grayscale(100%)" : "none",
-        minWidth: depth === 0 ? 160 : depth === 1 ? 145 : 130,
-        maxWidth: depth === 0 ? 200 : depth === 1 ? 180 : 160,
+          : isMine && !creature.isDead
+            ? `0 0 10px ${genC.glow}`
+            : "none",
+        opacity: creature.isDead ? 0.4 : isMine ? 1 : 0.7,
+        filter: creature.isDead ? "grayscale(100%)" : "none",
+        minWidth: 130,
+        maxWidth: 170,
       }}
     >
       {/* Active pulse ring */}
-      {node.isActive && (
+      {creature.isActive && (
         <div
           className="absolute -inset-px rounded-xl animate-pulse pointer-events-none"
           style={{ boxShadow: "0 0 12px rgba(0,229,160,0.3)" }}
@@ -956,12 +1024,11 @@ function AlberoNodeCard({
       )}
 
       {/* Creature SVG */}
-      <div className="flex justify-center mb-2 relative">
-        <CreatureRenderer params={vp} size={size} animated={node.isActive} seed={42} />
-        {/* Dead overlay skull */}
-        {node.isDead && (
+      <div className="flex justify-center mb-1.5 relative">
+        <CreatureRenderer params={vp} size={size} animated={creature.isActive} seed={42} />
+        {creature.isDead && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff3d3d" strokeWidth={1.5} opacity={0.8}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff3d3d" strokeWidth={1.5} opacity={0.8}>
               <circle cx="12" cy="10" r="7" />
               <circle cx="9.5" cy="9" r="1.5" fill="#ff3d3d" />
               <circle cx="14.5" cy="9" r="1.5" fill="#ff3d3d" />
@@ -972,23 +1039,22 @@ function AlberoNodeCard({
       </div>
 
       {/* Name */}
-      <p className="text-xs font-bold text-foreground truncate text-center leading-tight">
-        {node.name}
+      <p className="text-[11px] font-bold text-foreground truncate text-center leading-tight">
+        {creature.name}
       </p>
 
-      {/* Owner */}
+      {/* Owner label */}
       <p className="text-[9px] text-muted truncate text-center mt-0.5">
-        {node.ownerName}
+        {isMine ? creature.ownerName : `di ${creature.ownerName}`}
       </p>
 
       {/* Day count */}
       <p className="text-[9px] text-muted text-center mt-0.5">
-        Giorno {node.ageDays}
+        Giorno {creature.ageDays}
       </p>
 
-      {/* Badges row */}
-      <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
-        {/* Generation badge */}
+      {/* Badges */}
+      <div className="flex items-center justify-center gap-1 mt-1 flex-wrap">
         <span
           className="rounded-sm px-1.5 py-0.5 text-[8px] font-bold"
           style={{
@@ -996,11 +1062,10 @@ function AlberoNodeCard({
             backgroundColor: `${genC.color}20`,
           }}
         >
-          Gen {node.familyGeneration}
+          Gen {creature.familyGeneration}
         </span>
 
-        {/* Founder badge */}
-        {node.isFounder && (
+        {creature.isFounder && (
           <span
             className="rounded-sm px-1.5 py-0.5 text-[8px] font-bold flex items-center gap-0.5"
             style={{ color: "#ffd600", backgroundColor: "rgba(255,214,0,0.12)" }}
@@ -1012,80 +1077,110 @@ function AlberoNodeCard({
           </span>
         )}
 
-        {/* Stability dot */}
         <span className="flex items-center gap-0.5">
           <span
             className="inline-block h-2 w-2 rounded-full"
-            style={{ backgroundColor: getStabilityColor(node.stability) }}
+            style={{ backgroundColor: getStabilityColor(creature.stability) }}
           />
-          <span className="text-[8px] text-muted">{Math.round(node.stability * 100)}%</span>
+          <span className="text-[8px] text-muted">{Math.round(creature.stability * 100)}%</span>
         </span>
       </div>
     </div>
   );
 }
 
-/* DNA Heritage bar for non-founder creatures */
-function DnaHeritageBar({ node }: { node: TreeNode }) {
-  if (node.isFounder) return null;
+/* ------------------------------------------------------------------ */
+/* Single breeding event: parents + offspring                          */
+/* ------------------------------------------------------------------ */
 
-  // Show a visual 65/35 inheritance split
-  const primaryPct = 65;
-  const secondaryPct = 35;
-  const genC = getGenColor(node.familyGeneration);
-  const parentGenC = getGenColor(Math.max(1, node.familyGeneration - 1));
-
-  return (
-    <div className="mt-2 w-full px-1">
-      <p className="text-[8px] text-muted uppercase tracking-wider mb-1 text-center">Eredit&agrave; DNA</p>
-      <div className="flex h-2 rounded-full overflow-hidden">
-        <div
-          style={{
-            width: `${primaryPct}%`,
-            backgroundColor: parentGenC.color,
-            boxShadow: `inset 0 0 4px ${parentGenC.glow}`,
-          }}
-        />
-        <div
-          style={{
-            width: `${secondaryPct}%`,
-            backgroundColor: genC.color,
-            boxShadow: `inset 0 0 4px ${genC.glow}`,
-          }}
-        />
-      </div>
-      <div className="flex justify-between mt-0.5">
-        <span className="text-[7px]" style={{ color: parentGenC.color }}>
-          {primaryPct}% genitore primario
-        </span>
-        <span className="text-[7px]" style={{ color: genC.color }}>
-          {secondaryPct}% partner
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* Enhanced node card with heritage */
-function AlberoNodeWithHeritage({
-  node,
+function BreedingEventCard({
+  primaryParent,
+  event,
   depth,
 }: {
-  node: TreeNode;
+  primaryParent: TreeCreature;
+  event: BreedingEvent;
   depth: number;
 }) {
   return (
     <div className="flex flex-col items-center">
-      <AlberoNodeCard node={node} depth={depth} />
-      {!node.isFounder && <DnaHeritageBar node={node} />}
+      {/* Parent pair row */}
+      <div className="flex items-center justify-center">
+        <FamilyCreatureCard creature={primaryParent} role="mine" size={depth === 0 ? 70 : 60} />
+        <DnaConnection />
+        <FamilyCreatureCard creature={event.partnerParent} role="partner" size={depth === 0 ? 70 : 60} />
+      </div>
+
+      {/* Offspring row */}
+      {(event.myOffspring || event.partnerOffspring) && (
+        <div className="flex items-start justify-center gap-6 md:gap-10">
+          {/* My offspring (left) */}
+          <div className="flex flex-col items-center">
+            <VerticalLine mine={true} />
+            {event.myOffspring ? (
+              <FamilyCreatureCard creature={event.myOffspring} role="mine" size={55} />
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/20 p-3 text-center" style={{ minWidth: 130 }}>
+                <p className="text-[9px] text-muted">Nessun figlio tuo</p>
+              </div>
+            )}
+          </div>
+
+          {/* Partner offspring (right) */}
+          <div className="flex flex-col items-center">
+            <VerticalLine mine={false} />
+            {event.partnerOffspring ? (
+              <FamilyCreatureCard creature={event.partnerOffspring} role="partner" size={55} />
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/20 p-3 text-center opacity-70" style={{ minWidth: 130 }}>
+                <p className="text-[9px] text-muted">Nessun figlio partner</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Recursive: if my offspring has child breedings, render them below */}
+      {event.myOffspring && event.childBreedings.length > 0 && (
+        <div className="flex flex-col items-center mt-2">
+          {/* Connection line from offspring down to next breeding */}
+          <div
+            className="w-[2px] h-6"
+            style={{
+              background: `linear-gradient(to bottom, ${getGenColor(event.myOffspring.familyGeneration).color}, ${getGenColor(event.myOffspring.familyGeneration + 1).color})`,
+              boxShadow: `0 0 6px ${getGenColor(event.myOffspring.familyGeneration).glow}`,
+            }}
+          />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0 my-1">
+            <path
+              d="M6 3c0 4.97 5.37 8 12 8M18 3c0 4.97-5.37 8-12 8M6 21c0-4.97 5.37-8 12-8M18 21c0-4.97-5.37-8-12-8"
+              stroke={getGenColor(event.myOffspring.familyGeneration + 1).color}
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              opacity={0.7}
+            />
+          </svg>
+          {event.childBreedings.map((childEvent) => (
+            <BreedingEventCard
+              key={childEvent.breedingId}
+              primaryParent={event.myOffspring!}
+              event={childEvent}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-/* Full Albero tab component */
+/* ------------------------------------------------------------------ */
+/* Full Albero tab component                                           */
+/* ------------------------------------------------------------------ */
+
 function AlberoTab({ onSwitchToPartner }: { onSwitchToPartner: () => void }) {
   const { toast } = useToast();
-  const [tree, setTree] = useState<TreeNode | null>(null);
+  const [treeData, setTreeData] = useState<FamilyTreeData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchTree = useCallback(async () => {
@@ -1105,7 +1200,7 @@ function AlberoTab({ onSwitchToPartner }: { onSwitchToPartner: () => void }) {
       const treeRes = await fetch(`/api/creatures/${active.id}/family-tree`);
       if (!treeRes.ok) throw new Error();
       const treeJson = await treeRes.json();
-      setTree(treeJson.data?.tree ?? null);
+      setTreeData(treeJson.data ?? null);
     } catch {
       toast("error", "Errore nel caricamento dell'albero genealogico.");
     } finally {
@@ -1129,7 +1224,7 @@ function AlberoTab({ onSwitchToPartner }: { onSwitchToPartner: () => void }) {
     );
   }
 
-  if (!tree) {
+  if (!treeData) {
     return (
       <div className="rounded-xl border border-border/30 bg-surface-2 p-8 text-center">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#b26eff" strokeWidth={1.2} className="mx-auto mb-3 opacity-40">
@@ -1141,16 +1236,35 @@ function AlberoTab({ onSwitchToPartner }: { onSwitchToPartner: () => void }) {
     );
   }
 
-  /* Count descendants for the legend summary */
-  function countNodes(n: TreeNode): number {
-    return 1 + n.children.reduce((sum, c) => sum + countNodes(c), 0);
+  /* Count all unique creatures in the tree */
+  function countBreedingCreatures(breedings: BreedingEvent[]): Set<string> {
+    const ids = new Set<string>();
+    for (const b of breedings) {
+      ids.add(b.partnerParent.creatureId);
+      if (b.myOffspring) ids.add(b.myOffspring.creatureId);
+      if (b.partnerOffspring) ids.add(b.partnerOffspring.creatureId);
+      for (const id of countBreedingCreatures(b.childBreedings)) {
+        ids.add(id);
+      }
+    }
+    return ids;
   }
-  function maxGen(n: TreeNode): number {
-    if (n.children.length === 0) return n.familyGeneration;
-    return Math.max(n.familyGeneration, ...n.children.map(maxGen));
+  function maxGenBreedings(breedings: BreedingEvent[]): number {
+    let max = 0;
+    for (const b of breedings) {
+      max = Math.max(max, b.partnerParent.familyGeneration);
+      if (b.myOffspring) max = Math.max(max, b.myOffspring.familyGeneration);
+      if (b.partnerOffspring) max = Math.max(max, b.partnerOffspring.familyGeneration);
+      max = Math.max(max, maxGenBreedings(b.childBreedings));
+    }
+    return max;
   }
-  const totalNodes = countNodes(tree);
-  const deepestGen = maxGen(tree);
+
+  const allIds = countBreedingCreatures(treeData.breedings);
+  allIds.add(treeData.root.creatureId);
+  const totalNodes = allIds.size;
+  const deepestGen = Math.max(treeData.root.familyGeneration, maxGenBreedings(treeData.breedings));
+  const hasBreedings = treeData.breedings.length > 0;
 
   return (
     <div className="space-y-6">
@@ -1164,7 +1278,7 @@ function AlberoTab({ onSwitchToPartner }: { onSwitchToPartner: () => void }) {
             Albero Genealogico
           </h3>
           <p className="text-[10px] text-muted mt-0.5">
-            La discendenza della tua stirpe, dal fondatore alla prole pi&ugrave; recente.
+            Entrambi i genitori e la prole di ogni accoppiamento.
           </p>
         </div>
         <div className="flex gap-3 text-[9px] text-muted">
@@ -1175,13 +1289,51 @@ function AlberoTab({ onSwitchToPartner }: { onSwitchToPartner: () => void }) {
 
       {/* Tree visualization */}
       <div className="overflow-x-auto pb-6 -mx-4 px-4">
-        <div className="flex justify-center min-w-fit">
-          <AlberoTreeBranchWithHeritage node={tree} depth={0} onSwitchToPartner={onSwitchToPartner} />
+        <div className="flex flex-col items-center min-w-fit">
+          {hasBreedings ? (
+            <>
+              {/* Root creature header (shown above first breeding) */}
+              {treeData.breedings.map((event) => (
+                <BreedingEventCard
+                  key={event.breedingId}
+                  primaryParent={treeData.root}
+                  event={event}
+                  depth={0}
+                />
+              ))}
+            </>
+          ) : (
+            /* No breedings yet - show root creature alone */
+            <div className="flex flex-col items-center">
+              <FamilyCreatureCard creature={treeData.root} role="mine" size={80} />
+              <div className="mt-6 text-center">
+                <div
+                  className="w-0.5 h-6 mx-auto mb-3"
+                  style={{
+                    background: `linear-gradient(to bottom, ${getGenColor(treeData.root.familyGeneration).color}, transparent)`,
+                    boxShadow: `0 0 6px ${getGenColor(treeData.root.familyGeneration).glow}`,
+                  }}
+                />
+                <p className="text-sm text-muted mb-1">Il tuo capostipite non ha ancora discendenti.</p>
+                <p className="text-[10px] text-muted mb-4">
+                  Inizia un accoppiamento per espandere la tua stirpe genetica.
+                </p>
+                <Button
+                  variant="accent"
+                  size="sm"
+                  onClick={onSwitchToPartner}
+                  className="uppercase font-bold tracking-wider text-[11px]"
+                >
+                  Cerca un Partner
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Generation color legend */}
-      <div className="flex items-center justify-center gap-4 text-[9px] text-muted border-t border-border/20 pt-4">
+      <div className="flex items-center justify-center gap-4 text-[9px] text-muted border-t border-border/20 pt-4 flex-wrap">
         {[1, 2, 3].filter(g => g <= deepestGen).map((gen) => {
           const c = getGenColor(gen);
           return (
@@ -1202,119 +1354,11 @@ function AlberoTab({ onSwitchToPartner }: { onSwitchToPartner: () => void }) {
           <div className="h-2 w-2 rounded-full bg-muted/30" />
           <span>Morta</span>
         </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full border border-dashed border-border/50" />
+          <span>DNA altrui</span>
+        </div>
       </div>
-    </div>
-  );
-}
-
-/* Tree branch with heritage bars on non-founder nodes */
-function AlberoTreeBranchWithHeritage({
-  node,
-  depth,
-  onSwitchToPartner,
-}: {
-  node: TreeNode;
-  depth: number;
-  onSwitchToPartner: () => void;
-}) {
-  const genC = getGenColor(node.familyGeneration);
-  const childGenC = node.children.length > 0
-    ? getGenColor(node.children[0]!.familyGeneration)
-    : genC;
-
-  return (
-    <div className="flex flex-col items-center">
-      {/* Node card with heritage */}
-      <AlberoNodeWithHeritage node={node} depth={depth} />
-
-      {/* Connection to children */}
-      {node.children.length > 0 && (
-        <div className="flex flex-col items-center w-full">
-          <div
-            className="w-0.5 h-6 md:h-8"
-            style={{
-              background: `linear-gradient(to bottom, ${genC.color}, ${childGenC.color})`,
-              boxShadow: `0 0 6px ${genC.glow}`,
-            }}
-          />
-
-          <DnaHelixIcon color={childGenC.color} />
-
-          {node.children.length === 1 ? (
-            <div className="flex flex-col items-center">
-              <div
-                className="w-0.5 h-4"
-                style={{
-                  background: childGenC.color,
-                  boxShadow: `0 0 4px ${childGenC.glow}`,
-                }}
-              />
-              <AlberoTreeBranchWithHeritage
-                node={node.children[0]!}
-                depth={depth + 1}
-                onSwitchToPartner={onSwitchToPartner}
-              />
-            </div>
-          ) : (
-            <div className="relative flex flex-col items-center w-full">
-              <div className="relative w-full flex justify-center">
-                <div
-                  className="h-0.5 absolute"
-                  style={{
-                    width: `${Math.min(100, 50 + (node.children.length - 1) * 25)}%`,
-                    background: childGenC.color,
-                    boxShadow: `0 0 4px ${childGenC.glow}`,
-                  }}
-                />
-              </div>
-
-              <div className="flex gap-3 md:gap-6 mt-0">
-                {node.children.map((child) => (
-                  <div key={child.creatureId} className="flex flex-col items-center">
-                    <div
-                      className="w-0.5 h-5"
-                      style={{
-                        background: childGenC.color,
-                        boxShadow: `0 0 4px ${childGenC.glow}`,
-                      }}
-                    />
-                    <AlberoTreeBranchWithHeritage
-                      node={child}
-                      depth={depth + 1}
-                      onSwitchToPartner={onSwitchToPartner}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Empty state for root founder with no children */}
-      {node.children.length === 0 && node.isFounder && depth === 0 && (
-        <div className="mt-6 text-center">
-          <div
-            className="w-0.5 h-6 mx-auto mb-3"
-            style={{
-              background: `linear-gradient(to bottom, ${genC.color}, transparent)`,
-              boxShadow: `0 0 6px ${genC.glow}`,
-            }}
-          />
-          <p className="text-sm text-muted mb-1">Il tuo capostipite non ha ancora discendenti.</p>
-          <p className="text-[10px] text-muted mb-4">
-            Inizia un accoppiamento per espandere la tua stirpe genetica.
-          </p>
-          <Button
-            variant="accent"
-            size="sm"
-            onClick={onSwitchToPartner}
-            className="uppercase font-bold tracking-wider text-[11px]"
-          >
-            Cerca un Partner
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

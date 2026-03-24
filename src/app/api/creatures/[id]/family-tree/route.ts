@@ -4,12 +4,16 @@ import {
   unauthorizedResponse,
 } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, creatureLineage, users } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { creatures, breedingRecords, users } from '@/lib/db/schema';
+import { eq, or } from 'drizzle-orm';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import type { ElementLevels, TraitValues } from '@/types/game';
 
-interface TreeNode {
+/* ------------------------------------------------------------------ */
+/* Types                                                               */
+/* ------------------------------------------------------------------ */
+
+interface TreeCreature {
   creatureId: string;
   name: string;
   ageDays: number;
@@ -17,11 +21,31 @@ interface TreeNode {
   isFounder: boolean;
   isDead: boolean;
   isActive: boolean;
-  stability: number;
+  isMine: boolean;
   ownerName: string;
+  stability: number;
   visualParams: Record<string, unknown>;
-  children: TreeNode[];
 }
+
+interface BreedingEvent {
+  breedingId: string;
+  partnerParent: TreeCreature;
+  myOffspring: TreeCreature | null;
+  partnerOffspring: TreeCreature | null;
+  /** Recursive breedings of myOffspring */
+  childBreedings: BreedingEvent[];
+}
+
+interface FamilyTreeResponse {
+  rootCreatureId: string;
+  requestedCreatureId: string;
+  root: TreeCreature;
+  breedings: BreedingEvent[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
 
 async function getCreatureWithOwner(creatureId: string) {
   const [result] = await db
@@ -35,11 +59,12 @@ async function getCreatureWithOwner(creatureId: string) {
   return result ?? null;
 }
 
-function buildTreeNode(
+function toTreeCreature(
   creature: typeof creatures.$inferSelect,
   ownerName: string,
+  requestingUserId: string,
   activeCreatureId?: string,
-): TreeNode {
+): TreeCreature {
   const traitValues = creature.traitValues as unknown as TraitValues;
   const elementLevels = creature.elementLevels as unknown as ElementLevels;
   const visualParams = mapTraitsToVisuals(
@@ -58,20 +83,20 @@ function buildTreeNode(
     isFounder: creature.isFounder,
     isDead: creature.isDead,
     isActive: creature.id === activeCreatureId,
-    stability: creature.stability ?? 0.5,
+    isMine: creature.userId === requestingUserId,
     ownerName,
+    stability: creature.stability ?? 0.5,
     visualParams: visualParams as unknown as Record<string, unknown>,
-    children: [],
   };
 }
 
-/** Walk up to find the root ancestor (founder). */
+/** Walk up to find the root ancestor (founder) belonging to the requesting user. */
 async function findRoot(creatureId: string): Promise<string> {
   let currentId = creatureId;
   const visited = new Set<string>();
 
   while (true) {
-    if (visited.has(currentId)) break; // prevent infinite loops
+    if (visited.has(currentId)) break;
     visited.add(currentId);
 
     const [creature] = await db
@@ -80,7 +105,7 @@ async function findRoot(creatureId: string): Promise<string> {
       .where(eq(creatures.id, currentId));
 
     if (!creature || !creature.parentACreatureId) {
-      return currentId; // this is the root
+      return currentId;
     }
 
     currentId = creature.parentACreatureId;
@@ -89,35 +114,82 @@ async function findRoot(creatureId: string): Promise<string> {
   return currentId;
 }
 
-/** Recursively build the tree downward from a creature. */
-async function buildTreeDown(creatureId: string, activeId?: string, depth: number = 0): Promise<TreeNode | null> {
-  if (depth > 10) return null; // safety limit
+/**
+ * Recursively build family tree showing both parents and both offspring
+ * for every breeding event a creature participated in.
+ */
+async function buildBreedings(
+  creatureId: string,
+  requestingUserId: string,
+  activeCreatureId: string | undefined,
+  depth: number = 0,
+  visited: Set<string> = new Set(),
+): Promise<BreedingEvent[]> {
+  if (depth > 5 || visited.has(creatureId)) return [];
+  visited.add(creatureId);
 
-  const data = await getCreatureWithOwner(creatureId);
-  if (!data) return null;
-
-  const node = buildTreeNode(data.creature, data.ownerName, activeId);
-
-  // Find children via lineage (where this creature is the primary parent)
-  const childLineages = await db
-    .select({ childId: creatureLineage.childId })
-    .from(creatureLineage)
+  // Find all breeding records where this creature was a parent
+  const records = await db
+    .select()
+    .from(breedingRecords)
     .where(
-      and(
-        eq(creatureLineage.parentId, creatureId),
-        eq(creatureLineage.parentRole, 'primary'),
+      or(
+        eq(breedingRecords.parentAId, creatureId),
+        eq(breedingRecords.parentBId, creatureId),
       ),
     );
 
-  for (const lineage of childLineages) {
-    const childNode = await buildTreeDown(lineage.childId, activeId, depth + 1);
-    if (childNode) {
-      node.children.push(childNode);
-    }
+  const events: BreedingEvent[] = [];
+
+  for (const record of records) {
+    // Determine partner parent
+    const partnerId = record.parentAId === creatureId
+      ? record.parentBId
+      : record.parentAId;
+
+    const partnerData = await getCreatureWithOwner(partnerId);
+    if (!partnerData) continue;
+
+    // Get both offspring
+    const offspringAData = record.offspringAId
+      ? await getCreatureWithOwner(record.offspringAId)
+      : null;
+    const offspringBData = record.offspringBId
+      ? await getCreatureWithOwner(record.offspringBId)
+      : null;
+
+    // Determine which offspring is "mine" (belongs to the requesting user)
+    const allOffspring = [offspringAData, offspringBData].filter(Boolean) as NonNullable<typeof offspringAData>[];
+    const myOffspringData = allOffspring.find(o => o.creature.userId === requestingUserId) ?? null;
+    const partnerOffspringData = allOffspring.find(o => o.creature.userId !== requestingUserId) ?? null;
+
+    const myOffspring = myOffspringData
+      ? toTreeCreature(myOffspringData.creature, myOffspringData.ownerName, requestingUserId, activeCreatureId)
+      : null;
+    const partnerOffspring = partnerOffspringData
+      ? toTreeCreature(partnerOffspringData.creature, partnerOffspringData.ownerName, requestingUserId, activeCreatureId)
+      : null;
+
+    // Recursively get breedings for my offspring
+    const childBreedings = myOffspring
+      ? await buildBreedings(myOffspring.creatureId, requestingUserId, activeCreatureId, depth + 1, visited)
+      : [];
+
+    events.push({
+      breedingId: record.id,
+      partnerParent: toTreeCreature(partnerData.creature, partnerData.ownerName, requestingUserId, activeCreatureId),
+      myOffspring,
+      partnerOffspring,
+      childBreedings,
+    });
   }
 
-  return node;
+  return events;
 }
+
+/* ------------------------------------------------------------------ */
+/* Route handler                                                       */
+/* ------------------------------------------------------------------ */
 
 export async function GET(
   _request: Request,
@@ -155,21 +227,25 @@ export async function GET(
   // Walk up to find the root
   const rootId = await findRoot(creatureId);
 
-  // Build full tree from root downward
-  const tree = await buildTreeDown(rootId, creatureId);
-
-  if (!tree) {
+  const rootData = await getCreatureWithOwner(rootId);
+  if (!rootData) {
     return NextResponse.json(
       { error: { code: 'TREE_ERROR', message: 'Impossibile costruire l\'albero genealogico.' } },
       { status: 500 },
     );
   }
 
-  return NextResponse.json({
-    data: {
-      rootCreatureId: rootId,
-      requestedCreatureId: creatureId,
-      tree,
-    },
-  });
+  const root = toTreeCreature(rootData.creature, rootData.ownerName, session.userId, creatureId);
+
+  // Build all breeding events starting from root, recursively following "my" offspring
+  const breedings = await buildBreedings(rootId, session.userId, creatureId);
+
+  const response: FamilyTreeResponse = {
+    rootCreatureId: rootId,
+    requestedCreatureId: creatureId,
+    root,
+    breedings,
+  };
+
+  return NextResponse.json({ data: response });
 }
