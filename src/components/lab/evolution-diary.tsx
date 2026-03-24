@@ -69,18 +69,53 @@ const PERSONALITY_DEFS = [
 // Dominant element insight descriptions
 // ---------------------------------------------------------------------------
 
-const DOMINANT_ELEMENT_INSIGHTS: Record<string, string> = {
-  Ca: 'Il Calcio ha forgiato una creatura corazzata e robusta, con ossa spesse e postura salda.',
-  Fe: 'Il Ferro ha creato un bruto muscoloso, aggressivo e dal colore rossastro.',
-  K: 'Il Potassio ha sviluppato un\'intelligenza aliena, alta e slanciata, con molti occhi.',
-  Na: 'Il Sodio ha sviluppato un organismo nervoso e reattivo, con riflessi fulminei.',
-  S: 'Lo Zolfo ha generato un orrore tossico ricoperto di spine.',
-  Cl: 'Il Cloro ha prodotto una creatura acida e velenosa, adattata alla sopravvivenza.',
-  P: 'Il Fosforo ha dato vita a un alieno bioluminescente, elegante e misterioso.',
-  N: 'L\'Azoto ha costruito un organismo equilibrato e resistente.',
-  O: 'L\'Ossigeno ha favorito una creatura armoniosa e bilanciata.',
-  C: 'Il Carbonio ha costruito una struttura solida e massiccia.',
-};
+/** Generate creature description from actual visual params + traits, not generic element text */
+function generateCreatureInsight(
+  vp: Record<string, number> | undefined,
+  traitValues: Record<string, number> | undefined,
+  dominantEl: ElementId,
+): string {
+  if (!vp && !traitValues) return `Il ${ELEMENT_NAMES[dominantEl]} domina la composizione genetica di questa creatura.`;
+
+  const parts: string[] = [];
+
+  // Body color description from actual bodyHue
+  const hue = vp?.bodyHue ?? 0;
+  if (hue >= 0 && hue < 30) parts.push('dal corpo rossastro');
+  else if (hue >= 30 && hue < 60) parts.push('con tonalita aranciate');
+  else if (hue >= 60 && hue < 90) parts.push('dai toni giallastri');
+  else if (hue >= 90 && hue < 150) parts.push('dal corpo verdastro');
+  else if (hue >= 150 && hue < 210) parts.push('dai toni acquamarina');
+  else if (hue >= 210 && hue < 270) parts.push('dal corpo blu-azzurro');
+  else if (hue >= 270 && hue < 330) parts.push('con sfumature violacee');
+  else parts.push('dal corpo cremisi');
+
+  // Size from body dimensions
+  const w = vp?.bodyWidth ?? 140;
+  const h = vp?.bodyHeight ?? 130;
+  if (w > 170 && h > 150) parts.push('di corporatura massiccia');
+  else if (w < 100 || h < 100) parts.push('di dimensioni contenute');
+  else if (w > h * 1.3) parts.push('dal profilo tozzo e largo');
+  else if (h > w * 1.3) parts.push('dal corpo slanciato e alto');
+
+  // Notable features from traits
+  const tv = traitValues ?? {};
+  if ((tv.furDensity ?? 0) > 40) parts.push('ricoperta di pelliccia');
+  if ((tv.spininess ?? 0) > 40) parts.push('irta di spine');
+  if ((tv.clawDev ?? 0) > 40) parts.push('con artigli sviluppati');
+  if ((tv.eyeDev ?? 0) > 50) parts.push('con occhi evoluti');
+  if ((tv.tailGrowth ?? 0) > 40) parts.push('dotata di coda');
+  if ((tv.armoring ?? 0) > 40) parts.push('con placche corazzate');
+
+  // Glow
+  const glow = vp?.glowIntensity ?? 0;
+  if (glow > 0.5) parts.push('avvolta in un bagliore intenso');
+  else if (glow > 0.2) parts.push('con una lieve bioluminescenza');
+
+  if (parts.length === 0) return `Una creatura unica plasmata dal ${ELEMENT_NAMES[dominantEl]}.`;
+
+  return `Creatura ${parts.slice(0, 4).join(', ')}.`;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -334,6 +369,8 @@ function GeneticIdentityCard({
   totalDays,
   stability,
   elementLevels,
+  traitValues,
+  visualParams,
   foundingElements,
   growthElements,
 }: {
@@ -342,6 +379,8 @@ function GeneticIdentityCard({
   totalDays: number;
   stability: number;
   elementLevels: Record<string, number>;
+  traitValues?: Record<string, number>;
+  visualParams?: Record<string, number>;
   foundingElements: Record<string, number> | null;
   growthElements: Record<string, number> | null;
 }) {
@@ -350,7 +389,7 @@ function GeneticIdentityCard({
   const personality = computePersonality(elementLevels);
   const topPersonality = personality.reduce((a, b) => (a.pct > b.pct ? a : b));
   const activeSynergies = getActiveSynergies(elementLevels);
-  const insight = DOMINANT_ELEMENT_INSIGHTS[dominant] ?? 'Una creatura unica nel suo genere.';
+  const insight = generateCreatureInsight(visualParams, traitValues, dominant);
 
   const stabilityPct = Math.round(stability * 100);
   const stabilityColor = stabilityPct >= 70 ? '#39ff7f' : stabilityPct >= 40 ? '#ffd600' : '#ff4466';
@@ -940,6 +979,8 @@ export function EvolutionDiary({
           totalDays={totalDays}
           stability={stability}
           elementLevels={elLevels}
+          traitValues={currentTraitValues}
+          visualParams={currentVisualParams as Record<string, number> | undefined}
           foundingElements={foundingElements}
           growthElements={growthElements}
         />
