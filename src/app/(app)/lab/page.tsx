@@ -53,22 +53,55 @@ export default async function LabPage() {
     cooldownRemaining = Math.max(0, TIME_CONFIG.COOLDOWN_MS - (Date.now() - creature.updatedAt.getTime()));
   }
 
-  // Count battles user hasn't seen (defender battles AFTER last arena visit)
+  // Fetch unseen battles (defender battles AFTER last arena visit) with details
   let unseenBattles = 0;
+  let unseenBattleDetails: Array<{ battleId: string; attackerCreatureName: string; defenderCreatureName: string; won: boolean; date: string }> = [];
   try {
-    const [user] = await db.select({ lastArenaVisit: users.lastArenaVisit })
+    const [userRow] = await db.select({ lastArenaVisit: users.lastArenaVisit })
       .from(users).where(eq(users.id, session.userId));
-    const threshold = user?.lastArenaVisit ?? new Date(0); // if never visited, count all
-    const [unseenCount] = await db
-      .select({ count: sql<number>`count(*)` })
+    const threshold = userRow?.lastArenaVisit ?? new Date(0);
+
+    const unseenRows = await db
+      .select({
+        id: battles.id,
+        challengerCreatureId: battles.challengerCreatureId,
+        defenderCreatureId: battles.defenderCreatureId,
+        winnerCreatureId: battles.winnerCreatureId,
+        createdAt: battles.createdAt,
+      })
       .from(battles)
       .where(
         and(
           eq(battles.defenderUserId, session.userId),
           gte(battles.createdAt, threshold),
+          eq(battles.battleMode, 'ranked'),
         ),
-      );
-    unseenBattles = unseenCount?.count ?? 0;
+      )
+      .orderBy(sql`${battles.createdAt} DESC`)
+      .limit(10);
+
+    unseenBattles = unseenRows.length;
+
+    if (unseenRows.length > 0) {
+      // Fetch creature names for the battles
+      const creatureIds = new Set<string>();
+      for (const b of unseenRows) {
+        creatureIds.add(b.challengerCreatureId);
+        creatureIds.add(b.defenderCreatureId);
+      }
+      const creatureNames = await db.select({ id: creatures.id, name: creatures.name })
+        .from(creatures)
+        .where(sql`${creatures.id} IN (${sql.join([...creatureIds].map(id => sql`${id}`), sql`, `)})`);
+      const nameMap = new Map(creatureNames.map(c => [c.id, c.name]));
+
+      unseenBattleDetails = unseenRows.map(b => ({
+        battleId: b.id,
+        attackerCreatureName: nameMap.get(b.challengerCreatureId) ?? 'Sconosciuto',
+        defenderCreatureName: nameMap.get(b.defenderCreatureId) ?? 'Sconosciuto',
+        won: b.winnerCreatureId === b.defenderCreatureId,
+        date: b.createdAt.toISOString(),
+      }));
+    }
   } catch {
     // Arena tables may not exist yet — ignore
   }
@@ -105,6 +138,7 @@ export default async function LabPage() {
       isDevMode={TIME_CONFIG.isDevMode}
       cooldownRemaining={cooldownRemaining}
       unseenBattles={unseenBattles}
+      unseenBattleDetails={unseenBattleDetails}
       ranking={ranking}
       wellness={wellness}
     />

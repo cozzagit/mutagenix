@@ -46,6 +46,7 @@ interface Props {
   isDevMode: boolean;
   cooldownRemaining?: number;
   unseenBattles?: number;
+  unseenBattleDetails?: Array<{ battleId: string; attackerCreatureName: string; defenderCreatureName: string; won: boolean; date: string }>;
   ranking?: { eloRating: number; wins: number; losses: number; draws: number; tier: string; axp?: number } | null;
   wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
@@ -136,6 +137,7 @@ export function LabDashboard({
   isDevMode,
   cooldownRemaining: initialCooldown = 0,
   unseenBattles = 0,
+  unseenBattleDetails = [],
   ranking = null,
   wellness,
 }: Props) {
@@ -820,29 +822,53 @@ export function LabDashboard({
           </div>
         )}
 
-        {/* Battle notification banner */}
+        {/* Battle notification banner — detailed */}
         {showBattleBanner && (
           <div className="w-full shrink-0 px-4 pt-2">
-            <div className="flex items-center justify-between rounded-lg border border-danger/30 bg-danger/10 px-3 py-2">
-              <div className="flex items-center gap-2">
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-danger">
-                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-                </svg>
-                <p className="text-[11px] text-danger">
-                  Il tuo guerriero ha combattuto!{' '}
-                  <Link href="/arena" className="font-bold underline hover:text-danger/80">
-                    Vai all&apos;Arena per vedere i risultati.
-                  </Link>
-                </p>
+            <div className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2.5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{'\u2694\uFE0F'}</span>
+                  <span className="text-xs font-bold text-danger">
+                    {unseenBattles} sfid{unseenBattles === 1 ? 'a' : 'e'} subita{unseenBattles === 1 ? '' : 'e'}!
+                  </span>
+                </div>
+                <button onClick={() => setShowBattleBanner(false)} className="shrink-0 rounded p-0.5 text-danger/60 hover:text-danger">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                  </svg>
+                </button>
               </div>
-              <button
-                onClick={() => setShowBattleBanner(false)}
-                className="shrink-0 rounded p-0.5 text-danger/60 hover:text-danger"
-              >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </button>
+              {unseenBattleDetails.length > 0 ? (
+                <div className="flex flex-col gap-1.5">
+                  {unseenBattleDetails.slice(0, 5).map((b) => (
+                    <Link
+                      key={b.battleId}
+                      href={`/arena/battle/${b.battleId}`}
+                      className="flex items-center justify-between rounded-lg bg-background/40 px-2.5 py-1.5 transition-colors hover:bg-background/60"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[10px] font-black ${b.won ? 'text-accent' : 'text-danger'}`}>
+                          {b.won ? 'VINTO' : 'PERSO'}
+                        </span>
+                        <span className="text-[10px] text-muted">
+                          {b.attackerCreatureName} ha attaccato {b.defenderCreatureName}
+                        </span>
+                      </div>
+                      <span className="text-[9px] text-primary font-bold">Rivedi &rarr;</span>
+                    </Link>
+                  ))}
+                  {unseenBattleDetails.length > 5 && (
+                    <Link href="/arena" className="text-center text-[10px] text-danger/70 underline hover:text-danger">
+                      +{unseenBattleDetails.length - 5} altre sfide
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <Link href="/arena" className="text-[10px] text-danger/80 underline hover:text-danger">
+                  Vai all&apos;Arena per i dettagli
+                </Link>
+              )}
             </div>
           </div>
         )}
