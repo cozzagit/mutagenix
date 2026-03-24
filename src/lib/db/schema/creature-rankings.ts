@@ -32,6 +32,12 @@ export const creatureRankings = pgTable('creature_rankings', {
   consecutiveLosses: integer('consecutive_losses').notNull().default(0),
   axp: integer('axp').notNull().default(0),
   rankTier: text('rank_tier').notNull().default('novice'), // novice, intermediate, veteran, legend, immortal, divine
+  farmingWins: integer('farming_wins').notNull().default(0),
+  farmingLosses: integer('farming_losses').notNull().default(0),
+  farmingDraws: integer('farming_draws').notNull().default(0),
+  tournamentWins: integer('tournament_wins').notNull().default(0),
+  tournamentLosses: integer('tournament_losses').notNull().default(0),
+  farmingAxp: integer('farming_axp').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

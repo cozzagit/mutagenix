@@ -86,3 +86,28 @@ export {
   type CaricaHistoryEntry,
   type NewCaricaHistoryEntry,
 } from './cariche';
+export {
+  squads,
+  type Squad,
+  type NewSquad,
+} from './squads';
+export {
+  tournaments,
+  type Tournament,
+  type NewTournament,
+} from './tournaments';
+export {
+  tournamentParticipants,
+  type TournamentParticipant,
+  type NewTournamentParticipant,
+} from './tournament-participants';
+export {
+  tournamentMatches,
+  type TournamentMatch,
+  type NewTournamentMatch,
+} from './tournament-matches';
+export {
+  tournamentResults,
+  type TournamentResult,
+  type NewTournamentResult,
+} from './tournament-results';

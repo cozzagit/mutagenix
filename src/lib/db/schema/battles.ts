@@ -34,6 +34,12 @@ export const battles = pgTable('battles', {
   defenderEloAfter: integer('defender_elo_after').notNull(),
   challengerHpPercent: real('challenger_hp_percent'), // final HP %
   defenderHpPercent: real('defender_hp_percent'),
+  battleMode: text('battle_mode').notNull().default('ranked'),
+  tournamentMatchId: uuid('tournament_match_id'),
+  squadBattleId: uuid('squad_battle_id'),
+  duelIndex: integer('duel_index'),
+  kinshipMalus: real('kinship_malus').notNull().default(0),
+  teamBonus: real('team_bonus').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
