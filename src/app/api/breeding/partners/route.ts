@@ -75,16 +75,20 @@ export async function GET() {
 
     // Top 3 elements by level
     const elementEntries = ELEMENTS
-      .map((el: ElementId) => ({ element: el, level: elementLevels[el] ?? 0 }))
+      .map((el: ElementId) => ({ elementId: el, level: elementLevels[el] ?? 0 }))
       .sort((a, b) => b.level - a.level)
       .slice(0, 3);
+
+    // Derive tier from age
+    const ageDays = row.creature.ageDays ?? 0;
+    const tier = ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice';
 
     results.push({
       creatureId: row.creature.id,
       name: row.creature.name,
       ownerName: row.ownerName,
-      ageDays: row.creature.ageDays ?? 0,
-      tier: row.creature.familyGeneration,
+      ageDays,
+      tier,
       stability: row.creature.stability ?? 0.5,
       familyGeneration: row.creature.familyGeneration,
       visualParams,

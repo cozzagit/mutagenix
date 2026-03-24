@@ -91,14 +91,16 @@ function getGenLabel(gen: number | null): string {
 
 function getElementColor(elementId: string): string {
   const map: Record<string, string> = {
-    hydrogen: "#00e5ff",
-    carbon: "#76ff03",
-    nitrogen: "#b26eff",
-    sulfur: "#ffd600",
-    phosphorus: "#ff9100",
-    iron: "#ff4466",
-    silicon: "#00e5a0",
-    mercury: "#c0c0c0",
+    N: "#3d5afe",
+    K: "#b26eff",
+    Na: "#ff9100",
+    C: "#6b6d7b",
+    O: "#00f0ff",
+    P: "#39ff7f",
+    S: "#ffd600",
+    Ca: "#ffcc80",
+    Fe: "#ff4466",
+    Cl: "#76ff03",
   };
   return map[elementId] ?? "#888888";
 }
@@ -285,7 +287,7 @@ function PartnerCard({
                 backgroundColor: `${getElementColor(el.elementId)}20`,
               }}
             >
-              {el.elementId.slice(0, 2).toUpperCase()} {el.level}
+              {el.elementId} {Math.round(el.level)}
             </span>
           ))}
         </div>
