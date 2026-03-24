@@ -221,7 +221,19 @@ function CreatureNode({
 // StirpiView — Main Component
 // ---------------------------------------------------------------------------
 
-export function StirpiView({ creatures }: StirpiViewProps) {
+export function StirpiView({ creatures: allCreatures }: StirpiViewProps) {
+  // Filter: only show creatures that are part of a family (have parents or children)
+  const creatures = useMemo(() => {
+    const parentNames = new Set<string>();
+    const childNames = new Set<string>();
+    for (const c of allCreatures) {
+      if (c.parentNames?.parentA) parentNames.add(c.parentNames.parentA);
+      if (c.parentNames?.parentB) parentNames.add(c.parentNames.parentB);
+      if (c.parentNames?.parentA || c.parentNames?.parentB) childNames.add(c.name);
+    }
+    // Include creature if it's a parent of someone OR is a child of someone
+    return allCreatures.filter(c => parentNames.has(c.name) || childNames.has(c.name));
+  }, [allCreatures]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
 
