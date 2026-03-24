@@ -11,6 +11,7 @@ import { finalizeIfExpired } from '@/lib/game-engine/auto-finalize';
 import { TIME_CONFIG } from '@/lib/game-engine/time-config';
 import { loadWellnessInput } from '@/lib/game-engine/wellness-loader';
 import { calculateWellness } from '@/lib/game-engine/wellness';
+import { users } from '@/lib/db/schema';
 
 export async function GET() {
   let session;
@@ -20,10 +21,14 @@ export async function GET() {
     return unauthorizedResponse();
   }
 
-  let [creature] = await db
-    .select()
-    .from(creatures)
-    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
+  // Use active_creature_id if set, otherwise fall back to first non-archived
+  const [user] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  let [creature] = user?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, user.activeCreatureId))
+    : await db.select().from(creatures)
+        .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   if (!creature) {
     return NextResponse.json(
@@ -126,11 +131,17 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  const [updated] = await db
-    .update(creatures)
-    .set({ name: rawName, updatedAt: new Date() })
-    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)))
-    .returning();
+  // Rename only the active creature
+  const [patchUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  const [updated] = patchUser?.activeCreatureId
+    ? await db.update(creatures).set({ name: rawName, updatedAt: new Date() })
+        .where(and(eq(creatures.id, patchUser.activeCreatureId), eq(creatures.userId, session.userId)))
+        .returning()
+    : await db.update(creatures).set({ name: rawName, updatedAt: new Date() })
+        .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)))
+        .returning();
 
   if (!updated) {
     return NextResponse.json(

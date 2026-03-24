@@ -20,10 +20,14 @@ export default async function LabPage() {
     redirect('/login');
   }
 
-  let [creature] = await db
-    .select()
-    .from(creatures)
-    .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
+  // Use active_creature_id if set, otherwise fall back to first non-archived
+  const [user] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  let [creature] = user?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, user.activeCreatureId))
+    : await db.select().from(creatures)
+        .where(and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)));
 
   if (!creature) redirect('/login');
 

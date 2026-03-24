@@ -4,7 +4,7 @@ import {
   unauthorizedResponse,
 } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, creatureRankings } from '@/lib/db/schema';
+import { creatures, creatureRankings, users } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getRankTier } from '@/lib/game-engine/battle-engine';
 import { creatureToBattleCreature } from '@/lib/game-engine/battle-helpers';
@@ -66,16 +66,15 @@ export async function GET() {
     return unauthorizedResponse();
   }
 
-  // Get active creature
-  const [creature] = await db
-    .select()
-    .from(creatures)
-    .where(
-      and(
-        eq(creatures.userId, session.userId),
-        eq(creatures.isArchived, false),
-      ),
-    );
+  // Get active creature (use active_creature_id if set)
+  const [user] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  const [creature] = user?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, user.activeCreatureId))
+    : await db.select().from(creatures).where(
+        and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)),
+      );
 
   if (!creature) {
     return NextResponse.json(

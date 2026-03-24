@@ -8,6 +8,7 @@ import {
   creatures,
   creatureRankings,
   battles,
+  users,
   type TraitValues,
 } from '@/lib/db/schema';
 import { eq, and, ne, gte, sql } from 'drizzle-orm';
@@ -71,15 +72,14 @@ export async function POST(request: NextRequest) {
   }
 
   // 1. Get challenger's active creature
-  const [challengerCreature] = await db
-    .select()
-    .from(creatures)
-    .where(
-      and(
-        eq(creatures.userId, session.userId),
-        eq(creatures.isArchived, false),
-      ),
-    );
+  const [challengeUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  const [challengerCreature] = challengeUser?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, challengeUser.activeCreatureId))
+    : await db.select().from(creatures).where(
+        and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)),
+      );
 
   if (!challengerCreature) {
     return NextResponse.json(
