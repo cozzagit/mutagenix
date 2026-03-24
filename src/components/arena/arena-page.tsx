@@ -19,6 +19,8 @@ import { TournamentList } from "./tournament-list";
 /* Types                                                              */
 /* ------------------------------------------------------------------ */
 
+type Zone = "sfide" | "squadre" | "tornei";
+type SfideTab = "ranked" | "farming" | "classifica" | "cronologia";
 type Tab = "sfida" | "farming" | "tornei" | "squadra" | "classifica" | "cronologia";
 
 interface RankingEntry {
@@ -622,11 +624,12 @@ interface ArenaPageProps {
 }
 
 export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false }: ArenaPageProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("sfida");
+  const [activeZone, setActiveZone] = useState<Zone>("sfide");
+  const [sfideTab, setSfideTab] = useState<SfideTab>("ranked");
   const [showUnseenBanner, setShowUnseenBanner] = useState(unseenDefenderBattles > 0);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6">
+    <div className="mx-auto max-w-5xl px-4 py-4">
       {/* Unseen defender battles banner */}
       {showUnseenBanner && (
         <div className="mb-4 flex items-center justify-between rounded-xl border border-danger/30 bg-danger/10 px-4 py-3">
@@ -639,17 +642,14 @@ export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false
                 Hai subito {unseenDefenderBattles} sfid{unseenDefenderBattles === 1 ? 'a' : 'e'} mentre eri assente!
               </p>
               <button
-                onClick={() => { setActiveTab("cronologia"); setShowUnseenBanner(false); }}
+                onClick={() => { setActiveZone("sfide"); setSfideTab("cronologia"); setShowUnseenBanner(false); }}
                 className="text-[10px] text-danger/80 underline hover:text-danger"
               >
                 Guarda la cronologia
               </button>
             </div>
           </div>
-          <button
-            onClick={() => setShowUnseenBanner(false)}
-            className="shrink-0 rounded p-1 text-danger/60 hover:text-danger"
-          >
+          <button onClick={() => setShowUnseenBanner(false)} className="shrink-0 rounded p-1 text-danger/60 hover:text-danger">
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
               <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
             </svg>
@@ -657,40 +657,73 @@ export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false
         </div>
       )}
 
-      {/* Title */}
-      <div className="mb-6">
-        <h1 className="text-lg font-black text-foreground tracking-tight">
-          <span className="text-danger glow-red">Arena</span>
-        </h1>
-        <p className="text-xs text-muted mt-1">
-          Combatti, scala la classifica, conquista la gloria.
-        </p>
+      {/* Header with zone switch */}
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-black text-foreground tracking-tight">
+            <span className="text-danger glow-red">Arena</span>
+          </h1>
+          <p className="text-xs text-muted mt-0.5">Il centro del gioco. Ranking, gloria, sopravvivenza.</p>
+        </div>
+
+        {/* Zone switch — like biosfera toggle */}
+        <div className="flex items-center gap-0.5 rounded-lg bg-surface-2/80 p-0.5">
+          {([
+            { id: 'sfide' as Zone, label: 'Sfide' },
+            { id: 'squadre' as Zone, label: 'Squadre' },
+            { id: 'tornei' as Zone, label: 'Tornei' },
+          ]).map((z) => (
+            <button
+              key={z.id}
+              onClick={() => setActiveZone(z.id)}
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${
+                activeZone === z.id
+                  ? 'bg-danger/20 text-danger shadow-sm'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              {z.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-0 mb-6 border-b border-border/30 overflow-x-auto">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`shrink-0 px-3 py-2 text-[11px] md:text-xs font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
-              activeTab === tab.id
-                ? "text-danger border-danger"
-                : "text-muted border-transparent hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* === ZONE: SFIDE === */}
+      {activeZone === "sfide" && (
+        <>
+          {/* Sub-tabs for sfide zone */}
+          <div className="flex gap-0 mb-5 border-b border-border/30">
+            {([
+              { id: 'ranked' as SfideTab, label: '1v1 Ranked' },
+              { id: 'farming' as SfideTab, label: 'Farming' },
+              { id: 'classifica' as SfideTab, label: 'Classifica' },
+              { id: 'cronologia' as SfideTab, label: 'Cronologia' },
+            ]).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSfideTab(tab.id)}
+                className={`shrink-0 px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+                  sfideTab === tab.id
+                    ? 'text-danger border-danger'
+                    : 'text-muted border-transparent hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {sfideTab === "ranked" && <SfidaTab warrior={warrior} />}
+          {sfideTab === "farming" && <FarmingPage />}
+          {sfideTab === "classifica" && <ClassificaTab myCreatureId={warrior.creatureId} />}
+          {sfideTab === "cronologia" && <CronologiaTab />}
+        </>
+      )}
 
-      {/* Tab content */}
-      {activeTab === "sfida" && <SfidaTab warrior={warrior} />}
-      {activeTab === "farming" && <FarmingPage />}
-      {activeTab === "tornei" && <TournamentList />}
-      {activeTab === "squadra" && <SquadManager />}
-      {activeTab === "classifica" && <ClassificaTab myCreatureId={warrior.creatureId} />}
-      {activeTab === "cronologia" && <CronologiaTab />}
+      {/* === ZONE: SQUADRE === */}
+      {activeZone === "squadre" && <SquadManager />}
+
+      {/* === ZONE: TORNEI === */}
+      {activeZone === "tornei" && <TournamentList />}
     </div>
   );
 }
