@@ -7,7 +7,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { BattleNotifier } from "@/components/pwa/battle-notifier";
 
 // Increment this on breaking changes to force client refresh
-const APP_VERSION = 4;
+const APP_VERSION = 5;
 
 interface NavItem {
   href: string;
@@ -93,15 +93,11 @@ const NAV_ITEMS: NavItemExt[] = [
     label: "Biosfera",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-        {/* Beaker / labs icon */}
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5m-4.75-11.396c.25.023.5.05.75.082M5 14.5l-1.456 1.456a1.5 1.5 0 0 0 1.06 2.544h14.792a1.5 1.5 0 0 0 1.06-2.544L19 14.5m-14 0h14"
-        />
-        <circle cx="10" cy="17" r="1" fill="currentColor" opacity="0.5" />
-        <circle cx="14" cy="16" r="0.8" fill="currentColor" opacity="0.4" />
-        <circle cx="12" cy="18" r="0.6" fill="currentColor" opacity="0.3" />
+        {/* Globe / ecosystem icon */}
+        <circle cx="12" cy="12" r="9" />
+        <path strokeLinecap="round" d="M3 12h18" />
+        <path strokeLinecap="round" d="M12 3c-2.5 3-4 6.5-4 9s1.5 6 4 9" />
+        <path strokeLinecap="round" d="M12 3c2.5 3 4 6.5 4 9s-1.5 6-4 9" />
       </svg>
     ),
   },
@@ -154,14 +150,13 @@ function MobileNavLink({ item, isActive, badge }: { item: NavItemExt; isActive: 
   return (
     <Link
       href={item.href}
-      className={`focus-ring relative flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-1 text-[9px] font-medium transition-colors [&_svg]:h-4 [&_svg]:w-4 ${
+      className={`focus-ring relative flex items-center justify-center rounded-lg p-2 transition-colors [&_svg]:h-5 [&_svg]:w-5 ${
         isActive ? activeClass : "text-muted hover:text-foreground"
       }`}
     >
       {item.icon}
-      <span>{item.label || "Settings"}</span>
       {badge !== undefined && badge > 0 && (
-        <span className="absolute -right-1 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-danger px-0.5 text-[8px] font-bold text-white">
+        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-danger px-0.5 text-[8px] font-bold text-white">
           {badge > 9 ? '9+' : badge}
         </span>
       )}
@@ -271,12 +266,16 @@ export default function AppLayout({
 
       <BattleNotifier />
 
-      {/* Mobile: slim bottom nav (48px) */}
-      <nav className="flex h-12 shrink-0 items-center justify-around border-t border-border/50 bg-surface/80 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] md:hidden">
+      {/* Mobile: fixed bottom nav — icons only, always visible */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border/50 bg-surface/95 backdrop-blur-xl md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', height: 'calc(48px + env(safe-area-inset-bottom, 0px))' }}
+      >
         {NAV_ITEMS.map((item) => (
           <MobileNavLink key={item.href} item={item} isActive={isActive(item.href)} badge={getBadge(item)} />
         ))}
       </nav>
+      {/* Spacer so content doesn't hide behind fixed nav on mobile */}
+      <div className="h-12 shrink-0 md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} />
     </div>
   );
 }
