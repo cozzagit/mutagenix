@@ -75,6 +75,11 @@ export default async function EvolutionLogPage() {
         creatureName={creature.name}
         totalDays={0}
         elementLevels={creature.elementLevels}
+        generation={creature.generation ?? 1}
+        stability={creature.stability ?? 0.5}
+        ageDays={creature.ageDays ?? 0}
+        foundingElements={creature.foundingElements ?? null}
+        growthElements={creature.growthElements ?? null}
         keySnapshots={[]}
         allSnapshotsForMilestones={[]}
       />
@@ -133,6 +138,11 @@ export default async function EvolutionLogPage() {
         creature.foundingElements ?? null,
         creature.growthElements ?? null,
       ) as unknown as Record<string, number>}
+      generation={creature.generation ?? 1}
+      stability={creature.stability ?? 0.5}
+      ageDays={creature.ageDays ?? 0}
+      foundingElements={creature.foundingElements ?? null}
+      growthElements={creature.growthElements ?? null}
       keySnapshots={keySnapshots}
       allSnapshotsForMilestones={milestoneCandidates}
     />
