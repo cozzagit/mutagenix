@@ -160,25 +160,17 @@ function HeroBackground() {
 /* Icon components                                                     */
 /* ------------------------------------------------------------------ */
 
-function FlaskIcon() {
+function FlaskIcon({ className = "h-7 w-7" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5m-4.75-11.396c.25.023.5.05.75.082M5 14.5l-1.456 1.456a1.5 1.5 0 0 0 1.06 2.544h14.792a1.5 1.5 0 0 0 1.06-2.544L19 14.5m-14 0h14" />
     </svg>
   );
 }
 
-function SyringeIcon() {
+function DnaIcon({ className = "h-7 w-7" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
-      <path strokeLinecap="round" strokeLinejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 11.625l2.25-2.25M12 11.625l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-    </svg>
-  );
-}
-
-function DnaIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 3c0 4 6 5 6 9s-6 5-6 9" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M18 3c0 4-6 5-6 9s6 5 6 9" />
       <line x1="8" y1="6" x2="16" y2="6" strokeLinecap="round" />
@@ -187,6 +179,147 @@ function DnaIcon() {
     </svg>
   );
 }
+
+function SwordsIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l6-6m0 0l-3-3m3 3l3-3m-3 3l-6 6" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-6 6m0 0l3 3m-3-3l-3 3m3-3l6-6" />
+    </svg>
+  );
+}
+
+function HeartDnaIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 10h5M9.5 13h5" />
+    </svg>
+  );
+}
+
+function ShieldIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+    </svg>
+  );
+}
+
+function WarningIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+    </svg>
+  );
+}
+
+function CrownIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l2.09 6.26L20.18 9.27l-5.09 3.94L16.18 20 12 16.77 7.82 20l1.09-6.79L3.82 9.27l6.09-1.01L12 2Z" />
+    </svg>
+  );
+}
+
+function TreeIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M12 7l-4 4M12 7l4 4M12 13l-3 3M12 13l3 3" />
+      <circle cx="8" cy="11" r="1.5" />
+      <circle cx="16" cy="11" r="1.5" />
+      <circle cx="9" cy="16" r="1.5" />
+      <circle cx="15" cy="16" r="1.5" />
+      <circle cx="12" cy="3" r="1.5" />
+    </svg>
+  );
+}
+
+function UsersIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+    </svg>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Game phases data                                                    */
+/* ------------------------------------------------------------------ */
+
+const GAME_PHASES = [
+  {
+    phase: 1,
+    title: "Laboratorio",
+    icon: <FlaskIcon className="h-8 w-8" />,
+    desc: "Inietta esperimenti chimici nella tua creatura. 10 elementi, infinite combinazioni. Ogni iniezione fa avanzare l\u2019evoluzione di un giorno.",
+    color: "#3d5afe",
+  },
+  {
+    phase: 2,
+    title: "Evoluzione",
+    icon: <DnaIcon className="h-8 w-8" />,
+    desc: "Osserva la mutazione in tempo reale. Il corpo cresce, i tratti emergono, la personalit\u00E0 si forma. Il tuo percorso evolutivo determina il risultato.",
+    color: "#00e5a0",
+  },
+  {
+    phase: 3,
+    title: "Arena",
+    icon: <SwordsIcon className="h-8 w-8" />,
+    desc: "Combatti contro i guerrieri degli altri giocatori. Sistema ELO, 10 round automatici, conseguenze reali. Ogni battaglia conta.",
+    color: "#ff3d3d",
+  },
+  {
+    phase: 4,
+    title: "Riproduzione",
+    icon: <HeartDnaIcon className="h-8 w-8" />,
+    desc: "Accoppia la tua creatura con quelle di altri giocatori. I figli ereditano il 65% dal partner \u2014 scegli bene con chi ti allei. Costruisci un albero genealogico fino a 3 generazioni.",
+    color: "#b26eff",
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/* Feature cards data                                                  */
+/* ------------------------------------------------------------------ */
+
+const FEATURE_CARDS = [
+  {
+    icon: <FlaskIcon className="h-6 w-6" />,
+    title: "10 Elementi Chimici",
+    desc: "Azoto, Ferro, Fosforo... ogni elemento influenza corpo, mente e abilit\u00E0 in modi unici.",
+    color: "#3d5afe",
+  },
+  {
+    icon: <DnaIcon className="h-6 w-6" />,
+    title: "6 Sinergie Nascoste",
+    desc: "Combinazioni speciali di elementi sbloccano effetti unici: Ossatura, Sangue, Veleno, Neural, Organico, Caotico.",
+    color: "#00e5a0",
+  },
+  {
+    icon: <ShieldIcon className="h-6 w-6" />,
+    title: "Stato Vitale",
+    desc: "La tua creatura ha bisogno di cure: nutrimento, attivit\u00E0, stimoli, riposo. Trascurarla ha conseguenze in battaglia.",
+    color: "#00f0ff",
+  },
+  {
+    icon: <WarningIcon className="h-6 w-6" />,
+    title: "Sovradosaggio",
+    desc: "Iniettare sempre lo stesso elemento causa sovradosaggio. La diversificazione \u00E8 la chiave dell\u2019evoluzione.",
+    color: "#ff9100",
+  },
+  {
+    icon: <CrownIcon className="h-6 w-6" />,
+    title: "7 Cariche Settimanali",
+    desc: "Primario, Console, Pontefice, Tossicarca, Patriarca, Custode, Alchimista \u2014 ruoli prestigiosi con bonus reali.",
+    color: "#fbbf24",
+  },
+  {
+    icon: <TreeIcon className="h-6 w-6" />,
+    title: "Albero Genealogico",
+    desc: "Fino a 3 generazioni, 13 creature per giocatore. Ogni figlio porta il DNA di due famiglie.",
+    color: "#b26eff",
+  },
+];
 
 /* ------------------------------------------------------------------ */
 /* Landing page                                                        */
@@ -217,12 +350,13 @@ export default function LandingPage() {
         </h1>
 
         <p className="glow-cyan mb-3 text-lg font-bold tracking-[0.3em] text-bio-cyan sm:text-xl md:text-2xl">
-          Crea. Muta. Evolvi.
+          Crea. Muta. Evolvi. Combatti.
         </p>
 
-        <p className="mx-auto mb-10 max-w-lg text-base leading-relaxed text-muted sm:text-lg">
-          Il tuo organismo parte come un blob informe. Inietta esperimenti chimici, osserva la mutazione
-          in tempo reale e fallo evolvere di giorno in giorno in qualcosa di unico.
+        <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+          Inietta esperimenti chimici, osserva la mutazione in tempo reale,
+          combatti nell&apos;arena e riproduci la tua stirpe.
+          L&apos;evoluzione digitale ti aspetta.
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -243,7 +377,7 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* PWA Install button — appears on mobile when installable */}
+        {/* PWA Install button */}
         <div className="mt-4">
           <InstallButton variant="landing" />
         </div>
@@ -257,154 +391,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ==================== CARICHE DEL LABORATORIO BANNER ==================== */}
-      <section className="relative z-10 border-t border-[#fbbf24]/20 bg-gradient-to-b from-[#fbbf24]/[0.04] to-background px-6 py-8">
-        <div className="mx-auto max-w-2xl">
-          <div
-            className="rounded-2xl border p-5 backdrop-blur-sm"
-            style={{
-              borderColor: 'rgba(251, 191, 36, 0.25)',
-              backgroundColor: 'rgba(251, 191, 36, 0.04)',
-            }}
-          >
-            <div className="mb-3 flex items-center gap-2">
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l2.09 6.26L20.18 9.27l-5.09 3.94L16.18 20 12 16.77 7.82 20l1.09-6.79L3.82 9.27l6.09-1.01L12 2Z" />
-                </svg>
-                Nuovo
-              </span>
-              <span className="text-[10px] text-muted">24 Marzo 2026</span>
-            </div>
-            <h3 className="mb-2 text-sm font-bold text-foreground">
-              Cariche del Laboratorio
-            </h3>
-            <p className="mb-3 text-xs leading-relaxed text-muted">
-              Sette ruoli di prestigio vengono assegnati ogni settimana alle creature pi&ugrave; meritevoli:
-              il guerriero pi&ugrave; forte, la mente pi&ugrave; brillante, il ceppo pi&ugrave; prolifico e molto altro.
-              Ogni carica conferisce un <strong className="text-[#fbbf24]">bonus unico</strong> al suo detentore.
-            </p>
-            <p className="text-[11px] text-muted italic">
-              Scopri tutte le cariche nella{' '}
-              <Link href="/guida" className="text-[#fbbf24] underline underline-offset-2 hover:text-[#fcd34d]">
-                guida completa
-              </Link>.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== BREEDING SYSTEM BANNER ==================== */}
-      <section className="relative z-10 border-t border-[#b26eff]/20 bg-gradient-to-b from-[#b26eff]/[0.04] to-background px-6 py-8">
-        <div className="mx-auto max-w-2xl">
-          <div
-            className="rounded-2xl border p-5 backdrop-blur-sm"
-            style={{
-              borderColor: 'rgba(178, 110, 255, 0.25)',
-              backgroundColor: 'rgba(178, 110, 255, 0.04)',
-            }}
-          >
-            <div className="mb-3 flex items-center gap-2">
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                style={{ backgroundColor: 'rgba(178, 110, 255, 0.15)', color: '#b26eff' }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 3c0 4 6 5 6 9s-6 5-6 9" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 3c0 4-6 5-6 9s6 5 6 9" />
-                  <line x1="8" y1="6" x2="16" y2="6" strokeLinecap="round" />
-                  <line x1="8" y1="12" x2="16" y2="12" strokeLinecap="round" />
-                  <line x1="8" y1="18" x2="16" y2="18" strokeLinecap="round" />
-                </svg>
-                Nuovo
-              </span>
-              <span className="text-[10px] text-muted">24 Marzo 2026</span>
-            </div>
-            <h3 className="mb-2 text-sm font-bold text-foreground">
-              Sistema di Riproduzione e Clan
-            </h3>
-            <p className="mb-3 text-xs leading-relaxed text-muted">
-              Le creature possono ora riprodursi! Trova un partner, genera figli con il meccanismo di
-              ereditariet&agrave; <strong className="text-bio-purple">inversa-dominante (65/35)</strong>,
-              costruisci un albero genealogico fino a 3 generazioni e fonda il tuo clan.
-              L&apos;evoluzione non &egrave; pi&ugrave; un viaggio solitario.
-            </p>
-            <p className="text-[11px] text-muted italic">
-              Scopri tutti i dettagli nella{' '}
-              <Link href="/guida" className="text-bio-purple underline underline-offset-2 hover:text-[#c98eff]">
-                guida completa
-              </Link>.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== PATCH NOTES BANNER ==================== */}
-      <section className="relative z-10 border-t border-amber-500/20 bg-gradient-to-b from-amber-500/[0.04] to-background px-6 py-8">
-        <div className="mx-auto max-w-2xl">
-          <div
-            className="rounded-2xl border p-5 backdrop-blur-sm"
-            style={{
-              borderColor: 'rgba(255, 145, 0, 0.25)',
-              backgroundColor: 'rgba(255, 145, 0, 0.04)',
-            }}
-          >
-            <div className="mb-3 flex items-center gap-2">
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                style={{ backgroundColor: 'rgba(255, 145, 0, 0.15)', color: '#ff9100' }}
-              >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
-                  <path
-                    fillRule="evenodd"
-                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                Aggiornamento
-              </span>
-              <span className="text-[10px] text-muted">24 Marzo 2026</span>
-            </div>
-            <h3 className="mb-2 text-sm font-bold text-foreground">
-              Protocollo Biosicurezza: Sovradosaggio Elementale
-            </h3>
-            <p className="mb-3 text-xs leading-relaxed text-muted">
-              Il laboratorio ha introdotto nuovi protocolli di sicurezza biologica. Iniettare sempre lo stesso
-              elemento in modo sconsiderato ora causa <strong className="text-amber-400">sovradosaggio</strong>:
-              i crediti vengono parzialmente rigettati dall&apos;organismo (fino all&apos;80% sprecato).
-              Inoltre, i tratti combat sopra 85 subiscono una <strong className="text-amber-400">regressione naturale</strong>
-              &mdash; il corpo non riesce a sostenere livelli estremi indefinitamente.
-            </p>
-            <p className="text-[11px] text-muted italic">
-              Diversifica le iniezioni. La specializzazione estrema ha un costo biologico.
-              Consulta la{' '}
-              <Link href="/guida" className="text-primary underline underline-offset-2 hover:text-primary-light">
-                guida completa
-              </Link>{' '}
-              per tutti i dettagli.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* ==================== CREATURE SHOWCASE ==================== */}
       <section className="relative z-10 border-t border-border/30 bg-gradient-to-b from-surface/40 to-background px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
-            Ogni creatura è unica
+            Ogni Creatura &egrave; Unica
           </h2>
           <p className="mx-auto mb-12 max-w-md text-center text-sm text-muted">
-            La combinazione di elementi chimici che scegli determina l&apos;aspetto, la personalità e le abilità della tua creatura.
+            La combinazione di elementi chimici che scegli determina l&apos;aspetto, la personalit&agrave; e le abilit&agrave; della tua creatura.
           </p>
 
           <div className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3">
             {SHOWCASE_CREATURES.map((c) => (
               <div
                 key={c.name}
-                className="group flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-4 backdrop-blur-sm transition-all hover:border-primary/20 hover:bg-surface/60"
+                className="group flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-4 backdrop-blur-sm transition-all duration-300 hover:border-primary/20 hover:bg-surface/60 hover:shadow-lg hover:shadow-primary/5"
               >
                 <div className="mb-3 transition-transform duration-500 group-hover:scale-105">
                   <CreatureRenderer params={c.params} size={200} animated={false} seed={42} />
@@ -419,210 +420,192 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ==================== HOW IT WORKS ==================== */}
+      {/* ==================== COME FUNZIONA (4 phases) ==================== */}
       <section className="relative z-10 border-t border-border/30 px-6 py-16 sm:py-24">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="mb-12 text-center text-2xl font-black text-foreground sm:text-3xl">
-            Come funziona
-          </h2>
-
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            {[
-              { icon: <FlaskIcon />, title: "Registrati e ricevi il tuo blob", desc: "Un organismo primordiale ti aspetta nel laboratorio. Il suo destino dipende solo da te." },
-              { icon: <SyringeIcon />, title: "Inietta un esperimento chimico", desc: "Distribuisci 50 crediti tra 10 elementi. Ogni iniezione fa avanzare la creatura di un giorno evolutivo." },
-              { icon: <DnaIcon />, title: "Guarda la mutazione in diretta", desc: "Dopo ogni iniezione la creatura muta in tempo reale. Torna spesso per farla crescere pi\u00F9 in fretta." },
-            ].map((step, i) => (
-              <div key={step.title} className="flex flex-col items-center text-center">
-                <div className="relative mb-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    {step.icon}
-                  </div>
-                  <span
-                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-surface-3 text-[10px] font-bold text-primary"
-                    style={{ boxShadow: "0 0 8px #3d5afe33" }}
-                  >
-                    {i + 1}
-                  </span>
-                </div>
-                <h3 className="mb-2 text-sm font-bold text-foreground">{step.title}</h3>
-                <p className="text-xs leading-relaxed text-muted">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== FASE GUERRIERO ==================== */}
-      <section className="relative z-10 border-t border-border/30 px-6 py-16 sm:py-24">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-5xl">
           <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
-            Da Creatura a Guerriero
+            Come Funziona
           </h2>
-          <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted">
-            Quando il tuo organismo raggiunge la maturità, inizia la trasformazione in macchina da guerra.
+          <p className="mx-auto mb-14 max-w-lg text-center text-sm text-muted">
+            Quattro fasi. Un&apos;evoluzione senza fine.
           </p>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {/* Crescita */}
-            <div className="flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-6 text-center backdrop-blur-sm transition-all hover:border-accent/30 hover:bg-surface/60">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c0 0-4-3-4-8a4 4 0 0 1 8 0c0 5-4 8-4 8Z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 13V3" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l3-3 3 3" />
-                </svg>
-              </div>
-              <h3 className="mb-2 text-sm font-bold text-foreground">Crescita</h3>
-              <p className="text-xs leading-relaxed text-muted">
-                Nei primi giorni il tuo organismo cresce: corpo, arti, occhi, pelliccia. Ogni iniezione lo trasforma.
-              </p>
-            </div>
-
-            {/* Maturità */}
-            <div className="flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-6 text-center backdrop-blur-sm transition-all hover:border-[#ff3d3d]/30 hover:bg-surface/60">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-[#ff3d3d]" style={{ backgroundColor: "#ff3d3d15" }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2.25a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM9 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 22.5V21m6.364-2.636-.53-.53m-12.668 0-.53.53M21 12h1.5M1.5 12H3m15.364-6.364.53-.53M5.636 5.636l-.53-.53" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h1.5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-.75.75h-1.5m15-6h1.5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-.75.75h-1.5" />
-                </svg>
-              </div>
-              <h3 className="mb-2 text-sm font-bold text-foreground">Maturità</h3>
-              <p className="text-xs leading-relaxed text-muted">
-                Quando il corpo si stabilizza, le iniezioni iniziano a forgiare tratti da combattimento: attacco, difesa, velocità.
-              </p>
-            </div>
-
-            {/* Guerra */}
-            <div className="flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-6 text-center backdrop-blur-sm transition-all hover:border-[#ff3d3d]/30 hover:bg-surface/60">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-[#ff3d3d]" style={{ backgroundColor: "#ff3d3d15" }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l6-6m0 0l-3-3m3 3l3-3m-3 3l-6 6" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-6 6m0 0l3 3m-3-3l-3 3m3-3l6-6" />
-                </svg>
-              </div>
-              <h3 className="mb-2 text-sm font-bold text-foreground">Guerra</h3>
-              <p className="text-xs leading-relaxed text-muted">
-                Il tuo guerriero è pronto per l&apos;Arena. Ogni elemento chimico influenza il suo stile di combattimento.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== L'ARENA ==================== */}
-      <section className="relative z-10 border-t border-[#ff3d3d]/20 bg-gradient-to-b from-[#ff3d3d]/[0.03] to-background px-6 py-16 sm:py-24">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
-            L&apos;Arena
-          </h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-sm" style={{ color: "#ff3d3d" }}>
-            Dove la selezione naturale fa il suo lavoro.
-          </p>
-
-          {/* Dramatic description */}
-          <div
-            className="mx-auto mb-10 max-w-2xl rounded-2xl border p-6 text-center text-sm leading-relaxed text-muted backdrop-blur-sm"
-            style={{
-              borderColor: "#ff3d3d30",
-              backgroundColor: "rgba(255, 61, 61, 0.04)",
-            }}
-          >
-            Sfida i guerrieri degli altri giocatori in combattimenti automatici. La strategia non è nei riflessi
-            — è nelle settimane di iniezioni che hanno forgiato la tua creatura. Ogni battaglia ha conseguenze
-            reali: il vincitore si rafforza, lo sconfitto porta le cicatrici.
-          </div>
-
-          {/* 2x2 feature pills */}
-          <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {[
-              {
-                title: "Combattimento Automatico",
-                desc: "Le creature combattono in base ai loro stats. Tu decidi la strategia nel laboratorio.",
-              },
-              {
-                title: "Classifica ELO",
-                desc: "Sistema di ranking competitivo. Scala la classifica e diventa l'Apex Predator.",
-              },
-              {
-                title: "Conseguenze Reali",
-                desc: "Cicatrici permanenti, periodi di recupero, boost per i vincitori. Ogni sfida conta.",
-              },
-              {
-                title: "Esperienza Arena (AXP)",
-                desc: "Combatti per guadagnare AXP e potenziare il tuo guerriero. Chi non combatte arrugginisce.",
-              },
-              {
-                title: "Replay Round-by-Round",
-                desc: "Rivivi ogni battaglia turno per turno con animazioni e effetti speciali.",
-              },
-            ].map((feat) => (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {GAME_PHASES.map((phase) => (
               <div
-                key={feat.title}
-                className="rounded-xl border p-4 backdrop-blur-sm transition-all hover:bg-surface/60"
+                key={phase.phase}
+                className="group relative flex flex-col items-center rounded-2xl border border-border/30 bg-surface/40 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:bg-surface/60"
                 style={{
-                  borderColor: "#ff3d3d25",
-                  backgroundColor: "rgba(255, 61, 61, 0.03)",
+                  ["--phase-color" as string]: phase.color,
                 }}
               >
-                <h3 className="mb-1 text-sm font-bold" style={{ color: "#ff3d3d" }}>
-                  {feat.title}
-                </h3>
-                <p className="text-xs leading-relaxed text-muted">{feat.desc}</p>
+                {/* Phase number */}
+                <span
+                  className="absolute -top-3 left-4 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold"
+                  style={{
+                    backgroundColor: `${phase.color}20`,
+                    color: phase.color,
+                    boxShadow: `0 0 10px ${phase.color}22`,
+                  }}
+                >
+                  {phase.phase}
+                </span>
+
+                {/* Icon */}
+                <div
+                  className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 group-hover:scale-110"
+                  style={{
+                    backgroundColor: `${phase.color}12`,
+                    color: phase.color,
+                  }}
+                >
+                  {phase.icon}
+                </div>
+
+                <h3 className="mb-2 text-sm font-bold text-foreground">{phase.title}</h3>
+                <p className="text-xs leading-relaxed text-muted">{phase.desc}</p>
+
+                {/* Hover border glow */}
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{
+                    boxShadow: `inset 0 0 0 1px ${phase.color}30`,
+                  }}
+                />
               </div>
             ))}
-          </div>
-
-          {/* CTA */}
-          <div className="flex justify-center">
-            <Link
-              href="/register"
-              className="focus-ring inline-flex h-12 min-w-[220px] items-center justify-center gap-2 rounded-xl px-8 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-[#ff3d3d]/40 active:scale-[0.97]"
-              style={{
-                backgroundColor: "#ff3d3d",
-                boxShadow: "0 10px 25px -5px rgba(255, 61, 61, 0.25)",
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l6-6m0 0l-3-3m3 3l3-3m-3 3l-6 6" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-6 6m0 0l3 3m-3-3l-3 3m3-3l6-6" />
-              </svg>
-              Entra nell&apos;Arena
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* ==================== ELEMENTS TEASER ==================== */}
+      {/* ==================== SISTEMA DI GIOCO ==================== */}
       <section className="relative z-10 border-t border-border/30 bg-gradient-to-b from-surface/30 to-background px-6 py-16 sm:py-24">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-5xl">
           <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
-            10 Elementi, Infinite Possibilità
+            Un Ecosistema Complesso
           </h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">
-            Ogni elemento influenza la tua creatura in modi diversi. Scopri le combinazioni e le sinergie nascoste.
+          <p className="mx-auto mb-14 max-w-lg text-center text-sm text-muted">
+            Meccaniche profonde sotto una superficie di biochimica e caos evolutivo.
           </p>
 
-          <div className="grid grid-cols-5 gap-3 sm:gap-4">
-            {ELEMENT_TEASER.map((el) => (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURE_CARDS.map((card) => (
               <div
-                key={el.symbol}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border/30 bg-surface/40 py-3 transition-all hover:border-primary/20"
+                key={card.title}
+                className="group flex flex-col rounded-2xl border border-border/30 bg-surface/40 p-5 backdrop-blur-sm transition-all duration-300 hover:bg-surface/60"
               >
-                <span
-                  className="text-xl font-black sm:text-2xl"
+                {/* Icon */}
+                <div
+                  className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110"
                   style={{
-                    color: el.color,
-                    textShadow: `0 0 12px ${el.color}44`,
+                    backgroundColor: `${card.color}12`,
+                    color: card.color,
                   }}
                 >
-                  {el.symbol}
-                </span>
-                <span className="text-[9px] font-medium text-muted sm:text-[10px]">
-                  {el.name}
-                </span>
+                  {card.icon}
+                </div>
+
+                <h3 className="mb-1.5 text-sm font-bold text-foreground">{card.title}</h3>
+                <p className="text-xs leading-relaxed text-muted">{card.desc}</p>
+
+                {/* Hover border glow */}
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{
+                    boxShadow: `inset 0 0 0 1px ${card.color}20`,
+                  }}
+                />
               </div>
             ))}
+          </div>
+
+          {/* Elements grid embedded */}
+          <div className="mt-14">
+            <h3 className="mb-6 text-center text-lg font-bold text-foreground">
+              La Tavola degli Elementi
+            </h3>
+            <div className="grid grid-cols-5 gap-3 sm:gap-4">
+              {ELEMENT_TEASER.map((el) => (
+                <div
+                  key={el.symbol}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-border/30 bg-surface/40 py-3 transition-all duration-300 hover:border-primary/20 hover:bg-surface/60"
+                >
+                  <span
+                    className="text-xl font-black sm:text-2xl"
+                    style={{
+                      color: el.color,
+                      textShadow: `0 0 12px ${el.color}44`,
+                    }}
+                  >
+                    {el.symbol}
+                  </span>
+                  <span className="text-[9px] font-medium text-muted sm:text-[10px]">
+                    {el.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ==================== PROSSIMAMENTE ==================== */}
+      <section className="relative z-10 border-t border-[#fbbf24]/15 px-6 py-16 sm:py-24">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="mb-3 text-center text-2xl font-black text-foreground sm:text-3xl">
+            Prossimamente
+          </h2>
+          <p className="mx-auto mb-10 text-center text-sm text-muted">
+            L&apos;evoluzione non si ferma mai.
+          </p>
+
+          {/* Clan teaser card */}
+          <div className="mx-auto max-w-lg">
+            <div
+              className="group relative overflow-hidden rounded-2xl border p-6 backdrop-blur-sm transition-all duration-500 hover:shadow-lg"
+              style={{
+                borderColor: "rgba(251, 191, 36, 0.2)",
+                backgroundColor: "rgba(251, 191, 36, 0.03)",
+              }}
+            >
+              {/* Shimmer overlay */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.04]"
+                style={{
+                  background: "linear-gradient(110deg, transparent 30%, rgba(251, 191, 36, 0.4) 50%, transparent 70%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 4s ease-in-out infinite",
+                }}
+              />
+
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110"
+                  style={{
+                    backgroundColor: "rgba(251, 191, 36, 0.1)",
+                    color: "#fbbf24",
+                  }}
+                >
+                  <UsersIcon className="h-7 w-7" />
+                </div>
+
+                <h3 className="mb-2 text-base font-bold text-foreground">
+                  Formazione di Clan
+                </h3>
+                <p className="text-sm leading-relaxed text-muted">
+                  Alleanze tra scienziati. Guerre tra stirpi.
+                  Il laboratorio sta per diventare politico.
+                </p>
+              </div>
+
+              {/* Hover border glow */}
+              <div
+                className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                style={{
+                  boxShadow: "inset 0 0 0 1px rgba(251, 191, 36, 0.25), 0 0 30px rgba(251, 191, 36, 0.06)",
+                }}
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -631,7 +614,7 @@ export default function LandingPage() {
       <section className="relative z-10 border-t border-border/30 px-6 py-16 sm:py-24">
         <div className="mx-auto flex max-w-lg flex-col items-center text-center">
           <h2 className="mb-4 text-2xl font-black text-foreground sm:text-3xl">
-            Pronto a creare il tuo mostro?
+            Pronto a Creare il Tuo Mostro?
           </h2>
           <p className="mb-8 text-sm text-muted">
             Unisciti al laboratorio. Il tuo blob ti aspetta.
@@ -651,6 +634,14 @@ export default function LandingPage() {
           Mutagenix &copy; 2026 &mdash; Un esperimento di evoluzione digitale
         </p>
       </footer>
+
+      {/* Shimmer animation for Coming Soon card */}
+      <style jsx>{`
+        @keyframes shimmer {
+          0%, 100% { background-position: 200% 0; }
+          50% { background-position: -200% 0; }
+        }
+      `}</style>
     </div>
   );
 }
