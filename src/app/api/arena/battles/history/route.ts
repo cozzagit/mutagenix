@@ -5,7 +5,7 @@ import {
 } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
 import { battles, creatures } from '@/lib/db/schema';
-import { eq, or, desc, sql } from 'drizzle-orm';
+import { eq, or, and, desc, sql } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   let session;
@@ -18,17 +18,27 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Math.max(parseInt(searchParams.get('limit') ?? '10', 10), 1), 50);
   const offset = Math.max(parseInt(searchParams.get('offset') ?? '0', 10), 0);
+  const mode = searchParams.get('mode') ?? 'ranked'; // 'ranked' | 'farming' | 'all'
+
+  // Build mode filter
+  const modeFilter = mode === 'all'
+    ? undefined
+    : eq(battles.battleMode, mode);
+
+  const userFilter = or(
+    eq(battles.challengerUserId, session.userId),
+    eq(battles.defenderUserId, session.userId),
+  );
+
+  const whereClause = modeFilter
+    ? and(userFilter, modeFilter)
+    : userFilter;
 
   // Fetch battles where user is challenger or defender
   const myBattles = await db
     .select()
     .from(battles)
-    .where(
-      or(
-        eq(battles.challengerUserId, session.userId),
-        eq(battles.defenderUserId, session.userId),
-      ),
-    )
+    .where(whereClause)
     .orderBy(desc(battles.createdAt))
     .limit(limit)
     .offset(offset);
@@ -37,12 +47,7 @@ export async function GET(request: NextRequest) {
   const [countResult] = await db
     .select({ count: sql<number>`count(*)` })
     .from(battles)
-    .where(
-      or(
-        eq(battles.challengerUserId, session.userId),
-        eq(battles.defenderUserId, session.userId),
-      ),
-    );
+    .where(whereClause);
 
   // Collect unique creature IDs for name lookup
   const creatureIds = new Set<string>();
