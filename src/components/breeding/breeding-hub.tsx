@@ -594,21 +594,40 @@ function PartnerTab() {
 /* Tab: Richieste                                                     */
 /* ------------------------------------------------------------------ */
 
+interface SentRequest {
+  id: string;
+  status: string;
+  energyCost: number;
+  expiresAt: string;
+  createdAt: string;
+  targetCreatureName: string;
+  targetOwnerName: string;
+}
+
 function RichiesteTab() {
   const router = useRouter();
   const { toast } = useToast();
   const [requests, setRequests] = useState<BreedingRequest[]>([]);
+  const [sentRequests, setSentRequests] = useState<SentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [processingAction, setProcessingAction] = useState<"accept" | "reject" | null>(null);
+  const [processingAction, setProcessingAction] = useState<"accept" | "reject" | "cancel" | null>(null);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/breeding/requests");
-      if (!res.ok) throw new Error();
-      const json = await res.json();
-      setRequests((json.data ?? []).filter((r: BreedingRequest) => r.status === "pending"));
+      const [inRes, sentRes] = await Promise.all([
+        fetch("/api/breeding/requests"),
+        fetch("/api/breeding/requests/sent"),
+      ]);
+      if (inRes.ok) {
+        const json = await inRes.json();
+        setRequests((json.data ?? []).filter((r: BreedingRequest) => r.status === "pending"));
+      }
+      if (sentRes.ok) {
+        const json = await sentRes.json();
+        setSentRequests(json.data ?? []);
+      }
     } catch {
       toast("error", "Errore nel caricamento delle richieste.");
     } finally {
@@ -670,27 +689,95 @@ function RichiesteTab() {
     );
   }
 
-  if (requests.length === 0) {
+  const handleCancel = useCallback(async (id: string) => {
+    setProcessingId(id);
+    setProcessingAction("cancel");
+    try {
+      const res = await fetch(`/api/breeding/requests/${id}/cancel`, { method: "POST" });
+      if (!res.ok) {
+        const json = await res.json();
+        toast("error", json.error?.message ?? "Errore nell'annullamento.");
+        return;
+      }
+      toast("info", "Richiesta annullata.");
+      fetchRequests();
+    } catch {
+      toast("error", "Errore di rete.");
+    } finally {
+      setProcessingId(null);
+      setProcessingAction(null);
+    }
+  }, [toast, fetchRequests]);
+
+  if (loading) {
     return (
-      <div className="rounded-xl border border-border/30 bg-surface-2 p-8 text-center">
-        <p className="text-sm text-muted">Nessuna richiesta di accoppiamento in sospeso.</p>
-        <p className="text-[10px] text-muted mt-1">Quando qualcuno propone un accoppiamento con la tua creatura, apparir&agrave; qui.</p>
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-40 rounded-xl border border-border/30 bg-surface-2 animate-pulse" />
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {requests.map((req) => (
-        <RequestCard
-          key={req.id}
-          request={req}
-          onAccept={handleAccept}
-          onReject={handleReject}
-          accepting={processingId === req.id && processingAction === "accept"}
-          rejecting={processingId === req.id && processingAction === "reject"}
-        />
-      ))}
+    <div className="space-y-6">
+      {/* Incoming requests */}
+      <div>
+        <h3 className="text-sm font-bold text-foreground mb-2">Richieste Ricevute</h3>
+        {requests.length === 0 ? (
+          <div className="rounded-xl border border-border/30 bg-surface-2 p-6 text-center">
+            <p className="text-xs text-muted">Nessuna richiesta in arrivo.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {requests.map((req) => (
+              <RequestCard
+                key={req.id}
+                request={req}
+                onAccept={handleAccept}
+                onReject={handleReject}
+                accepting={processingId === req.id && processingAction === "accept"}
+                rejecting={processingId === req.id && processingAction === "reject"}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Sent requests */}
+      <div>
+        <h3 className="text-sm font-bold text-foreground mb-2">Richieste Inviate</h3>
+        {sentRequests.length === 0 ? (
+          <div className="rounded-xl border border-border/30 bg-surface-2 p-6 text-center">
+            <p className="text-xs text-muted">Non hai richieste inviate.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {sentRequests.map((sr) => (
+              <div key={sr.id} className="flex items-center justify-between rounded-xl border border-border/30 bg-surface/80 p-3">
+                <div>
+                  <p className="text-sm font-bold text-foreground">{sr.targetCreatureName}</p>
+                  <p className="text-[10px] text-muted">di {sr.targetOwnerName} &middot; {sr.energyCost} energia &middot; Scade tra {Math.max(0, Math.ceil((new Date(sr.expiresAt).getTime() - Date.now()) / 3600000))}h</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${sr.status === 'pending' ? 'bg-amber-500/15 text-amber-400' : sr.status === 'accepted' ? 'bg-accent/15 text-accent' : 'bg-danger/15 text-danger'}`}>
+                    {sr.status === 'pending' ? 'In attesa' : sr.status === 'accepted' ? 'Accettata' : sr.status === 'rejected' ? 'Rifiutata' : sr.status === 'cancelled' ? 'Annullata' : sr.status}
+                  </span>
+                  {sr.status === 'pending' && (
+                    <button
+                      onClick={() => handleCancel(sr.id)}
+                      disabled={processingId === sr.id}
+                      className="rounded-lg border border-danger/30 bg-danger/10 px-2 py-1 text-[10px] font-bold text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
+                    >
+                      Annulla
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

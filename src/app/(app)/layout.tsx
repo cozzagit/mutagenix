@@ -77,6 +77,7 @@ const NAV_ITEMS: NavItemExt[] = [
       </svg>
     ),
     activeColor: 'blue',
+    badgeKey: 'breeding',
   },
   {
     href: "/laboratori",
@@ -166,6 +167,7 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   const [arenaBadge, setArenaBadge] = useState(0);
+  const [breedingBadge, setBreedingBadge] = useState(0);
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
@@ -206,8 +208,32 @@ export default function AppLayout({
     return () => { cancelled = true; };
   }, [pathname]);
 
+  // Fetch pending breeding requests for badge
+  useEffect(() => {
+    if (isActive("/breeding")) {
+      setBreedingBadge(0);
+      return;
+    }
+
+    let cancelled = false;
+    async function fetchBreedingRequests() {
+      try {
+        const res = await fetch("/api/breeding/requests");
+        if (!res.ok || cancelled) return;
+        const json = await res.json();
+        const pending = (json.data ?? []).filter((r: { status: string }) => r.status === 'pending');
+        setBreedingBadge(pending.length);
+      } catch {
+        // silently ignore
+      }
+    }
+    fetchBreedingRequests();
+    return () => { cancelled = true; };
+  }, [pathname]);
+
   function getBadge(item: NavItemExt): number | undefined {
     if (item.badgeKey === 'arena') return arenaBadge;
+    if (item.badgeKey === 'breeding') return breedingBadge;
     return undefined;
   }
 
