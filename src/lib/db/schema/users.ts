@@ -15,6 +15,9 @@ export const users = pgTable('users', {
   streak: integer('streak').default(0),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   isAdmin: boolean('is_admin').default(false),
+  activeCreatureId: uuid('active_creature_id'), // no FK to avoid circular deps
+  energy: integer('energy').notNull().default(100),
+  maxCreatures: integer('max_creatures').notNull().default(1),
   lastArenaVisit: timestamp('last_arena_visit', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

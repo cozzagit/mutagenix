@@ -48,3 +48,33 @@ export {
   type BattleChallenge,
   type NewBattleChallenge,
 } from './battle-challenges';
+export {
+  breedingRequests,
+  type BreedingRequest,
+  type NewBreedingRequest,
+} from './breeding-requests';
+export {
+  breedingRecords,
+  type BreedingRecord,
+  type NewBreedingRecord,
+} from './breeding-records';
+export {
+  creatureLineage,
+  type CreatureLineage,
+  type NewCreatureLineage,
+} from './creature-lineage';
+export {
+  clans,
+  type Clan,
+  type NewClan,
+} from './clans';
+export {
+  clanMemberships,
+  type ClanMembership,
+  type NewClanMembership,
+} from './clan-memberships';
+export {
+  playerRelationships,
+  type PlayerRelationship,
+  type NewPlayerRelationship,
+} from './player-relationships';

@@ -96,6 +96,15 @@ export const creatures = pgTable('creatures', {
   mutationStartedAt: timestamp('mutation_started_at', { withTimezone: true }),
   mutationEndsAt: timestamp('mutation_ends_at', { withTimezone: true }),
 
+  // Breeding / lineage fields
+  isFounder: boolean('is_founder').notNull().default(false),
+  isDead: boolean('is_dead').notNull().default(false),
+  deathAt: timestamp('death_at', { withTimezone: true }),
+  deathCause: text('death_cause'), // starvation|instability|battle_trauma
+  parentACreatureId: uuid('parent_a_creature_id'), // no FK to avoid circular deps
+  parentBCreatureId: uuid('parent_b_creature_id'), // no FK to avoid circular deps
+  familyGeneration: integer('family_generation').notNull().default(1),
+
   // Archive fields
   isArchived: boolean('is_archived').default(false).notNull(),
   archivedAt: timestamp('archived_at', { withTimezone: true }),
