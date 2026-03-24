@@ -86,35 +86,33 @@ export default async function LaboratoriPage() {
   const allRankings = await db.select().from(creatureRankings);
   const rankingsMap = new Map(allRankings.map((r) => [r.creatureId, r]));
 
-  // 4. Batch load wellness data for all creatures
+  // 4. Batch load wellness data for all creatures using ORM queries
   const now = new Date();
   const timeScale = TIME_CONFIG.isDevMode ? 480 : 1;
   const activityWindowMs = (72 * 60 * 60 * 1000) / timeScale;
   const windowStart = new Date(now.getTime() - activityWindowMs);
-  const allCreatureIds = allCreatures.map((c) => c.id);
 
-  const idsArray = sql`ARRAY[${sql.join(allCreatureIds.map(id => sql`${id}::uuid`), sql`, `)}]`;
-  const windowStartIso = windowStart.toISOString();
-  const [lastInjResults, recentCountResults] = allCreatureIds.length > 0 ? await Promise.all([
-    db.execute(sql`
-      SELECT DISTINCT ON (creature_id) creature_id, created_at
-      FROM allocations WHERE creature_id = ANY(${idsArray})
-      ORDER BY creature_id, created_at DESC
-    `) as Promise<{ creature_id: string; created_at: Date }[]>,
-    db.execute(sql`
-      SELECT creature_id, count(*) as cnt FROM allocations
-      WHERE creature_id = ANY(${idsArray}) AND created_at >= ${windowStartIso}::timestamptz
-      GROUP BY creature_id
-    `) as Promise<{ creature_id: string; cnt: string }[]>,
-  ]) : [[] as { creature_id: string; created_at: Date }[], [] as { creature_id: string; cnt: string }[]];
+  // Fetch all allocations' latest timestamp per creature + recent count
+  const allAllocations = await db
+    .select({
+      creatureId: allocations.creatureId,
+      createdAt: allocations.createdAt,
+    })
+    .from(allocations);
 
+  // Build maps from allocations data
   const lastInjMap = new Map<string, Date>();
-  for (const row of lastInjResults) {
-    lastInjMap.set(row.creature_id, new Date(row.created_at));
-  }
   const recentCountMap = new Map<string, number>();
-  for (const row of recentCountResults) {
-    recentCountMap.set(row.creature_id, Number(row.cnt));
+  for (const a of allAllocations) {
+    // Track most recent injection
+    const existing = lastInjMap.get(a.creatureId);
+    if (!existing || a.createdAt > existing) {
+      lastInjMap.set(a.creatureId, a.createdAt);
+    }
+    // Count recent injections
+    if (a.createdAt >= windowStart) {
+      recentCountMap.set(a.creatureId, (recentCountMap.get(a.creatureId) ?? 0) + 1);
+    }
   }
 
   // 5. Build creature data with recalculated visuals and potenza
