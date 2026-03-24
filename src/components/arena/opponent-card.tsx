@@ -79,6 +79,13 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
 
   return (
     <div className="group flex flex-col rounded-xl border border-border/50 bg-surface/80 p-3 transition-all hover:border-danger/40 hover:bg-surface">
+      {/* Cariche badges — above creature for consistent alignment */}
+      <div className="flex items-center justify-center gap-0.5 mb-1 min-h-[22px]">
+        {opponent.cariche && opponent.cariche.length > 0 && opponent.cariche.map((cId) => (
+          <CaricaBadge key={cId} caricaId={cId} compact />
+        ))}
+      </div>
+
       {/* Creature centered */}
       <div className="flex justify-center mb-2">
         <CreatureRenderer params={vp} size={90} animated={false} seed={42} />
@@ -102,15 +109,6 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
           <span className="rounded-sm bg-warning/15 px-1 py-0.5 text-[8px] font-bold text-warning">⚠</span>
         )}
       </div>
-
-      {/* Cariche badges */}
-      {opponent.cariche && opponent.cariche.length > 0 && (
-        <div className="flex items-center justify-center gap-0.5 mb-1">
-          {opponent.cariche.map((cId) => (
-            <CaricaBadge key={cId} caricaId={cId} compact />
-          ))}
-        </div>
-      )}
 
       {/* ELO prominent */}
       <div className="flex items-center justify-center gap-1 mb-2">
