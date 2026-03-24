@@ -432,19 +432,38 @@ export default function GuidaPage() {
               </div>
             </div>
 
-            <div
-              className="rounded-lg p-4 text-[12px] leading-relaxed"
-              style={{
-                borderLeft: '3px solid #b26eff',
-                backgroundColor: 'rgba(178, 110, 255, 0.05)',
-                color: '#ccc',
-              }}
-            >
-              <p className="font-semibold mb-1" style={{ color: '#b26eff' }}>Tornei &mdash; Coming Soon</p>
-              <p>
-                Campionato, eliminazione diretta, tornei random, iscrizione e combattimenti live.
-                I tornei saranno disponibili in un prossimo aggiornamento.
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Tornei</p>
+              <p className="text-[13px] mb-3">
+                I tornei sono competizioni strutturate con iscrizione, pi&ugrave; match e conseguenze permanenti.
+                I danni si accumulano durante tutto il torneo e alla fine le creature pi&ugrave; danneggiate rischiano la morte.
               </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                {[
+                  { name: 'Campionato', desc: 'Girone all\'italiana: tutti contro tutti, vince chi ha pi\u00F9 punti', color: '#3d5afe' },
+                  { name: 'Eliminazione', desc: 'Tabellone a eliminazione diretta: perdi e sei fuori', color: '#ff4466' },
+                  { name: 'Random', desc: 'Eliminazione con accoppiamenti casuali', color: '#ffd600' },
+                ].map((t) => (
+                  <div
+                    key={t.name}
+                    className="flex flex-col gap-0.5 rounded-lg border border-border/20 bg-surface-2/40 px-3 py-2"
+                  >
+                    <span className="text-xs font-black" style={{ color: t.color }}>{t.name}</span>
+                    <span className="text-[10px] text-muted">{t.desc}</span>
+                  </div>
+                ))}
+              </div>
+
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; <strong className="text-foreground">Iscrizione:</strong> iscriviti nella tab TORNEI, potrebbe costare energia</li>
+                <li>&bull; <strong className="text-foreground">Squadra snapshot:</strong> la tua squadra viene salvata all&apos;iscrizione</li>
+                <li>&bull; <strong className="text-danger">Danno persistente:</strong> i danni subiti si accumulano tra un match e l&apos;altro &mdash; le creature iniziano ogni match con l&apos;HP residuo dal precedente</li>
+                <li>&bull; <strong className="text-foreground">Punteggio campionato:</strong> Vittoria = 3pt, Pareggio = 1pt, Sconfitta = 0pt</li>
+                <li>&bull; <strong className="text-foreground">Morte a fine torneo:</strong> alla fine del torneo, le creature pi&ugrave; danneggiate e in bassa classifica possono morire</li>
+                <li>&bull; <span className="text-accent font-semibold">Le creature fondatrici (isFounder) sono SEMPRE immuni alla morte da torneo</span></li>
+                <li>&bull; HP minimo: una creatura non scende mai sotto il 20% di HP persistente</li>
+              </ul>
             </div>
           </div>
         </GuideCard>

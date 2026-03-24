@@ -13,12 +13,13 @@ import type { VisualParams } from "@/lib/game-engine/visual-mapper";
 import type { RoundEvent } from "@/types/battle";
 import { FarmingPage } from "./farming-page";
 import { SquadManager } from "./squad-manager";
+import { TournamentList } from "./tournament-list";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
 /* ------------------------------------------------------------------ */
 
-type Tab = "sfida" | "farming" | "squadra" | "classifica" | "cronologia";
+type Tab = "sfida" | "farming" | "tornei" | "squadra" | "classifica" | "cronologia";
 
 interface RankingEntry {
   position: number;
@@ -70,6 +71,7 @@ interface ChallengeResult {
 const TABS: { id: Tab; label: string }[] = [
   { id: "sfida", label: "SFIDA" },
   { id: "farming", label: "FARMING" },
+  { id: "tornei", label: "TORNEI" },
   { id: "squadra", label: "SQUADRA" },
   { id: "classifica", label: "CLASSIFICA" },
   { id: "cronologia", label: "CRONOLOGIA" },
@@ -685,6 +687,7 @@ export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false
       {/* Tab content */}
       {activeTab === "sfida" && <SfidaTab warrior={warrior} />}
       {activeTab === "farming" && <FarmingPage />}
+      {activeTab === "tornei" && <TournamentList />}
       {activeTab === "squadra" && <SquadManager />}
       {activeTab === "classifica" && <ClassificaTab myCreatureId={warrior.creatureId} />}
       {activeTab === "cronologia" && <CronologiaTab />}
