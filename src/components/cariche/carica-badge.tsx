@@ -14,7 +14,7 @@ export function CaricaBadge({ caricaId, compact = false }: CaricaBadgeProps) {
   if (compact) {
     return (
       <span
-        className="inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px]"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-sm"
         style={{
           backgroundColor: `${carica.badgeColor}20`,
           border: `1px solid ${carica.badgeColor}40`,

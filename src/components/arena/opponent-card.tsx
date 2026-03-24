@@ -80,7 +80,7 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
   return (
     <div className="group flex flex-col rounded-xl border border-border/50 bg-surface/80 p-3 transition-all hover:border-danger/40 hover:bg-surface">
       {/* Cariche badges — above creature for consistent alignment */}
-      <div className="flex items-center justify-center gap-0.5 mb-1 min-h-[22px]">
+      <div className="flex items-center justify-center gap-1 mb-1 min-h-[30px]">
         {opponent.cariche && opponent.cariche.length > 0 && opponent.cariche.map((cId) => (
           <CaricaBadge key={cId} caricaId={cId} compact />
         ))}
