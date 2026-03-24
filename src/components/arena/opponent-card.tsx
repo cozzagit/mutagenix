@@ -24,6 +24,7 @@ export interface OpponentData {
   visualParams: Record<string, unknown>;
   axpTier: string; // Recluta, Esperto, Veterano, Maestro
   cariche?: string[];
+  isBot?: boolean;
   stability?: number; // 0-1, opponent stability
   wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
@@ -98,7 +99,11 @@ export function OpponentCard({ opponent, disabled = false, onChallenge }: Oppone
 
       {/* Owner + day */}
       <p className="text-[10px] text-muted truncate text-center mb-2">
-        {opponent.ownerName} · Giorno {opponent.ageDays ?? 0}
+        {opponent.ownerName}
+        {opponent.isBot && (
+          <span className="ml-1 rounded-sm bg-surface-3 px-1 py-0.5 text-[7px] font-bold text-muted/60 uppercase">Bot</span>
+        )}
+        {' '}· Giorno {opponent.ageDays ?? 0}
       </p>
 
       {/* Tier + AXP + stability badges */}

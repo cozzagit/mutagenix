@@ -41,6 +41,7 @@ export interface LaboratoriCreature {
   familyGeneration?: number;
   cariche?: string[];
   isDead?: boolean;
+  isBot?: boolean;
 }
 
 interface LaboratoriDirectoryProps {
@@ -242,6 +243,9 @@ function SpecimenCard({
           {/* Scientist */}
           <p className="truncate text-center text-[10px] text-muted">
             {creature.ownerName}
+            {creature.isBot && (
+              <span className="ml-1 rounded-sm bg-surface-3 px-1 py-0.5 text-[7px] font-bold text-muted/60 uppercase">Bot</span>
+            )}
           </p>
 
           {/* Day + Level badge row */}

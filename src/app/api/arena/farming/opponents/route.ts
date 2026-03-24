@@ -91,6 +91,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Detect bot users
+  const allUsersForBotCheck = await db.select({ id: users.id, email: users.email }).from(users);
+  const botUserIdSet = new Set<string>();
+  for (const u of allUsersForBotCheck) {
+    if (u.email?.includes('@mutagenix.io')) botUserIdSet.add(u.id);
+  }
+
   if (format === '1v1') {
     // 1v1: show individual creatures (warrior phase, alive, not archived, not own)
     const opponents = await db
@@ -122,6 +129,7 @@ export async function GET(request: NextRequest) {
         userName: o.ownerName,
         ageDays: o.creature.ageDays,
         eloRating: o.ranking?.eloRating ?? 1000,
+        isBot: botUserIdSet.has(o.creature.userId),
         attackPower: roundToNearest10(tv.attackPower ?? 0),
         defense: roundToNearest10(tv.defense ?? 0),
         speed: roundToNearest10(tv.speed ?? 0),

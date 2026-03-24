@@ -328,7 +328,12 @@ function CreatureNode({
       >
         {creature.name}
       </p>
-      <p className="text-[8px] text-muted">{creature.ownerName}</p>
+      <p className="text-[8px] text-muted">
+        {creature.ownerName}
+        {creature.isBot && (
+          <span className="ml-0.5 rounded-sm bg-surface-3 px-0.5 py-px text-[6px] font-bold text-muted/60 uppercase">Bot</span>
+        )}
+      </p>
       <span
         className="mt-0.5 rounded-full px-1.5 py-0.5 text-[7px] font-bold"
         style={{

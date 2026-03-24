@@ -152,6 +152,13 @@ export async function GET() {
   const traitValues = (c: typeof creatures.$inferSelect) =>
     c.traitValues as Record<string, number>;
 
+  // Detect bot users
+  const botEmails = await db.select({ id: users.id, email: users.email }).from(users);
+  const botUserIdSet = new Set<string>();
+  for (const u of botEmails) {
+    if (u.email?.includes('@mutagenix.io')) botUserIdSet.add(u.id);
+  }
+
   const result = filtered.map((o) => {
     const tv = traitValues(o.creature);
     return {
@@ -159,6 +166,7 @@ export async function GET() {
       name: o.creature.name,
       ageDays: o.creature.ageDays,
       ownerName: o.ownerName,
+      isBot: botUserIdSet.has(o.creature.userId),
       tier: o.ranking.rankTier,
       eloRating: o.ranking.eloRating,
       wins: o.ranking.wins,

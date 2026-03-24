@@ -82,6 +82,12 @@ export default async function LaboratoriPage() {
   const allUsers = await db.select().from(users);
   const usersMap = new Map(allUsers.map((u) => [u.id, u]));
 
+  // Detect bot users
+  const botUserIds = new Set<string>();
+  for (const u of allUsers) {
+    if (u.email?.includes('@mutagenix.io')) botUserIds.add(u.id);
+  }
+
   // 3. Fetch all rankings
   const allRankings = await db.select().from(creatureRankings);
   const rankingsMap = new Map(allRankings.map((r) => [r.creatureId, r]));
@@ -203,6 +209,7 @@ export default async function LaboratoriPage() {
         }),
         cariche: caricheMap.get(c.id) ?? [],
         isDead: c.isDead,
+        isBot: botUserIds.has(c.userId),
         familyGeneration: c.familyGeneration,
         parentNames: (c.parentACreatureId || c.parentBCreatureId) ? {
           parentA: c.parentACreatureId ? parentNameMap.get(c.parentACreatureId) ?? null : null,

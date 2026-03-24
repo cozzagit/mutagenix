@@ -59,12 +59,20 @@ export async function GET(request: NextRequest) {
     caricheMap.set(c.creatureId, existing);
   }
 
+  // Detect bot users
+  const allUsersForBotCheck = await db.select({ id: users.id, email: users.email }).from(users);
+  const botUserIdSet = new Set<string>();
+  for (const u of allUsersForBotCheck) {
+    if (u.email?.includes('@mutagenix.io')) botUserIdSet.add(u.id);
+  }
+
   // Add position (offset-based)
   const rankedList = rankings.map((r, i) => ({
     position: offset + i + 1,
     creatureId: r.creatureId,
     name: r.creatureName,
     ownerName: r.ownerName,
+    isBot: botUserIdSet.has(r.ownerId),
     ageDays: r.ageDays,
     eloRating: r.eloRating,
     wins: r.wins,

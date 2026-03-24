@@ -27,6 +27,7 @@ interface FarmingOpponent {
   defense?: number;
   speed?: number;
   visualParams?: Record<string, unknown>;
+  isBot?: boolean;
   // For 2v2/3v3 — player cards with squad preview
   squadPreview?: {
     name: string;
@@ -144,7 +145,11 @@ function FarmingCreatureCard({
         {opponent.creatureName ?? "???"}
       </p>
       <p className="text-[10px] text-muted truncate text-center mb-2">
-        {opponent.userName} · Giorno {opponent.ageDays ?? 0}
+        {opponent.userName}
+        {opponent.isBot && (
+          <span className="ml-1 rounded-sm bg-surface-3 px-1 py-0.5 text-[7px] font-bold text-muted/60 uppercase">Bot</span>
+        )}
+        {' '}· Giorno {opponent.ageDays ?? 0}
       </p>
 
       {/* Quick stats */}

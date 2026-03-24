@@ -37,6 +37,7 @@ interface RankingEntry {
   bestWinStreak: number;
   tier: string;
   cariche?: string[];
+  isBot?: boolean;
 }
 
 interface BattleHistoryEntry {
@@ -478,7 +479,12 @@ function ClassificaTab({ myCreatureId }: { myCreatureId: string }) {
                     <CaricaBadge key={cId} caricaId={cId} compact />
                   ))}
                 </span>
-                <span className="hidden md:block text-muted truncate">{entry.ownerName}</span>
+                <span className="hidden md:block text-muted truncate">
+                  {entry.ownerName}
+                  {entry.isBot && (
+                    <span className="ml-1 rounded-sm bg-surface-3 px-1 py-0.5 text-[7px] font-bold text-muted/60 uppercase">Bot</span>
+                  )}
+                </span>
                 <span className="font-mono text-foreground">{entry.eloRating}</span>
                 <span className="hidden md:block text-muted">
                   <span className="text-accent">{entry.wins}V</span> <span className="text-danger">{entry.losses}S</span>{entry.draws > 0 && <> <span className="text-warning">{entry.draws}P</span></>}
