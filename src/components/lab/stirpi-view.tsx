@@ -16,12 +16,30 @@ interface StirpiViewProps {
   creatures: LaboratoriCreature[];
 }
 
-interface BreedingEvent {
-  id: string;
-  parent1: LaboratoriCreature;
-  parent2: LaboratoriCreature;
-  children: LaboratoriCreature[];
+interface GenealogyNode {
+  creature: LaboratoriCreature;
+  generation: number;
+  x: number;
+  y: number;
 }
+
+interface BreedingLink {
+  parent1: GenealogyNode;
+  parent2: GenealogyNode;
+  children: GenealogyNode[];
+  midX: number;
+  midY: number;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const NODE_WIDTH = 130;
+const ROW_HEIGHT = 200;
+const PADDING_LEFT = 80;
+const PADDING_TOP = 60;
+const NODE_RENDER_WIDTH = 90;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -33,77 +51,236 @@ function getGenColor(gen: number): string {
   return '#00e5a0';
 }
 
-/** Build breeding events from the creature list. */
-function buildBreedingEvents(creatures: LaboratoriCreature[]): BreedingEvent[] {
-  // Name -> creature map
-  const nameMap = new Map<string, LaboratoriCreature>();
+function getGenSize(gen: number): number {
+  if (gen === 1) return 75;
+  if (gen === 2) return 65;
+  return 55;
+}
+
+/**
+ * Find all creatures involved in breeding: they are parents of someone,
+ * or they have parents (i.e. they are children).
+ */
+function findInvolvedCreatures(
+  creatures: LaboratoriCreature[],
+): LaboratoriCreature[] {
+  const parentNames = new Set<string>();
+  const childIds = new Set<string>();
+
   for (const c of creatures) {
-    nameMap.set(c.name, c);
-  }
-
-  // Find all children (creatures with both parents set)
-  const children = creatures.filter(
-    (c) => c.parentNames?.parentA && c.parentNames?.parentB,
-  );
-
-  // Group children by parent pair (sorted parent names as key)
-  const breedingGroups = new Map<string, LaboratoriCreature[]>();
-  for (const child of children) {
-    const key = [child.parentNames!.parentA!, child.parentNames!.parentB!]
-      .sort()
-      .join('|');
-    const arr = breedingGroups.get(key) ?? [];
-    arr.push(child);
-    breedingGroups.set(key, arr);
-  }
-
-  // Build events
-  const events: BreedingEvent[] = [];
-  for (const [key, groupChildren] of breedingGroups) {
-    const [p1Name, p2Name] = key.split('|');
-    const parent1 = nameMap.get(p1Name);
-    const parent2 = nameMap.get(p2Name);
-    if (!parent1 || !parent2) continue;
-
-    // Each breeding attempt typically produces 2 children.
-    // If the same pair bred multiple times, chunk into pairs.
-    for (let i = 0; i < groupChildren.length; i += 2) {
-      const chunk = groupChildren.slice(i, i + 2);
-      events.push({
-        id: `${key}:${i}`,
-        parent1,
-        parent2,
-        children: chunk,
-      });
+    if (c.parentNames?.parentA) {
+      parentNames.add(c.parentNames.parentA);
+      childIds.add(c.id);
+    }
+    if (c.parentNames?.parentB) {
+      parentNames.add(c.parentNames.parentB);
+      childIds.add(c.id);
     }
   }
 
-  // Sort events: earliest children first (oldest breeding events first)
-  events.sort((a, b) => {
-    const ageA = Math.max(...a.children.map((c) => c.ageDays));
-    const ageB = Math.max(...b.children.map((c) => c.ageDays));
-    return ageB - ageA; // oldest first
-  });
-
-  return events;
+  return creatures.filter(
+    (c) => parentNames.has(c.name) || childIds.has(c.id),
+  );
 }
 
-/** Find creatures that have never bred (no children reference them as parent). */
-function findSoloFounders(creatures: LaboratoriCreature[]): LaboratoriCreature[] {
-  const parentNames = new Set<string>();
-  for (const c of creatures) {
-    if (c.parentNames?.parentA) parentNames.add(c.parentNames.parentA);
-    if (c.parentNames?.parentB) parentNames.add(c.parentNames.parentB);
+/**
+ * Order Gen 1 creatures so breeding partners are placed next to each other.
+ */
+function orderByBreedingProximity(
+  gen1: LaboratoriCreature[],
+  allCreatures: LaboratoriCreature[],
+): LaboratoriCreature[] {
+  // Find unique breeding pairs among all creatures
+  const pairs: [string, string][] = [];
+  for (const c of allCreatures) {
+    if (c.parentNames?.parentA && c.parentNames?.parentB) {
+      const key = [c.parentNames.parentA, c.parentNames.parentB]
+        .sort()
+        .join('|');
+      if (!pairs.some((p) => p.sort().join('|') === key)) {
+        pairs.push(
+          [c.parentNames.parentA, c.parentNames.parentB].sort() as [
+            string,
+            string,
+          ],
+        );
+      }
+    }
   }
 
-  // Founders: gen 1, not a parent of anyone, and have no parents themselves
-  return creatures.filter(
-    (c) =>
-      (c.familyGeneration ?? 1) === 1 &&
-      !parentNames.has(c.name) &&
-      !c.parentNames?.parentA &&
-      !c.parentNames?.parentB,
+  const gen1Names = new Set(gen1.map((c) => c.name));
+  const placed: LaboratoriCreature[] = [];
+  const remaining = new Set(gen1.map((c) => c.name));
+
+  // Only consider pairs where at least one member is gen1
+  const gen1Pairs = pairs.filter(
+    ([a, b]) => gen1Names.has(a) || gen1Names.has(b),
   );
+
+  for (const [a, b] of gen1Pairs) {
+    if (remaining.has(a) && !placed.some((c) => c.name === a)) {
+      placed.push(gen1.find((c) => c.name === a)!);
+      remaining.delete(a);
+    }
+    if (remaining.has(b) && !placed.some((c) => c.name === b)) {
+      placed.push(gen1.find((c) => c.name === b)!);
+      remaining.delete(b);
+    }
+  }
+
+  // Add remaining gen1 that haven't bred
+  for (const c of gen1) {
+    if (remaining.has(c.name)) {
+      placed.push(c);
+    }
+  }
+
+  return placed;
+}
+
+/**
+ * Resolve horizontal overlaps in a set of nodes by pushing them apart.
+ */
+function resolveOverlaps(nodes: GenealogyNode[], minSpacing: number) {
+  nodes.sort((a, b) => a.x - b.x);
+  for (let i = 1; i < nodes.length; i++) {
+    const prev = nodes[i - 1];
+    const curr = nodes[i];
+    if (curr.x - prev.x < minSpacing) {
+      curr.x = prev.x + minSpacing;
+    }
+  }
+}
+
+/**
+ * Build breeding links from positioned nodes.
+ */
+function buildBreedingLinks(nodes: GenealogyNode[]): BreedingLink[] {
+  // Group children by parent pair
+  const pairMap = new Map<string, GenealogyNode[]>();
+
+  for (const node of nodes) {
+    const c = node.creature;
+    if (!c.parentNames?.parentA || !c.parentNames?.parentB) continue;
+    const key = [c.parentNames.parentA, c.parentNames.parentB]
+      .sort()
+      .join('|');
+    const arr = pairMap.get(key) ?? [];
+    arr.push(node);
+    pairMap.set(key, arr);
+  }
+
+  const links: BreedingLink[] = [];
+  for (const [key, children] of pairMap) {
+    const [p1Name, p2Name] = key.split('|');
+    const parent1 = nodes.find((n) => n.creature.name === p1Name);
+    const parent2 = nodes.find((n) => n.creature.name === p2Name);
+    if (!parent1 || !parent2) continue;
+
+    // Junction Y is between the parent row and child row
+    const parentBottomY = Math.max(parent1.y, parent2.y) + 55;
+    const childTopY = Math.min(...children.map((c) => c.y));
+    const junctionY = parentBottomY + (childTopY - parentBottomY) * 0.4;
+
+    links.push({
+      parent1,
+      parent2,
+      children,
+      midX: (parent1.x + parent2.x) / 2,
+      midY: junctionY,
+    });
+  }
+
+  return links;
+}
+
+/**
+ * Main layout function: positions all creatures in generation layers
+ * and builds breeding links between them.
+ */
+function layoutGenealogy(allCreatures: LaboratoriCreature[]): {
+  nodes: GenealogyNode[];
+  links: BreedingLink[];
+} {
+  const involved = findInvolvedCreatures(allCreatures);
+  if (involved.length === 0) return { nodes: [], links: [] };
+
+  // Determine max generation
+  const maxGen = Math.max(
+    ...involved.map((c) => c.familyGeneration ?? 1),
+    1,
+  );
+
+  // Group by generation
+  const byGen = new Map<number, LaboratoriCreature[]>();
+  for (let g = 1; g <= maxGen; g++) {
+    byGen.set(
+      g,
+      involved.filter((c) => (c.familyGeneration ?? 1) === g),
+    );
+  }
+
+  const nodes: GenealogyNode[] = [];
+
+  // Position Gen 1 (order by breeding proximity)
+  const gen1 = byGen.get(1) ?? [];
+  const orderedGen1 = orderByBreedingProximity(gen1, allCreatures);
+  orderedGen1.forEach((c, i) => {
+    nodes.push({
+      creature: c,
+      generation: 1,
+      x: PADDING_LEFT + i * NODE_WIDTH,
+      y: PADDING_TOP,
+    });
+  });
+
+  // Position subsequent generations
+  for (let g = 2; g <= maxGen; g++) {
+    const genCreatures = byGen.get(g) ?? [];
+    const rowY = PADDING_TOP + ROW_HEIGHT * (g - 1);
+
+    for (const child of genCreatures) {
+      const p1 = nodes.find(
+        (n) => n.creature.name === child.parentNames?.parentA,
+      );
+      const p2 = nodes.find(
+        (n) => n.creature.name === child.parentNames?.parentB,
+      );
+      let midX: number;
+      if (p1 && p2) {
+        midX = (p1.x + p2.x) / 2;
+      } else if (p1) {
+        midX = p1.x;
+      } else if (p2) {
+        midX = p2.x;
+      } else {
+        // Orphan — place at the end
+        const existing = nodes.filter((n) => n.generation === g);
+        midX =
+          existing.length > 0
+            ? Math.max(...existing.map((n) => n.x)) + NODE_WIDTH
+            : PADDING_LEFT;
+      }
+      nodes.push({ creature: child, generation: g, x: midX, y: rowY });
+    }
+
+    // Resolve overlaps within this generation
+    const genNodes = nodes.filter((n) => n.generation === g);
+    resolveOverlaps(genNodes, NODE_WIDTH * 0.85);
+
+    // Apply resolved positions back
+    for (const gn of genNodes) {
+      const idx = nodes.findIndex(
+        (n) => n.creature.id === gn.creature.id,
+      );
+      if (idx >= 0) nodes[idx] = gn;
+    }
+  }
+
+  // Build breeding links
+  const links = buildBreedingLinks(nodes);
+
+  return { nodes, links };
 }
 
 // ---------------------------------------------------------------------------
@@ -165,100 +342,115 @@ function CreatureNode({
   );
 }
 
-function DnaConnector() {
-  return (
-    <div className="flex flex-col items-center gap-0.5 px-2">
-      <div className="flex items-center gap-1">
-        <div className="h-[2px] w-6 bg-gradient-to-r from-transparent to-pink-400/60" />
-        <span className="text-xs text-pink-400">&#9829;</span>
-        <div className="h-[2px] w-6 bg-gradient-to-r from-pink-400/60 to-transparent" />
-      </div>
-      <span className="text-[7px] font-bold text-pink-400/40">DNA</span>
-    </div>
-  );
-}
+function BreedingLinkSVG({ link }: { link: BreedingLink }) {
+  const { parent1, parent2, children, midX, midY } = link;
 
-function BreedingEventCard({ event }: { event: BreedingEvent }) {
-  // Figure out which child belongs to which parent's owner
-  const child1 =
-    event.children.find((c) => c.ownerName === event.parent1.ownerName) ??
-    event.children[0] ??
-    null;
-  const child2 =
-    event.children.find(
-      (c) => c.ownerName === event.parent2.ownerName && c !== child1,
-    ) ??
-    (event.children.length > 1
-      ? event.children.find((c) => c !== child1) ?? null
-      : null);
+  // Parent bottom anchor (below the creature render)
+  const p1Bottom = parent1.y + 55;
+  const p2Bottom = parent2.y + 55;
+  const parentBottomY = Math.max(p1Bottom, p2Bottom);
 
   return (
-    <div className="rounded-2xl border border-border/30 bg-surface/40 p-4 sm:p-6">
-      {/* Parents row */}
-      <div className="flex items-center justify-center gap-4 sm:gap-6">
-        <CreatureNode creature={event.parent1} size={80} />
-        <DnaConnector />
-        <CreatureNode creature={event.parent2} size={80} />
-      </div>
+    <g>
+      {/* Horizontal breeding line between parents */}
+      <line
+        x1={parent1.x}
+        y1={parentBottomY}
+        x2={parent2.x}
+        y2={parentBottomY}
+        stroke="#ec4899"
+        strokeWidth={1.5}
+        opacity={0.4}
+        strokeDasharray="6 3"
+      />
 
-      {/* Descent lines */}
-      <div className="flex items-center justify-center py-2">
-        <div className="flex items-center gap-12 sm:gap-16">
-          {child1 && (
-            <div className="h-8 w-[2px] bg-gradient-to-b from-bio-purple/50 to-bio-purple/20" />
-          )}
-          {child2 && (
-            <div className="h-8 w-[2px] border-l-2 border-dashed border-border/30 bg-gradient-to-b from-bio-purple/50 to-bio-purple/20" />
-          )}
-        </div>
-      </div>
+      {/* Vertical stubs from each parent down to the horizontal line */}
+      {parent1.y + 55 < parentBottomY && (
+        <line
+          x1={parent1.x}
+          y1={parent1.y + 55}
+          x2={parent1.x}
+          y2={parentBottomY}
+          stroke="#ec4899"
+          strokeWidth={1.5}
+          opacity={0.3}
+        />
+      )}
+      {parent2.y + 55 < parentBottomY && (
+        <line
+          x1={parent2.x}
+          y1={parent2.y + 55}
+          x2={parent2.x}
+          y2={parentBottomY}
+          stroke="#ec4899"
+          strokeWidth={1.5}
+          opacity={0.3}
+        />
+      )}
 
-      {/* Children row */}
-      <div className="flex items-center justify-center gap-4 sm:gap-6">
-        {child1 && <CreatureNode creature={child1} size={65} />}
-        {child1 && child2 && (
-          <span className="text-[9px] text-muted/30">&amp;</span>
-        )}
-        {child2 && <CreatureNode creature={child2} size={65} />}
-        {!child1 && !child2 && (
-          <p className="text-[9px] italic text-muted/40">
-            Prole non trovata
-          </p>
-        )}
-      </div>
-    </div>
+      {/* Vertical line from breeding line midpoint down to junction */}
+      <line
+        x1={midX}
+        y1={parentBottomY}
+        x2={midX}
+        y2={midY}
+        stroke="#ec4899"
+        strokeWidth={1.5}
+        opacity={0.3}
+      />
+
+      {/* Heart at junction */}
+      <text
+        x={midX}
+        y={midY + 4}
+        textAnchor="middle"
+        fill="#ec4899"
+        fontSize={10}
+        opacity={0.6}
+      >
+        &#9829;
+      </text>
+
+      {/* Lines from junction to each child */}
+      {children.map((child, i) => {
+        const childTopY = child.y - 15;
+        return (
+          <g key={i}>
+            {/* Horizontal from junction to above child */}
+            {Math.abs(child.x - midX) > 1 && (
+              <line
+                x1={midX}
+                y1={midY}
+                x2={child.x}
+                y2={midY}
+                stroke="#b26eff"
+                strokeWidth={1}
+                opacity={0.3}
+              />
+            )}
+            {/* Vertical down to child */}
+            <line
+              x1={child.x}
+              y1={midY}
+              x2={child.x}
+              y2={childTopY}
+              stroke="#b26eff"
+              strokeWidth={1}
+              opacity={0.3}
+            />
+            {/* Small arrow/dot at the child end */}
+            <circle
+              cx={child.x}
+              cy={childTopY}
+              r={2.5}
+              fill="#b26eff"
+              opacity={0.4}
+            />
+          </g>
+        );
+      })}
+    </g>
   );
-}
-
-/** Detect multi-generation chains: if a child from one event is a parent in another. */
-function findChainedEvents(events: BreedingEvent[]): Map<string, string[]> {
-  // Map: event id -> list of event ids that follow (child became parent)
-  const chains = new Map<string, string[]>();
-
-  // Build a lookup: creature name -> events where it is a parent
-  const parentInEvent = new Map<string, string[]>();
-  for (const ev of events) {
-    for (const name of [ev.parent1.name, ev.parent2.name]) {
-      const arr = parentInEvent.get(name) ?? [];
-      arr.push(ev.id);
-      parentInEvent.set(name, arr);
-    }
-  }
-
-  for (const ev of events) {
-    const downstream: string[] = [];
-    for (const child of ev.children) {
-      const nextEvents = parentInEvent.get(child.name);
-      if (nextEvents) {
-        downstream.push(...nextEvents);
-      }
-    }
-    if (downstream.length > 0) {
-      chains.set(ev.id, downstream);
-    }
-  }
-
-  return chains;
 }
 
 // ---------------------------------------------------------------------------
@@ -266,62 +458,35 @@ function findChainedEvents(events: BreedingEvent[]): Map<string, string[]> {
 // ---------------------------------------------------------------------------
 
 export function StirpiView({ creatures: allCreatures }: StirpiViewProps) {
-  const events = useMemo(
-    () => buildBreedingEvents(allCreatures),
+  const { nodes, links } = useMemo(
+    () => layoutGenealogy(allCreatures),
     [allCreatures],
   );
 
-  const soloFounders = useMemo(
-    () => findSoloFounders(allCreatures),
-    [allCreatures],
-  );
-
-  const chains = useMemo(() => findChainedEvents(events), [events]);
-
-  // Group events into chains for visual rendering.
-  // An event that is "downstream" of another gets rendered after it with a connector.
-  const renderedEventIds = new Set<string>();
-
-  /** Recursively render an event and its downstream events. */
-  function renderEventChain(eventId: string): React.ReactNode[] {
-    if (renderedEventIds.has(eventId)) return [];
-    renderedEventIds.add(eventId);
-
-    const event = events.find((e) => e.id === eventId);
-    if (!event) return [];
-
-    const nodes: React.ReactNode[] = [
-      <BreedingEventCard key={event.id} event={event} />,
-    ];
-
-    const downstream = chains.get(eventId);
-    if (downstream) {
-      for (const nextId of downstream) {
-        if (renderedEventIds.has(nextId)) continue;
-        // Chain connector
-        nodes.push(
-          <div
-            key={`chain-${eventId}-${nextId}`}
-            className="flex justify-center py-1"
-          >
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="h-6 w-[2px] bg-gradient-to-b from-bio-purple/40 to-bio-purple/15" />
-              <span className="text-[7px] font-bold uppercase tracking-widest text-muted/30">
-                Gen successiva
-              </span>
-              <div className="h-4 w-[2px] bg-gradient-to-b from-bio-purple/15 to-transparent" />
-            </div>
-          </div>,
-        );
-        nodes.push(...renderEventChain(nextId));
-      }
+  // Find solo founders (gen 1, never bred, have no parents)
+  const soloFounders = useMemo(() => {
+    const parentNames = new Set<string>();
+    for (const c of allCreatures) {
+      if (c.parentNames?.parentA) parentNames.add(c.parentNames.parentA);
+      if (c.parentNames?.parentB) parentNames.add(c.parentNames.parentB);
     }
+    return allCreatures.filter(
+      (c) =>
+        (c.familyGeneration ?? 1) === 1 &&
+        !parentNames.has(c.name) &&
+        !c.parentNames?.parentA &&
+        !c.parentNames?.parentB,
+    );
+  }, [allCreatures]);
 
-    return nodes;
-  }
+  // Determine generations present
+  const generations = useMemo(() => {
+    const gens = new Set(nodes.map((n) => n.generation));
+    return Array.from(gens).sort((a, b) => a - b);
+  }, [nodes]);
 
   // Empty state
-  if (events.length === 0 && soloFounders.length === 0) {
+  if (nodes.length === 0 && soloFounders.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16">
         <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#8a9a70]/15 bg-surface/30">
@@ -349,13 +514,18 @@ export function StirpiView({ creatures: allCreatures }: StirpiViewProps) {
     );
   }
 
-  // Render all event chains
-  const chainNodes: React.ReactNode[] = [];
-  for (const event of events) {
-    if (!renderedEventIds.has(event.id)) {
-      chainNodes.push(...renderEventChain(event.id));
-    }
-  }
+  // Calculate canvas dimensions
+  const canvasWidth =
+    nodes.length > 0
+      ? Math.max(...nodes.map((n) => n.x)) + NODE_RENDER_WIDTH + 40
+      : 400;
+  const canvasHeight =
+    nodes.length > 0
+      ? Math.max(...nodes.map((n) => n.y)) + 150
+      : 300;
+
+  // Count breeding events (unique parent pairs)
+  const breedingCount = links.length;
 
   return (
     <div className="space-y-6">
@@ -375,15 +545,72 @@ export function StirpiView({ creatures: allCreatures }: StirpiViewProps) {
           />
         </svg>
         <h3 className="text-sm font-bold tracking-wide text-foreground/70">
-          Incroci Genetici
+          Albero Genealogico
         </h3>
         <span className="rounded-full bg-bio-purple/10 px-2 py-0.5 text-[9px] font-bold text-bio-purple/60">
-          {events.length} {events.length === 1 ? 'incrocio' : 'incroci'}
+          {breedingCount} {breedingCount === 1 ? 'incrocio' : 'incroci'}
+        </span>
+        <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-[9px] font-bold text-muted/50">
+          {nodes.length} creature
         </span>
       </div>
 
-      {/* Breeding event cards */}
-      <div className="flex flex-col gap-4">{chainNodes}</div>
+      {/* Genealogical tree */}
+      <div
+        className="overflow-auto rounded-2xl border border-border/30 bg-background"
+        style={{ maxHeight: '70vh' }}
+      >
+        <div className="relative" style={{ width: canvasWidth, minHeight: canvasHeight }}>
+          {/* Generation labels on the left */}
+          {generations.map((gen) => {
+            const genNodes = nodes.filter((n) => n.generation === gen);
+            if (genNodes.length === 0) return null;
+            const y = genNodes[0].y;
+            return (
+              <div
+                key={gen}
+                className="absolute left-2"
+                style={{ top: y - 10 }}
+              >
+                <span
+                  className="text-[9px] font-bold uppercase tracking-wider"
+                  style={{ color: getGenColor(gen), opacity: 0.4 }}
+                >
+                  Gen {gen}
+                </span>
+              </div>
+            );
+          })}
+
+          {/* SVG connection lines */}
+          <svg
+            className="absolute inset-0 pointer-events-none"
+            width={canvasWidth}
+            height={canvasHeight}
+          >
+            {links.map((link, i) => (
+              <BreedingLinkSVG key={i} link={link} />
+            ))}
+          </svg>
+
+          {/* Creature nodes */}
+          {nodes.map((node) => (
+            <div
+              key={node.creature.id}
+              className="absolute"
+              style={{
+                left: node.x - NODE_RENDER_WIDTH / 2,
+                top: node.y - 10,
+              }}
+            >
+              <CreatureNode
+                creature={node.creature}
+                size={getGenSize(node.generation)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Solo founders section */}
       {soloFounders.length > 0 && (
