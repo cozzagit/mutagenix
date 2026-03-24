@@ -9,6 +9,8 @@ import { eq, and } from 'drizzle-orm';
 import { interpolateCreatureState } from '@/lib/game-engine/interpolation';
 import { finalizeIfExpired } from '@/lib/game-engine/auto-finalize';
 import { TIME_CONFIG } from '@/lib/game-engine/time-config';
+import { loadWellnessInput } from '@/lib/game-engine/wellness-loader';
+import { calculateWellness } from '@/lib/game-engine/wellness';
 
 export async function GET() {
   let session;
@@ -45,12 +47,17 @@ export async function GET() {
     }
   }
 
+  // Load wellness data
+  const wellnessInput = await loadWellnessInput(creature.id);
+  const wellness = calculateWellness(wellnessInput);
+
   return NextResponse.json({
     data: {
       id: creature.id,
       name: creature.name,
       generation: creature.generation,
       ageDays: creature.ageDays,
+      wellness,
 
       current: {
         elementLevels: interpolated.elementLevels,

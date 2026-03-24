@@ -25,6 +25,8 @@ import { TIME_CONFIG } from '@/lib/game-engine/time-config';
 import type { RankTier } from '@/types/battle';
 import type { Creature } from '@/lib/db/schema/creatures';
 import type { CreatureRanking } from '@/lib/db/schema/creature-rankings';
+import { loadWellnessInput } from './wellness-loader';
+import { calculateWellness } from './wellness';
 
 // ---------------------------------------------------------------------------
 // AXP helpers
@@ -136,9 +138,23 @@ export async function executeBattle(
       .where(eq(creatureRankings.creatureId, defenderCreature.id));
   }
 
+  // --- Load wellness for both creatures ---
+  const [challengerWellnessInput, defenderWellnessInput] = await Promise.all([
+    loadWellnessInput(challengerCreature.id, {
+      lastBattleAt: challengerRanking.lastBattleAt,
+      battlesToday: challengerRanking.battlesToday,
+    }),
+    loadWellnessInput(defenderCreature.id, {
+      lastBattleAt: defenderRanking.lastBattleAt,
+      battlesToday: defenderRanking.battlesToday,
+    }),
+  ]);
+  const challengerWellness = calculateWellness(challengerWellnessInput);
+  const defenderWellness = calculateWellness(defenderWellnessInput);
+
   // --- Run battle ---
-  const challengerBattle = creatureToBattleCreature(challengerCreature, challengerRanking);
-  const defenderBattle = creatureToBattleCreature(defenderCreature, defenderRanking);
+  const challengerBattle = creatureToBattleCreature(challengerCreature, challengerRanking, challengerWellness);
+  const defenderBattle = creatureToBattleCreature(defenderCreature, defenderRanking, defenderWellness);
   const battleResult = calculateBattle(challengerBattle, defenderBattle);
 
   const isDraw = battleResult.winnerId === null;

@@ -16,6 +16,7 @@ import { PersonalityRadar } from './personality-radar';
 import { EditableCreatureName } from './editable-creature-name';
 import { InstallButton } from '@/components/pwa/install-button';
 import { TierCelebration } from './tier-celebration';
+import { WellnessPanel } from '@/components/creature/wellness-panel';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -44,6 +45,7 @@ interface Props {
   cooldownRemaining?: number;
   unseenBattles?: number;
   ranking?: { eloRating: number; wins: number; losses: number; draws: number; tier: string; axp?: number } | null;
+  wellness?: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
 }
 
 type Phase = 'idle' | 'allocating' | 'mutating' | 'waiting';
@@ -133,6 +135,7 @@ export function LabDashboard({
   cooldownRemaining: initialCooldown = 0,
   unseenBattles = 0,
   ranking = null,
+  wellness,
 }: Props) {
   const router = useRouter();
 
@@ -754,19 +757,43 @@ export function LabDashboard({
       {/* RIGHT AREA — Name/day ABOVE creature, countdown/button BELOW   */}
       {/* ============================================================= */}
       <div className="flex flex-1 flex-col items-center overflow-y-auto overflow-x-hidden">
-        {/* Global mutation event banner */}
-        <div className="w-full shrink-0 px-4 pt-2">
-          <button
-            onClick={() => setShowMutationEvent(true)}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-bio-purple/40 bg-bio-purple/10 px-3 py-2 transition-all hover:bg-bio-purple/20"
-            style={{ animation: 'pulse-glow 3s ease-in-out infinite' }}>
-            <span className="text-base" style={{ animation: 'divine-rainbow 2s ease-in-out infinite' }}>☢</span>
-            <p className="text-[11px] font-bold text-bio-purple" style={{ textShadow: '0 0 8px #b26eff44' }}>
-              Mutazione Genetica Globale
-            </p>
-            <span className="text-base" style={{ animation: 'divine-rainbow 2s ease-in-out infinite' }}>☢</span>
-          </button>
-        </div>
+        {/* Wellness status summary banner */}
+        {wellness && (
+          <div className="w-full shrink-0 px-4 pt-2">
+            <div
+              className="flex w-full items-center justify-between rounded-lg border px-3 py-2"
+              style={{
+                borderColor: wellness.composite >= 60 ? '#00e5a030' : wellness.composite >= 30 ? '#ff910030' : '#ff3d3d30',
+                backgroundColor: wellness.composite >= 60 ? 'rgba(0, 229, 160, 0.06)' : wellness.composite >= 30 ? 'rgba(255, 145, 0, 0.06)' : 'rgba(255, 61, 61, 0.06)',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm">{wellness.composite >= 60 ? '💚' : wellness.composite >= 30 ? '🟡' : '🔴'}</span>
+                <div>
+                  <p className="text-[11px] font-bold" style={{ color: wellness.composite >= 60 ? '#00e5a0' : wellness.composite >= 30 ? '#ff9100' : '#ff3d3d' }}>
+                    {wellness.composite >= 80 ? 'In forma perfetta' : wellness.composite >= 60 ? 'Condizioni buone' : wellness.composite >= 40 ? 'Necessita attenzione' : wellness.composite >= 20 ? 'Condizioni critiche' : 'Stato di emergenza'}
+                  </p>
+                  <p className="text-[9px] text-muted">
+                    {wellness.hunger < 30 && 'Ha fame — inietta! '}
+                    {wellness.boredom < 30 && 'Si annoia — combatti! '}
+                    {wellness.fatigue < 30 && 'Stanca — falla riposare! '}
+                    {wellness.activity < 30 && 'Inattiva — torna più spesso! '}
+                    {wellness.composite >= 70 && 'Nutrimento, attività e stimoli nella norma.'}
+                  </p>
+                </div>
+              </div>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                style={{
+                  color: wellness.composite >= 60 ? '#00e5a0' : wellness.composite >= 30 ? '#ff9100' : '#ff3d3d',
+                  backgroundColor: wellness.composite >= 60 ? '#00e5a015' : wellness.composite >= 30 ? '#ff910015' : '#ff3d3d15',
+                }}
+              >
+                {wellness.composite}%
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Battle notification banner */}
         {showBattleBanner && (
@@ -920,6 +947,9 @@ export function LabDashboard({
               </div>
             )}
 
+            {/* Wellness Panel */}
+            {wellness && <WellnessPanel wellness={wellness} />}
+
             {/* Overdose warning */}
             {overdoseLevel && !mutationActive && (
               <div
@@ -1032,47 +1062,6 @@ export function LabDashboard({
         <TierCelebration tier={tierCelebration} onClose={() => setTierCelebration(null)} />
       )}
 
-      {/* Global mutation event modal */}
-      {showMutationEvent && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-background/90 backdrop-blur-sm p-4"
-          onClick={() => setShowMutationEvent(false)}>
-          <div className="w-full max-w-md rounded-2xl border border-bio-purple/40 bg-surface p-6"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-center mb-4">
-              <span className="text-4xl" style={{ animation: 'divine-rainbow 2s ease-in-out infinite' }}>☢</span>
-            </div>
-            <h2 className="text-center text-xl font-black text-bio-purple mb-3"
-              style={{ textShadow: '0 0 12px #b26eff44' }}>
-              Mutazione Genetica Globale
-            </h2>
-            <div className="space-y-3 text-sm text-muted leading-relaxed">
-              <p>
-                Una <span className="font-bold text-bio-purple">radiazione cosmica</span> ha investito tutti i laboratori,
-                provocando una mutazione genetica di massa su tutte le creature.
-              </p>
-              <p>
-                Il DNA di ogni organismo è stato <span className="font-bold text-foreground">ristrutturato</span> in base
-                al suo percorso evolutivo. Le creature che hanno avuto uno sviluppo bilanciato nelle fasi iniziali
-                mostrano ora tratti più definiti e unici.
-              </p>
-              <p>
-                Nuove caratteristiche sono emerse: <span className="font-bold text-danger">bocche, zanne e mandibole</span> sono
-                ora visibili su tutte le creature, con forme diverse in base alla personalità e agli elementi dominanti.
-              </p>
-              <p className="text-xs text-muted/70 italic">
-                I tuoi esperimenti futuri terranno conto della storia evolutiva: le prime iniezioni
-                avranno un impatto permanente sulla forma della creatura.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowMutationEvent(false)}
-              className="mt-5 w-full rounded-xl bg-bio-purple/20 border border-bio-purple/30 px-4 py-2.5 text-sm font-bold text-bio-purple transition-all hover:bg-bio-purple/30"
-            >
-              Ho capito
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

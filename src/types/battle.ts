@@ -33,6 +33,14 @@ export interface BattleCreature {
   axp: number;
   // Stability (0-1, higher = more stable)
   stability: number;
+  // Wellness indicators (0-100 each, optional — defaults to 100 if missing)
+  wellness?: {
+    activity: number;
+    hunger: number;
+    boredom: number;
+    fatigue: number;
+    composite: number;
+  };
 }
 
 /** A single event that occurred during a battle round. */

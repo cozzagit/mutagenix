@@ -16,6 +16,7 @@ import type { Creature } from '@/lib/db/schema/creatures';
 import type { CreatureRanking } from '@/lib/db/schema/creature-rankings';
 import type { BattleCreature } from '@/types/battle';
 import type { ElementLevels, TraitValues } from '@/types/game';
+import type { WellnessState } from './wellness';
 
 /**
  * Calculate personality distribution from element levels.
@@ -107,6 +108,7 @@ function getActiveSynergies(elementLevels: ElementLevels): string[] {
 export function creatureToBattleCreature(
   creature: Creature,
   _ranking?: CreatureRanking,
+  wellness?: WellnessState,
 ): BattleCreature {
   const elementLevels = creature.elementLevels as ElementLevels;
   const traitValues = creature.traitValues as TraitValues;
@@ -150,5 +152,8 @@ export function creatureToBattleCreature(
 
     // Stability
     stability: creature.stability ?? 0.5,
+
+    // Wellness (if provided)
+    wellness,
   };
 }

@@ -7,6 +7,8 @@ import { LabDashboard } from '@/components/lab/lab-dashboard';
 import { interpolateCreatureState } from '@/lib/game-engine/interpolation';
 import { finalizeIfExpired } from '@/lib/game-engine/auto-finalize';
 import { TIME_CONFIG } from '@/lib/game-engine/time-config';
+import { loadWellnessInput } from '@/lib/game-engine/wellness-loader';
+import { calculateWellness } from '@/lib/game-engine/wellness';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,6 +83,10 @@ export default async function LabPage() {
     ranking = r ?? null;
   } catch { /* table may not exist */ }
 
+  // Load wellness
+  const wellnessInput = await loadWellnessInput(creature.id);
+  const wellness = calculateWellness(wellnessInput);
+
   return (
     <LabDashboard
       creature={creature}
@@ -96,6 +102,7 @@ export default async function LabPage() {
       cooldownRemaining={cooldownRemaining}
       unseenBattles={unseenBattles}
       ranking={ranking}
+      wellness={wellness}
     />
   );
 }

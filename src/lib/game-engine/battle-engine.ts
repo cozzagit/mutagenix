@@ -12,6 +12,7 @@ import type {
   RankTier,
 } from '@/types/battle';
 import { GAME_CONFIG } from './constants';
+import { calculateWellnessCombatModifiers } from './wellness';
 
 // ---------------------------------------------------------------------------
 // Stability thresholds
@@ -205,6 +206,15 @@ function initFighter(creature: BattleCreature): FighterState {
 
   // Poison immunity for cristallizzato (> 0.9)
   const poisonImmune = stability > STABILITY_CRYSTAL;
+
+  // --- Wellness modifiers ---
+  if (creature.wellness) {
+    const wm = calculateWellnessCombatModifiers(creature.wellness);
+    effectiveAtk *= wm.attackMul;
+    effectiveDef *= wm.defenseMul;
+    effectiveSpd *= wm.speedMul;
+    maxHp *= wm.staminaMul; // stamina affects HP pool
+  }
 
   return {
     creature,
