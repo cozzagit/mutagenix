@@ -14,12 +14,62 @@ import { eq, and, ne, desc, sql } from 'drizzle-orm';
 import type { BattleFormat } from '@/lib/game-engine/squad-battle-engine';
 
 // ---------------------------------------------------------------------------
-// GET — List available farming opponents
+// Helpers
 // ---------------------------------------------------------------------------
 
 function roundToNearest10(value: number): number {
   return Math.round(value / 10) * 10;
 }
+
+async function getFarmingStats(userId: string): Promise<{
+  wins: number;
+  losses: number;
+  farmingAxp: number;
+  battlesToday: number;
+  dailyLimit: number;
+}> {
+  // Aggregate farming stats across all user's creature rankings
+  const rows = await db
+    .select({
+      farmingWins: creatureRankings.farmingWins,
+      farmingLosses: creatureRankings.farmingLosses,
+      farmingAxp: creatureRankings.farmingAxp,
+    })
+    .from(creatureRankings)
+    .where(eq(creatureRankings.userId, userId));
+
+  let wins = 0;
+  let losses = 0;
+  let farmingAxp = 0;
+  for (const r of rows) {
+    wins += r.farmingWins;
+    losses += r.farmingLosses;
+    farmingAxp += r.farmingAxp;
+  }
+
+  // Count farming battles today from the battles table
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(sql`battles`)
+    .where(
+      sql`challenger_user_id = ${userId} AND battle_type = 'farming' AND created_at >= ${today.toISOString()}`,
+    );
+
+  return {
+    wins,
+    losses,
+    farmingAxp,
+    battlesToday: countRow?.count ?? 0,
+    dailyLimit: 20,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// GET — List available farming opponents
+// ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
   let session;
@@ -66,20 +116,26 @@ export async function GET(request: NextRequest) {
       return {
         creatureId: o.creature.id,
         userId: o.creature.userId,
-        name: o.creature.name,
+        creatureName: o.creature.name,
+        userName: o.ownerName,
         ageDays: o.creature.ageDays,
-        ownerName: o.ownerName,
         eloRating: o.ranking?.eloRating ?? 1000,
-        farmingWins: o.ranking?.farmingWins ?? 0,
-        farmingLosses: o.ranking?.farmingLosses ?? 0,
         attackPower: roundToNearest10(tv.attackPower ?? 0),
         defense: roundToNearest10(tv.defense ?? 0),
         speed: roundToNearest10(tv.speed ?? 0),
-        stamina: roundToNearest10(tv.stamina ?? 0),
+        visualParams: o.creature.visualParams ?? {},
       };
     });
 
-    return NextResponse.json({ data: result });
+    // Fetch farming stats for this user
+    const farmingStats = await getFarmingStats(session.userId);
+
+    return NextResponse.json({
+      data: {
+        opponents: result,
+        stats: farmingStats,
+      },
+    });
   }
 
   // 2v2 / 3v3: show players who have squads with enough filled slots
@@ -109,6 +165,7 @@ export async function GET(request: NextRequest) {
       defense: number;
       speed: number;
       stamina: number;
+      visualParams: Record<string, unknown>;
     }>;
   }> = [];
 
@@ -147,6 +204,7 @@ export async function GET(request: NextRequest) {
           defense: roundToNearest10(tv.defense ?? 0),
           speed: roundToNearest10(tv.speed ?? 0),
           stamina: roundToNearest10(tv.stamina ?? 0),
+          visualParams: c.visualParams ?? {},
         };
       }),
     });
@@ -154,5 +212,22 @@ export async function GET(request: NextRequest) {
     if (validOpponents.length >= 20) break;
   }
 
-  return NextResponse.json({ data: validOpponents });
+  // Map to the format expected by the component
+  const result = validOpponents.map((o) => ({
+    userId: o.userId,
+    userName: o.ownerName,
+    squadPreview: o.creatures.map((c) => ({
+      name: c.name,
+      visualParams: c.visualParams ?? {},
+    })),
+  }));
+
+  const farmingStats = await getFarmingStats(session.userId);
+
+  return NextResponse.json({
+    data: {
+      opponents: result,
+      stats: farmingStats,
+    },
+  });
 }

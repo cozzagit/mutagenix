@@ -26,91 +26,97 @@ export async function GET() {
     .from(squads)
     .where(eq(squads.userId, session.userId));
 
+  // Helper to build a SquadCreature from a DB row + wellness
+  function toSquadCreature(
+    c: typeof allUserCreatures[number],
+    wellness: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number },
+  ) {
+    const tv = c.traitValues as Record<string, number>;
+    return {
+      id: c.id,
+      name: c.name,
+      ageDays: c.ageDays,
+      attackPower: tv.attackPower ?? 0,
+      defense: tv.defense ?? 0,
+      speed: tv.speed ?? 0,
+      visualParams: c.visualParams ?? {},
+      wellness,
+    };
+  }
+
+  // Load all user's alive, non-archived creatures
+  const allUserCreatures = await db
+    .select()
+    .from(creatures)
+    .where(
+      and(
+        eq(creatures.userId, session.userId),
+        eq(creatures.isDead, false),
+        eq(creatures.isArchived, false),
+      ),
+    );
+
+  // Load wellness for all user creatures
+  const wellnessResults = await Promise.all(
+    allUserCreatures.map(async (c) => {
+      const wellnessInput = await loadWellnessInput(c.id);
+      const wellness = calculateWellness(wellnessInput);
+      return { creature: c, wellness };
+    }),
+  );
+
+  const creatureMap = new Map(
+    wellnessResults.map(({ creature, wellness }) => [
+      creature.id,
+      { creature, wellness },
+    ]),
+  );
+
   if (!squad) {
+    // No squad yet — all creatures are available
+    const available = wellnessResults.map(({ creature, wellness }) =>
+      toSquadCreature(creature, wellness),
+    );
+
     return NextResponse.json({
       data: {
-        squad: null,
-        slots: { slot1: null, slot2: null, slot3: null },
-        reserves: { reserve1: null, reserve2: null, reserve3: null },
+        starters: [null, null, null],
+        reserves: [null, null, null],
         autoRotate: true,
+        available,
       },
     });
   }
 
-  // Gather all creature IDs from squad
-  const slotIds = [
-    squad.slot1Id,
-    squad.slot2Id,
-    squad.slot3Id,
-    squad.reserve1Id,
-    squad.reserve2Id,
-    squad.reserve3Id,
-  ].filter((id): id is string => id !== null);
+  // Build starters and reserves arrays
+  const starterIds = [squad.slot1Id, squad.slot2Id, squad.slot3Id];
+  const reserveIds = [squad.reserve1Id, squad.reserve2Id, squad.reserve3Id];
+  const assignedIds = new Set(
+    [...starterIds, ...reserveIds].filter((id): id is string => id !== null),
+  );
 
-  let creatureMap = new Map<
-    string,
-    {
-      id: string;
-      name: string;
-      ageDays: number | null;
-      traitValues: Record<string, number>;
-      isDead: boolean;
-      stability: number | null;
-      wellness: { activity: number; hunger: number; boredom: number; fatigue: number; composite: number };
-    }
-  >();
+  const getSlot = (id: string | null) => {
+    if (!id) return null;
+    const entry = creatureMap.get(id);
+    if (!entry) return null;
+    return toSquadCreature(entry.creature, entry.wellness);
+  };
 
-  if (slotIds.length > 0) {
-    const rows = await db
-      .select()
-      .from(creatures)
-      .where(sql`${creatures.id} IN (${sql.join(slotIds.map((id) => sql`${id}`), sql`, `)})`);
+  const starters = starterIds.map(getSlot);
+  const reserves = reserveIds.map(getSlot);
 
-    // Load wellness for each creature
-    const wellnessResults = await Promise.all(
-      rows.map(async (c) => {
-        const wellnessInput = await loadWellnessInput(c.id);
-        const wellness = calculateWellness(wellnessInput);
-        return { creature: c, wellness };
-      }),
-    );
-
-    for (const { creature: c, wellness } of wellnessResults) {
-      const tv = c.traitValues as Record<string, number>;
-      creatureMap.set(c.id, {
-        id: c.id,
-        name: c.name,
-        ageDays: c.ageDays,
-        traitValues: {
-          attackPower: tv.attackPower ?? 0,
-          defense: tv.defense ?? 0,
-          speed: tv.speed ?? 0,
-          stamina: tv.stamina ?? 0,
-          specialAttack: tv.specialAttack ?? 0,
-        },
-        isDead: c.isDead,
-        stability: c.stability,
-        wellness,
-      });
-    }
-  }
-
-  const getSlot = (id: string | null) => (id ? creatureMap.get(id) ?? null : null);
+  // Available = all user's alive creatures NOT already assigned to a slot
+  const available = wellnessResults
+    .filter(({ creature }) => !assignedIds.has(creature.id))
+    .map(({ creature, wellness }) => toSquadCreature(creature, wellness));
 
   return NextResponse.json({
     data: {
       squadId: squad.id,
-      slots: {
-        slot1: getSlot(squad.slot1Id),
-        slot2: getSlot(squad.slot2Id),
-        slot3: getSlot(squad.slot3Id),
-      },
-      reserves: {
-        reserve1: getSlot(squad.reserve1Id),
-        reserve2: getSlot(squad.reserve2Id),
-        reserve3: getSlot(squad.reserve3Id),
-      },
+      starters,
+      reserves,
       autoRotate: squad.autoRotate,
+      available,
     },
   });
 }
@@ -128,6 +134,10 @@ export async function PUT(request: NextRequest) {
   }
 
   let body: {
+    // New array format from component
+    starters?: (string | null)[];
+    reserves?: (string | null)[];
+    // Legacy named-slot format
     slot1Id?: string | null;
     slot2Id?: string | null;
     slot3Id?: string | null;
@@ -146,14 +156,22 @@ export async function PUT(request: NextRequest) {
     );
   }
 
+  // Support both array format (from component) and named-slot format
+  const slot1Id = body.starters?.[0] ?? body.slot1Id ?? null;
+  const slot2Id = body.starters?.[1] ?? body.slot2Id ?? null;
+  const slot3Id = body.starters?.[2] ?? body.slot3Id ?? null;
+  const reserve1Id = body.reserves?.[0] ?? body.reserve1Id ?? null;
+  const reserve2Id = body.reserves?.[1] ?? body.reserve2Id ?? null;
+  const reserve3Id = body.reserves?.[2] ?? body.reserve3Id ?? null;
+
   // Collect all provided creature IDs
   const allIds = [
-    body.slot1Id,
-    body.slot2Id,
-    body.slot3Id,
-    body.reserve1Id,
-    body.reserve2Id,
-    body.reserve3Id,
+    slot1Id,
+    slot2Id,
+    slot3Id,
+    reserve1Id,
+    reserve2Id,
+    reserve3Id,
   ].filter((id): id is string => id != null);
 
   // Check for duplicates
@@ -205,12 +223,12 @@ export async function PUT(request: NextRequest) {
   const now = new Date();
   const values = {
     userId: session.userId,
-    slot1Id: body.slot1Id ?? null,
-    slot2Id: body.slot2Id ?? null,
-    slot3Id: body.slot3Id ?? null,
-    reserve1Id: body.reserve1Id ?? null,
-    reserve2Id: body.reserve2Id ?? null,
-    reserve3Id: body.reserve3Id ?? null,
+    slot1Id,
+    slot2Id,
+    slot3Id,
+    reserve1Id,
+    reserve2Id,
+    reserve3Id,
     autoRotate: body.autoRotate ?? true,
     updatedAt: now,
   };

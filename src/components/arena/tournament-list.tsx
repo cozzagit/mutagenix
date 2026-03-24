@@ -311,11 +311,19 @@ export function TournamentList() {
           ))}
         </div>
       ) : tournaments.length === 0 ? (
-        <div className="rounded-xl border border-border/30 bg-surface-2 p-8 text-center">
-          <p className="text-sm text-muted">Nessun torneo disponibile al momento.</p>
-          <p className="text-[10px] text-muted mt-1">
-            Torna più tardi per nuovi tornei.
+        <div className="rounded-xl border border-border/30 bg-surface-2 p-10 text-center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.2} className="h-10 w-10 text-muted/40 mx-auto mb-3">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-4.5A3.375 3.375 0 0 0 13.125 10.875h-2.25A3.375 3.375 0 0 0 7.5 14.25v4.5m6-12a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+          </svg>
+          <p className="text-sm font-bold text-muted mb-1">Nessun torneo disponibile al momento</p>
+          <p className="text-xs text-muted/70 leading-relaxed max-w-xs mx-auto">
+            I tornei vengono creati periodicamente dal sistema e dagli amministratori.
+            Torna a controllare presto — nuove competizioni sono in arrivo!
           </p>
+          <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[11px] font-bold text-primary">Prossimamente</span>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
