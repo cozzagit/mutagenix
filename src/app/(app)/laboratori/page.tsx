@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { users, creatures, creatureRankings } from '@/lib/db/schema';
-import { eq, and, sql, gte, desc } from 'drizzle-orm';
+import { users, creatures, creatureRankings, cariche } from '@/lib/db/schema';
+import { eq, and, sql, gte, gt, desc } from 'drizzle-orm';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import { calculateSynergies } from '@/lib/game-engine/synergy-system';
 import { SYNERGIES, COMBAT_TRAITS } from '@/lib/game-engine/constants';
@@ -127,7 +127,20 @@ export default async function LaboratoriPage() {
     if (parentIds.has(c.id)) parentNameMap.set(c.id, c.name);
   }
 
-  // 6. Build creature data with recalculated visuals and potenza
+  // 6. Batch load active cariche
+  const allCariche = await db.select({
+    creatureId: cariche.creatureId,
+    caricaId: cariche.caricaId,
+  }).from(cariche).where(gt(cariche.expiresAt, sql`NOW()`));
+
+  const caricheMap = new Map<string, string[]>();
+  for (const c of allCariche) {
+    const arr = caricheMap.get(c.creatureId) ?? [];
+    arr.push(c.caricaId);
+    caricheMap.set(c.creatureId, arr);
+  }
+
+  // 7. Build creature data with recalculated visuals and potenza
   const creaturesData: LaboratoriCreature[] = allCreatures
     .map((c) => {
       const user = usersMap.get(c.userId);
@@ -188,6 +201,7 @@ export default async function LaboratoriPage() {
           battlesToday: ranking?.battlesToday ?? 0,
           now,
         }),
+        cariche: caricheMap.get(c.id) ?? [],
         familyGeneration: c.familyGeneration,
         parentNames: (c.parentACreatureId || c.parentBCreatureId) ? {
           parentA: c.parentACreatureId ? parentNameMap.get(c.parentACreatureId) ?? null : null,
@@ -200,14 +214,6 @@ export default async function LaboratoriPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-4">
-      <div className="mb-4">
-        <h1 className="text-lg font-bold text-foreground">
-          I Laboratori
-        </h1>
-        <p className="mt-0.5 text-xs text-muted">
-          Tutte le creature di Mutagenix. Esplora gli esperimenti degli altri scienziati.
-        </p>
-      </div>
       <LaboratoriDirectory creatures={creaturesData} />
     </div>
   );
