@@ -189,6 +189,15 @@ export const GAME_CONFIG = {
   COMBAT_HARD_CEILING: 90,
   /** Minimum total element levels before overdose kicks in (early game protection) */
   OVERDOSE_MIN_TOTAL: 100,
+  // --- Senescence System (Day 1000+) ---
+  /** Day when senescence begins */
+  SENESCENCE_START: 1000,
+  /** Physical trait decay rate per day (% of current value) */
+  SENESCENCE_TRAIT_DECAY: 0.03,
+  /** Combat trait decay rate per day (% of current value) */
+  SENESCENCE_COMBAT_DECAY: 0.05,
+  /** Element level decay rate per day (% of current value) */
+  SENESCENCE_ELEMENT_DECAY: 0.02,
 } as const;
 
 // ---------------------------------------------------------------------------

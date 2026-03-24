@@ -224,6 +224,7 @@ export function mapTraitsToVisuals(
   activeSynergies: Synergy[],
   foundingElements?: Record<string, number> | null,
   growthElements?: Record<string, number> | null,
+  ageDays?: number,
 ): VisualParams {
   // Normalise traits to 0-1 range for interpolation
   const t = (trait: TraitId): number => clamp((traitValues[trait] ?? 0) / 100, 0, 1);
@@ -278,8 +279,8 @@ export function mapTraitsToVisuals(
   widthRatio = widthRatio * (1 - secWeight) + secWidthRatio * secWeight;
   heightRatio = heightRatio * (1 - secWeight) + secHeightRatio * secWeight;
 
-  const bodyWidth = baseSize * widthRatio;
-  const bodyHeight = baseSize * heightRatio;
+  let bodyWidth = baseSize * widthRatio;
+  let bodyHeight = baseSize * heightRatio;
 
   // Blobiness: spiny/toxic creatures are more irregular; armored are solid
   let bodyBlobiness: number;
@@ -397,7 +398,7 @@ export function mapTraitsToVisuals(
     ] as const);
   }
 
-  const limbLength = lerp(15, 80, t('limbGrowth'));
+  let limbLength = lerp(15, 80, t('limbGrowth'));
   let limbCurve = lerp(0, 1, t('tailGrowth') * 0.3 + t('posture') * 0.7);
 
   // Element #3 influences limb style
@@ -724,6 +725,33 @@ export function mapTraitsToVisuals(
   const muscleDefinition = lerp(0, 1, ct('stamina')) * combatPhase;
   const scarCount = Math.round(lerp(0, 8, ct('battleScars')));
   const specialAuraIntensity = lerp(0, 1, ct('specialAttack')) * combatPhase;
+
+  // ---------------------------------------------------------------------------
+  // Senescence visual aging (Day 1000+)
+  // ---------------------------------------------------------------------------
+  if (ageDays !== undefined && ageDays >= 1000) {
+    const senescenceRatio = Math.min(1, (ageDays - 1000) / 1000); // 0 at day 1000, 1 at day 2000
+
+    // Desaturate colors gradually
+    bodySaturation = Math.max(5, bodySaturation * (1 - senescenceRatio * 0.7));
+    bodyLightness = Math.min(45, bodyLightness + senescenceRatio * 15);
+    bodyOpacity = Math.max(0.5, bodyOpacity - senescenceRatio * 0.3);
+
+    // Shrink body (aging = withering)
+    bodyWidth = Math.max(60, bodyWidth * (1 - senescenceRatio * 0.25));
+    bodyHeight = Math.max(50, bodyHeight * (1 - senescenceRatio * 0.2));
+
+    // Reduce glow (life force fading)
+    glowIntensity = Math.max(0, glowIntensity * (1 - senescenceRatio * 0.8));
+
+    // Limbs weaken
+    limbLength = Math.max(10, limbLength * (1 - senescenceRatio * 0.3));
+    limbThickness = Math.max(2, limbThickness * (1 - senescenceRatio * 0.4));
+
+    // Spines/fur fall off
+    spineCount = Math.max(0, Math.round(spineCount * (1 - senescenceRatio * 0.6)));
+    furDensity = Math.max(0, furDensity * (1 - senescenceRatio * 0.5));
+  }
 
   return {
     bodyWidth,

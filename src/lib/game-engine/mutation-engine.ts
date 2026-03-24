@@ -162,7 +162,7 @@ export function processDailyMutation(
   }
 
   // --- 2. Calculate stability ---
-  const newStability = calculateStability(newElementLevels);
+  let newStability = calculateStability(newElementLevels);
 
   // --- 2b. Calculate combat ratio (Warrior Phase) ---
   // Gradual transition: at WARRIOR_PHASE_START → 0%, at WARRIOR_PHASE_FULL → 90%
@@ -337,6 +337,42 @@ export function processDailyMutation(
     }
   }
 
+  // --- 7c. Senescence decay (Day 1000+) ---
+  if (ageDays >= GAME_CONFIG.SENESCENCE_START) {
+    const senescenceAge = ageDays - GAME_CONFIG.SENESCENCE_START;
+    // Decay accelerates with age: base rate * (1 + senescenceAge/500)
+    const decayMultiplier = 1 + senescenceAge / 500;
+
+    // Physical traits decay
+    for (const trait of TRAITS) {
+      const oldVal = newTraitValues[trait] ?? 0;
+      const decay = -oldVal * GAME_CONFIG.SENESCENCE_TRAIT_DECAY * decayMultiplier;
+      newTraitValues[trait] = clamp(oldVal + decay, GAME_CONFIG.MIN_TRAIT_VALUE, GAME_CONFIG.MAX_TRAIT_VALUE);
+      if (Math.abs(decay) > 0.001) {
+        mutations.push({ traitId: trait, oldValue: oldVal, newValue: newTraitValues[trait], delta: decay, triggerType: 'decay', triggerDetails: 'senescenza' });
+      }
+    }
+
+    // Combat traits decay faster
+    for (const combatTrait of COMBAT_TRAITS) {
+      const oldVal = newTraitValues[combatTrait] ?? 0;
+      const decay = -oldVal * GAME_CONFIG.SENESCENCE_COMBAT_DECAY * decayMultiplier;
+      newTraitValues[combatTrait] = clamp(oldVal + decay, GAME_CONFIG.MIN_TRAIT_VALUE, GAME_CONFIG.MAX_TRAIT_VALUE);
+      if (Math.abs(decay) > 0.001) {
+        mutations.push({ traitId: combatTrait, oldValue: oldVal, newValue: newTraitValues[combatTrait], delta: decay, triggerType: 'decay', triggerDetails: 'senescenza' });
+      }
+    }
+
+    // Element levels decay
+    for (const el of ELEMENTS) {
+      const oldVal = newElementLevels[el];
+      newElementLevels[el] = Math.max(0, oldVal * (1 - GAME_CONFIG.SENESCENCE_ELEMENT_DECAY * decayMultiplier));
+    }
+
+    // Stability drops gradually
+    newStability = Math.max(0.1, newStability - 0.005 * decayMultiplier);
+  }
+
   // --- 8. Map to visuals ---
   const newVisualParams = mapTraitsToVisuals(
     newTraitValues,
@@ -344,6 +380,7 @@ export function processDailyMutation(
     activeSynergies,
     creature.foundingElements ?? null,
     creature.growthElements ?? null,
+    ageDays,
   );
 
   // --- 9. Return ---
