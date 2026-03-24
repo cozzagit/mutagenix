@@ -257,6 +257,54 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ==================== PATCH NOTES BANNER ==================== */}
+      <section className="relative z-10 border-t border-amber-500/20 bg-gradient-to-b from-amber-500/[0.04] to-background px-6 py-8">
+        <div className="mx-auto max-w-2xl">
+          <div
+            className="rounded-2xl border p-5 backdrop-blur-sm"
+            style={{
+              borderColor: 'rgba(255, 145, 0, 0.25)',
+              backgroundColor: 'rgba(255, 145, 0, 0.04)',
+            }}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                style={{ backgroundColor: 'rgba(255, 145, 0, 0.15)', color: '#ff9100' }}
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                  <path
+                    fillRule="evenodd"
+                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Aggiornamento
+              </span>
+              <span className="text-[10px] text-muted">24 Marzo 2026</span>
+            </div>
+            <h3 className="mb-2 text-sm font-bold text-foreground">
+              Protocollo Biosicurezza: Sovradosaggio Elementale
+            </h3>
+            <p className="mb-3 text-xs leading-relaxed text-muted">
+              Il laboratorio ha introdotto nuovi protocolli di sicurezza biologica. Iniettare sempre lo stesso
+              elemento in modo sconsiderato ora causa <strong className="text-amber-400">sovradosaggio</strong>:
+              i crediti vengono parzialmente rigettati dall&apos;organismo (fino all&apos;80% sprecato).
+              Inoltre, i tratti combat sopra 85 subiscono una <strong className="text-amber-400">regressione naturale</strong>
+              &mdash; il corpo non riesce a sostenere livelli estremi indefinitamente.
+            </p>
+            <p className="text-[11px] text-muted italic">
+              Diversifica le iniezioni. La specializzazione estrema ha un costo biologico.
+              Consulta la{' '}
+              <Link href="/guida" className="text-primary underline underline-offset-2 hover:text-primary-light">
+                guida completa
+              </Link>{' '}
+              per tutti i dettagli.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ==================== CREATURE SHOWCASE ==================== */}
       <section className="relative z-10 border-t border-border/30 bg-gradient-to-b from-surface/40 to-background px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-5xl">

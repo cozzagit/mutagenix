@@ -617,6 +617,132 @@ export default function GuidaPage() {
           </div>
         </GuideCard>
 
+        {/* Sovradosaggio */}
+        <GuideCard title="Sovradosaggio Elementale">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #ff9100',
+                backgroundColor: 'rgba(255, 145, 0, 0.08)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold mb-1" style={{ color: '#ff9100' }}>
+                NUOVO &mdash; Aggiornamento Biosicurezza
+              </p>
+              <p>
+                Il laboratorio ha introdotto protocolli di sicurezza contro il sovradosaggio elementale.
+                Pompare sempre lo stesso elemento non &egrave; pi&ugrave; una strategia vincente.
+              </p>
+            </div>
+
+            <p>
+              Il corpo della tua creatura ha una capacit&agrave; limitata di assorbire ciascun elemento.
+              Quando la <span className="font-semibold text-foreground">concentrazione di un singolo elemento
+              diventa troppo dominante</span> rispetto al totale, l&apos;organismo inizia a rigettare
+              i nutrienti in eccesso.
+            </p>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Livelli di saturazione:</p>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  {
+                    label: 'Saturazione lieve',
+                    threshold: '> 25% del totale',
+                    effect: '30% dei crediti sprecati',
+                    color: '#ffd600',
+                  },
+                  {
+                    label: 'Sovradosaggio severo',
+                    threshold: '> 35% del totale',
+                    effect: '60% dei crediti sprecati',
+                    color: '#ff9100',
+                  },
+                  {
+                    label: 'Sovradosaggio critico',
+                    threshold: '> 45% del totale',
+                    effect: '80% dei crediti sprecati',
+                    color: '#ff3d3d',
+                  },
+                ].map((level) => (
+                  <div key={level.label} className="flex items-start gap-3">
+                    <span
+                      className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor: level.color,
+                        boxShadow: `0 0 6px ${level.color}66`,
+                      }}
+                    />
+                    <div className="min-w-0">
+                      <span className="text-xs font-semibold" style={{ color: level.color }}>
+                        {level.label} ({level.threshold})
+                      </span>
+                      <p className="text-[11px] text-muted">{level.effect}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Regressione naturale dei tratti combat:</p>
+              <p>
+                I tratti di combattimento che superano il valore <strong className="text-foreground">85</strong> iniziano
+                a <span className="font-semibold" style={{ color: '#ff3d3d' }}>degradare spontaneamente</span> ogni giorno.
+                Il corpo non riesce a sostenere livelli estremi indefinitamente.
+              </p>
+              <p className="mt-2 text-[11px] italic">
+                Esempio: un tratto a 100 perde circa 0.3 punti al giorno, mentre la crescita a quel livello &egrave;
+                quasi impossibile. I valori convergeranno naturalmente verso 85-87.
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Diminishing returns potenziati:</p>
+              <p>
+                Pi&ugrave; un tratto combat &egrave; alto, pi&ugrave; &egrave; difficile farlo crescere ulteriormente.
+                Superato il valore 70, la crescita rallenta drasticamente:
+              </p>
+              <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {[
+                  { value: '50', eff: '75%' },
+                  { value: '70', eff: '51%' },
+                  { value: '80', eff: '36%' },
+                  { value: '85', eff: '28%' },
+                  { value: '90', eff: '19%' },
+                  { value: '95', eff: '6%' },
+                ].map((d) => (
+                  <div
+                    key={d.value}
+                    className="flex flex-col items-center rounded-lg border border-border/20 bg-surface-2/40 px-2 py-1.5"
+                  >
+                    <span className="text-[10px] font-semibold text-foreground">{d.value}</span>
+                    <span className="text-[9px] text-muted">{d.eff} eff.</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #00f0ff',
+                backgroundColor: 'rgba(0, 240, 255, 0.05)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold text-bio-cyan mb-1">Strategia consigliata</p>
+              <p>
+                Diversifica le iniezioni! Un guerriero che riceve nutrienti bilanciati tra pi&ugrave; elementi
+                eviter&agrave; il sovradosaggio e manterr&agrave; una crescita costante.
+                La specializzazione estrema ha un costo biologico.
+              </p>
+            </div>
+          </div>
+        </GuideCard>
+
         {/* Back to lab */}
         <div className="flex justify-center pt-2">
           <Link

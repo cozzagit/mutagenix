@@ -337,6 +337,22 @@ export function LabDashboard({
   // --- Warrior phase detection ---
   const isWarrior = ageDays >= GAME_CONFIG.WARRIOR_PHASE_START;
   const combatTraitValues = COMBAT_TRAITS.map((ct) => (creature.traitValues[ct] ?? 0));
+
+  // --- Overdose detection (element saturation warning) ---
+  const totalElements = ELEMENTS.reduce((s, el) => s + (elementLevels[el as string] ?? 0), 0);
+  const saturatedElements = totalElements >= GAME_CONFIG.OVERDOSE_MIN_TOTAL
+    ? ELEMENTS.filter((el) => (elementLevels[el as string] ?? 0) / totalElements > GAME_CONFIG.OVERDOSE_MILD_THRESHOLD)
+    : [];
+  const worstSaturation = saturatedElements.length > 0
+    ? Math.max(...saturatedElements.map((el) => (elementLevels[el as string] ?? 0) / totalElements))
+    : 0;
+  const overdoseLevel = worstSaturation > GAME_CONFIG.OVERDOSE_CRITICAL_THRESHOLD
+    ? 'critico'
+    : worstSaturation > GAME_CONFIG.OVERDOSE_SEVERE_THRESHOLD
+      ? 'severo'
+      : worstSaturation > GAME_CONFIG.OVERDOSE_MILD_THRESHOLD
+        ? 'lieve'
+        : null;
   const combatPowerTotal = Math.round(combatTraitValues.reduce((a, b) => a + b, 0));
   const hasCombatStats = combatTraitValues.some((v) => v > 0.5);
 
@@ -901,6 +917,34 @@ export function LabDashboard({
                   Prossimo esperimento tra{' '}
                   <span className="font-semibold tabular-nums text-foreground">{formatTime(cooldown)}</span>
                 </span>
+              </div>
+            )}
+
+            {/* Overdose warning */}
+            {overdoseLevel && !mutationActive && (
+              <div
+                className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-[11px] leading-relaxed"
+                style={{
+                  borderLeft: `3px solid ${overdoseLevel === 'critico' ? '#ff3d3d' : overdoseLevel === 'severo' ? '#ff9100' : '#ffd600'}`,
+                  backgroundColor: overdoseLevel === 'critico'
+                    ? 'rgba(255, 61, 61, 0.08)'
+                    : overdoseLevel === 'severo'
+                      ? 'rgba(255, 145, 0, 0.06)'
+                      : 'rgba(255, 214, 0, 0.05)',
+                }}
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-4 w-4 shrink-0" style={{ color: overdoseLevel === 'critico' ? '#ff3d3d' : overdoseLevel === 'severo' ? '#ff9100' : '#ffd600' }}>
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <span className="font-bold" style={{ color: overdoseLevel === 'critico' ? '#ff3d3d' : overdoseLevel === 'severo' ? '#ff9100' : '#ffd600' }}>
+                    Sovradosaggio {overdoseLevel}
+                  </span>
+                  <p className="mt-0.5 text-muted">
+                    {saturatedElements.map((el) => el).join(', ')} {saturatedElements.length > 1 ? 'sono' : 'è'} in
+                    eccesso. Diversifica le iniezioni per evitare sprechi di crediti.
+                  </p>
+                </div>
               </div>
             )}
 
