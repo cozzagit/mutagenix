@@ -328,13 +328,32 @@ export function SquadManager() {
       if (!res.ok) throw new Error();
       const json = await res.json();
       if (json.data) {
-        setSquad((prev) => ({
-          ...prev,
-          starters: json.data.starters ?? prev.starters,
-        }));
-        setAvailable(json.data.available ?? []);
+        // Auto-rotate returned suggested starters — save them immediately
+        const newStarters = json.data.starters ?? [];
+        const saveBody = {
+          starters: newStarters.map((c: SquadCreature | null) => c?.id ?? null),
+          reserves: squad.reserves.map((c) => c?.id ?? null),
+          autoRotate: squad.autoRotate,
+        };
+        const saveRes = await fetch("/api/arena/squad", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(saveBody),
+        });
+        if (saveRes.ok) {
+          toast("success", "Squadra auto-selezionata e salvata!");
+          // Reload full squad data from server to sync state
+          await fetchSquad();
+        } else {
+          // Still update local state even if save fails
+          setSquad((prev) => ({
+            ...prev,
+            starters: newStarters,
+          }));
+          setAvailable(json.data.available ?? []);
+          toast("info", "Titolari selezionati (salva per confermare).");
+        }
       }
-      toast("success", "Titolari selezionati automaticamente!");
     } catch {
       toast("error", "Errore nella rotazione automatica.");
     } finally {

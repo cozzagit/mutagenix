@@ -912,7 +912,7 @@ export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
       {/* Main content area */}
       {view === 'stirpi' ? (
         <div className="relative z-10">
-          <StirpiView creatures={filtered} />
+          <StirpiView creatures={creatures} />
         </div>
       ) : (
       <div className="relative z-10">
