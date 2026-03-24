@@ -47,15 +47,14 @@ export async function GET() {
   }
 
   // Get challenger's active creature
-  const [challengerCreature] = await db
-    .select()
-    .from(creatures)
-    .where(
-      and(
-        eq(creatures.userId, session.userId),
-        eq(creatures.isArchived, false),
-      ),
-    );
+  const [oppUser] = await db.select({ activeCreatureId: users.activeCreatureId })
+    .from(users).where(eq(users.id, session.userId));
+
+  const [challengerCreature] = oppUser?.activeCreatureId
+    ? await db.select().from(creatures).where(eq(creatures.id, oppUser.activeCreatureId))
+    : await db.select().from(creatures).where(
+        and(eq(creatures.userId, session.userId), eq(creatures.isArchived, false)),
+      );
 
   if (!challengerCreature) {
     return NextResponse.json(
