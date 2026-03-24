@@ -1,6 +1,6 @@
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, creatureRankings, battles, users } from '@/lib/db/schema';
+import { creatures, creatureRankings, battles, users, squads } from '@/lib/db/schema';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { ArenaPage } from '@/components/arena/arena-page';
@@ -209,7 +209,11 @@ export default async function ArenaMainPage() {
     visualParams: mapTraitsToVisuals(creature.traitValues as TraitValues, creature.elementLevels as ElementLevels, [], creature.foundingElements ?? null, creature.growthElements ?? null) as unknown as Record<string, unknown>,
   };
 
+  // Check if user has a squad
+  const [squad] = await db.select().from(squads).where(eq(squads.userId, session.userId));
+  const hasSquad = !!squad;
+
   // lastArenaVisit was already set to now() at the top of this function,
   // so there are no "unseen" battles by definition when viewing the arena.
-  return <ArenaPage warrior={warriorData} unseenDefenderBattles={0} />;
+  return <ArenaPage warrior={warriorData} unseenDefenderBattles={0} hasSquad={hasSquad} />;
 }

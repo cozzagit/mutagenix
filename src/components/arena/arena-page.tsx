@@ -11,12 +11,14 @@ import { useToast } from "@/components/ui/toast";
 import { CreatureRenderer, DEFAULT_VISUAL_PARAMS } from "@/components/creature/creature-renderer";
 import type { VisualParams } from "@/lib/game-engine/visual-mapper";
 import type { RoundEvent } from "@/types/battle";
+import { FarmingPage } from "./farming-page";
+import { SquadManager } from "./squad-manager";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
 /* ------------------------------------------------------------------ */
 
-type Tab = "sfida" | "classifica" | "cronologia";
+type Tab = "sfida" | "farming" | "squadra" | "classifica" | "cronologia";
 
 interface RankingEntry {
   position: number;
@@ -67,6 +69,8 @@ interface ChallengeResult {
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "sfida", label: "SFIDA" },
+  { id: "farming", label: "FARMING" },
+  { id: "squadra", label: "SQUADRA" },
   { id: "classifica", label: "CLASSIFICA" },
   { id: "cronologia", label: "CRONOLOGIA" },
 ];
@@ -612,9 +616,10 @@ function CronologiaTab() {
 interface ArenaPageProps {
   warrior: WarriorData;
   unseenDefenderBattles?: number;
+  hasSquad?: boolean;
 }
 
-export function ArenaPage({ warrior, unseenDefenderBattles = 0 }: ArenaPageProps) {
+export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false }: ArenaPageProps) {
   const [activeTab, setActiveTab] = useState<Tab>("sfida");
   const [showUnseenBanner, setShowUnseenBanner] = useState(unseenDefenderBattles > 0);
 
@@ -679,6 +684,8 @@ export function ArenaPage({ warrior, unseenDefenderBattles = 0 }: ArenaPageProps
 
       {/* Tab content */}
       {activeTab === "sfida" && <SfidaTab warrior={warrior} />}
+      {activeTab === "farming" && <FarmingPage />}
+      {activeTab === "squadra" && <SquadManager />}
       {activeTab === "classifica" && <ClassificaTab myCreatureId={warrior.creatureId} />}
       {activeTab === "cronologia" && <CronologiaTab />}
     </div>

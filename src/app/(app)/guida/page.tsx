@@ -354,6 +354,101 @@ export default function GuidaPage() {
           </div>
         </GuideCard>
 
+        {/* Arena V2 — Farming e Squadre */}
+        <GuideCard title="Arena V2 &mdash; Farming e Squadre">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #00e5a0',
+                backgroundColor: 'rgba(0, 229, 160, 0.08)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold mb-1" style={{ color: '#00e5a0' }}>
+                NUOVO &mdash; Battaglie di Farming e Sistema Squadre
+              </p>
+              <p>
+                Nuove modalit&agrave; di combattimento, gestione squadre e bonus di coordinazione.
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Battaglie di Farming</p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; Sempre disponibili, senza restrizioni di fascia</li>
+                <li>&bull; Tre formati: <strong className="text-foreground">1v1</strong> (singolo), <strong className="text-foreground">2v2</strong> (coppia), <strong className="text-foreground">3v3</strong> (squadra completa)</li>
+                <li>&bull; <span className="text-accent font-semibold">Nessuna morte</span> &mdash; i danni sono leggeri e recuperabili</li>
+                <li>&bull; Guadagni risorse e Farming AXP</li>
+                <li>&bull; Limite giornaliero: 20 battaglie farming al giorno</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Sistema Squadre</p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; Seleziona <strong className="text-foreground">3 titolari</strong> e fino a <strong className="text-foreground">3 riserve</strong></li>
+                <li>&bull; La rotazione automatica sceglie i migliori titolari disponibili</li>
+                <li>&bull; Nelle battaglie 2v2/3v3, i titolari combattono nell&apos;ordine scelto</li>
+                <li>&bull; Le riserve subentrano se un titolare non &egrave; disponibile (morto, wellness basso)</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Bonus Clan</p>
+              <p className="text-[13px]">
+                Combattere con creature dello stesso clan nella tua squadra conferisce un bonus di coordinazione
+                di <strong className="text-accent">+4 a +8% agli stats</strong> di tutti i membri del clan nella squadra.
+                Pi&ugrave; parenti, pi&ugrave; coordinazione.
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Malus Parentela</p>
+              <p className="text-[13px]">
+                Combattere <strong className="text-danger">contro</strong> creature con cui hai legami di parentela
+                comporta una penalit&agrave; dal <strong className="text-danger">-4% al -15%</strong> agli stats.
+                I guerrieri esitano a colpire i propri parenti.
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Formati</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { format: '1v1', label: 'Singolo', desc: 'Una creatura contro una', color: '#00e5a0' },
+                  { format: '2v2', label: 'Coppia', desc: 'Due duelli, vince chi ne prende di più', color: '#3d5afe' },
+                  { format: '3v3', label: 'Squadra', desc: 'Tre duelli, la squadra più forte prevale', color: '#b26eff' },
+                ].map((f) => (
+                  <div
+                    key={f.format}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-border/20 bg-surface-2/40 px-3 py-2.5"
+                  >
+                    <span className="text-sm font-black" style={{ color: f.color }}>{f.format}</span>
+                    <span className="text-[10px] font-semibold text-foreground">{f.label}</span>
+                    <span className="text-[9px] text-muted text-center">{f.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="rounded-lg p-4 text-[12px] leading-relaxed"
+              style={{
+                borderLeft: '3px solid #b26eff',
+                backgroundColor: 'rgba(178, 110, 255, 0.05)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold mb-1" style={{ color: '#b26eff' }}>Tornei &mdash; Coming Soon</p>
+              <p>
+                Campionato, eliminazione diretta, tornei random, iscrizione e combattimenti live.
+                I tornei saranno disponibili in un prossimo aggiornamento.
+              </p>
+            </div>
+          </div>
+        </GuideCard>
+
         {/* L'Arena */}
         <GuideCard title="L&apos;Arena">
           <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
