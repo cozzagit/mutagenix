@@ -4,8 +4,8 @@ import {
   unauthorizedResponse,
 } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { creatures, creatureRankings, users } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { creatures, creatureRankings, users, battles } from '@/lib/db/schema';
+import { eq, and, gte, sql } from 'drizzle-orm';
 import { getRankTier } from '@/lib/game-engine/battle-engine';
 import { creatureToBattleCreature } from '@/lib/game-engine/battle-helpers';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
@@ -134,14 +134,19 @@ export async function GET() {
     ? ranking.recoveryUntil.getTime() - now.getTime()
     : 0;
 
-  // Reset battlesToday if from previous day
-  let battlesToday = ranking.battlesToday;
-  if (
-    ranking.lastBattleAt &&
-    ranking.lastBattleAt.toDateString() !== now.toDateString()
-  ) {
-    battlesToday = 0;
-  }
+  // Count only ATTACKS today (not received battles)
+  const todayStart = new Date(now);
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const [attackCountResult] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(battles)
+    .where(
+      and(
+        eq(battles.challengerUserId, session.userId),
+        gte(battles.createdAt, todayStart),
+      ),
+    );
+  const battlesToday = attackCountResult?.count ?? 0;
 
   return NextResponse.json({
     data: {

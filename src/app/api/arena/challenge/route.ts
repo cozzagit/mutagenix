@@ -178,26 +178,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 7. Validate battles today limit (5 per day)
-  // Reset battlesToday if lastBattleAt is from a previous calendar day
-  let battlesToday = challengerRanking.battlesToday;
-  if (challengerRanking.lastBattleAt) {
-    const lastDate = new Date(challengerRanking.lastBattleAt);
-    const isNewDay = lastDate.getUTCDate() !== now.getUTCDate() ||
-                     lastDate.getUTCMonth() !== now.getUTCMonth() ||
-                     lastDate.getUTCFullYear() !== now.getUTCFullYear();
-    if (isNewDay) {
-      battlesToday = 0;
-      // Persist the reset immediately
-      await db.update(creatureRankings)
-        .set({ battlesToday: 0 })
-        .where(eq(creatureRankings.creatureId, challengerCreature.id));
-    }
-  }
+  // 7. Validate attack limit: 10 ATTACKS per day (receiving battles doesn't count)
+  const todayStart = new Date(now);
+  todayStart.setUTCHours(0, 0, 0, 0);
 
-  if (battlesToday >= 10) {
+  const [attackCountResult] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(battles)
+    .where(
+      and(
+        eq(battles.challengerUserId, session.userId),
+        gte(battles.createdAt, todayStart),
+      ),
+    );
+
+  const attacksToday = attackCountResult?.count ?? 0;
+
+  if (attacksToday >= 10) {
     return NextResponse.json(
-      { error: { code: 'DAILY_LIMIT', message: 'Hai raggiunto il limite di 10 battaglie giornaliere.' } },
+      { error: { code: 'DAILY_LIMIT', message: 'Hai raggiunto il limite di 10 attacchi giornalieri. Puoi ancora ricevere sfide.' } },
       { status: 422 },
     );
   }
