@@ -94,6 +94,7 @@ export default async function LaboratoriPage() {
   const allCreatureIds = allCreatures.map((c) => c.id);
 
   const idsArray = sql`ARRAY[${sql.join(allCreatureIds.map(id => sql`${id}::uuid`), sql`, `)}]`;
+  const windowStartIso = windowStart.toISOString();
   const [lastInjResults, recentCountResults] = allCreatureIds.length > 0 ? await Promise.all([
     db.execute(sql`
       SELECT DISTINCT ON (creature_id) creature_id, created_at
@@ -102,7 +103,7 @@ export default async function LaboratoriPage() {
     `) as Promise<{ creature_id: string; created_at: Date }[]>,
     db.execute(sql`
       SELECT creature_id, count(*) as cnt FROM allocations
-      WHERE creature_id = ANY(${idsArray}) AND created_at >= ${windowStart}
+      WHERE creature_id = ANY(${idsArray}) AND created_at >= ${windowStartIso}::timestamptz
       GROUP BY creature_id
     `) as Promise<{ creature_id: string; cnt: string }[]>,
   ]) : [[] as { creature_id: string; created_at: Date }[], [] as { creature_id: string; cnt: string }[]];

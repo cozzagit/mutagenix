@@ -111,6 +111,7 @@ export async function GET() {
 
   // Fetch last injection + recent count for all opponents in 2 batch queries
   const idsArray = sql`ARRAY[${sql.join(creatureIds.map(id => sql`${id}::uuid`), sql`, `)}]`;
+  const windowStartIso = windowStart.toISOString();
   const [lastInjections, recentCounts] = creatureIds.length > 0 ? await Promise.all([
     db.execute(sql`
       SELECT DISTINCT ON (creature_id) creature_id, created_at
@@ -121,7 +122,7 @@ export async function GET() {
     db.execute(sql`
       SELECT creature_id, count(*) as cnt
       FROM allocations
-      WHERE creature_id = ANY(${idsArray}) AND created_at >= ${windowStart}
+      WHERE creature_id = ANY(${idsArray}) AND created_at >= ${windowStartIso}::timestamptz
       GROUP BY creature_id
     `) as Promise<{ creature_id: string; cnt: string }[]>,
   ]) : [[] as { creature_id: string; created_at: Date }[], [] as { creature_id: string; cnt: string }[]];
