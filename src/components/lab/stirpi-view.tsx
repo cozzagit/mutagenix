@@ -301,7 +301,7 @@ function CreatureNode({
 
   const gen = creature.familyGeneration ?? 1;
   const genColor = getGenColor(gen);
-  const isDead = creature.wellness?.composite === 0 || creature.isDead;
+  const isDead = creature.isDead === true;
 
   return (
     <div className="flex flex-col items-center">
@@ -313,7 +313,7 @@ function CreatureNode({
             background: `radial-gradient(circle, ${genColor}22 0%, transparent 70%)`,
           }}
         />
-        <div className={isDead ? 'grayscale opacity-40' : ''}>
+        <div className={isDead ? 'opacity-30 sepia' : ''}>
           <CreatureRenderer
             params={vp}
             size={size}
