@@ -31,7 +31,7 @@ export function TierCelebration({ tier, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-4"
       style={{
         backgroundColor: phase === 'enter' ? 'transparent' : 'rgba(10,11,15,0.9)',
         transition: 'background-color 0.5s ease',

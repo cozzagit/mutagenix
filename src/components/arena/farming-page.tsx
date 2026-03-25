@@ -263,8 +263,8 @@ function ConfirmFarmingModal({
   loading: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-surface p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-surface p-6 my-auto max-h-[90dvh] overflow-y-auto">
         <h3 className="text-lg font-bold text-foreground mb-2">
           Battaglia Farming {format}
         </h3>

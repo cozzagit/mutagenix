@@ -203,7 +203,7 @@ export function AllocationPanel({
           open ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="mx-auto max-w-2xl rounded-t-2xl border border-b-0 border-border bg-surface px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-4 shadow-2xl shadow-black/50">
+        <div className="mx-auto max-w-2xl rounded-t-2xl border border-b-0 border-border bg-surface px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-4 shadow-2xl shadow-black/50 max-h-[85dvh] overflow-y-auto">
           {/* Header */}
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-bold text-foreground">

@@ -24,7 +24,7 @@ export function SenescenceCelebration({ creatureName, onClose }: SenescenceCeleb
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-4"
       style={{
         backgroundColor: visible ? 'rgba(0, 0, 0, 0.92)' : 'rgba(0, 0, 0, 0)',
         backdropFilter: 'blur(12px)',
@@ -51,7 +51,7 @@ export function SenescenceCelebration({ creatureName, onClose }: SenescenceCeleb
       </div>
 
       <div
-        className="relative mx-4 flex max-w-lg flex-col items-center px-6 py-10 text-center"
+        className="relative mx-4 my-auto flex max-w-lg flex-col items-center px-6 py-10 text-center"
         style={{
           opacity: visible ? 1 : 0,
           transform: visible ? 'translateY(0)' : 'translateY(20px)',

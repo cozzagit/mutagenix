@@ -1122,11 +1122,11 @@ export function LabDashboard({
       {/* Wellness info modal */}
       {showWellnessModal && (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-background/90 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-background/90 backdrop-blur-sm p-4 overflow-y-auto"
           onClick={() => setShowWellnessModal(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-border/50 bg-surface p-6"
+            className="w-full max-w-md rounded-2xl border border-border/50 bg-surface p-6 my-auto max-h-[90dvh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="mb-4 text-center text-xl font-black text-foreground">

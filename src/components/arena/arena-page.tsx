@@ -112,8 +112,8 @@ function BattleResultModal({
   const oVp = { ...DEFAULT_VISUAL_PARAMS, ...(opponentVisualParams as Partial<VisualParams>) } as VisualParams;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm p-0 md:p-4">
-      <div className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-border/50 bg-surface p-5 md:p-6">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm p-0 md:p-4 overflow-y-auto">
+      <div className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-border/50 bg-surface p-5 md:p-6 md:my-auto md:max-h-[90dvh] md:overflow-y-auto max-h-[85dvh] overflow-y-auto">
         {/* Creatures side by side */}
         <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
           <div className="text-center">
@@ -176,8 +176,8 @@ function ConfirmChallengeModal({
   loading: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-surface p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-surface p-6 my-auto max-h-[90dvh] overflow-y-auto">
         <h3 className="text-lg font-bold text-foreground mb-2">Conferma Sfida</h3>
         <p className="text-sm text-muted mb-6">
           Vuoi sfidare <strong className="text-foreground">{opponentName}</strong>?

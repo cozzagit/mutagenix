@@ -175,8 +175,8 @@ function CreatureSelector({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm p-0 md:p-4">
-      <div className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-border/50 bg-surface p-5 md:p-6 max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm p-0 md:p-4 overflow-y-auto">
+      <div className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-border/50 bg-surface p-5 md:p-6 max-h-[85dvh] overflow-y-auto md:my-auto md:max-h-[90dvh]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-foreground">
             Seleziona Creatura

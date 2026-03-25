@@ -406,14 +406,14 @@ export function BattleSuspense({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md p-4 overflow-y-auto"
       onClick={
         phase !== "buttons" && phase !== "result-reveal" && phase !== "stats"
           ? handleSkip
           : undefined
       }
     >
-      <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg my-auto max-h-[95dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Creatures facing each other */}
         <div
           className={`flex items-center justify-center gap-2 md:gap-4 mb-4 transition-all duration-500 ${

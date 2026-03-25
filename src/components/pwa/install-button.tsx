@@ -9,7 +9,7 @@ import { useInstallPrompt } from '@/hooks/use-install-prompt';
 
 function IOSModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center overflow-y-auto p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -17,7 +17,7 @@ function IOSModal({ onClose }: { onClose: () => void }) {
       />
 
       {/* Panel */}
-      <div className="relative z-10 mx-3 mb-3 w-full max-w-sm rounded-2xl border border-border/50 bg-surface p-5 shadow-2xl sm:mb-0">
+      <div className="relative z-10 mx-3 mb-3 w-full max-w-sm rounded-2xl border border-border/50 bg-surface p-5 shadow-2xl sm:mb-0 my-auto max-h-[90dvh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-3 hover:text-foreground"

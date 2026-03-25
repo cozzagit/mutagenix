@@ -193,8 +193,8 @@ export function OffspringReveal({ breedingId }: OffspringRevealProps) {
         }
       `}</style>
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background overflow-y-auto">
-        <div className="w-full max-w-2xl px-4 py-8">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background overflow-y-auto p-4">
+        <div className="w-full max-w-2xl px-4 py-8 my-auto">
           {/* Phase 1: Fusion text */}
           {phase === "fusion" && (
             <div className="flex flex-col items-center justify-center min-h-[60vh] anim-fade-in">
