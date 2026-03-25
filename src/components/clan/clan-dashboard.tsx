@@ -514,9 +514,14 @@ export function ClanDashboard({ userId }: { userId: string }) {
         <InviteMemberModal
           clanId={clanData.id}
           onClose={() => setShowInviteModal(false)}
-          onInvited={() => {
+          onInvited={(type) => {
             setShowInviteModal(false);
             fetchClan();
+            if (type === 'direct') {
+              toast("success", "Membro aggiunto alla Famiglia!");
+            } else {
+              toast("success", "Invito inviato!");
+            }
           }}
         />
       )}
@@ -1061,7 +1066,7 @@ function InviteMemberModal({
 }: {
   clanId: string;
   onClose: () => void;
-  onInvited: () => void;
+  onInvited: (type?: 'direct' | 'invite') => void;
 }) {
   const [searchResults, setSearchResults] = useState<
     {
@@ -1111,14 +1116,15 @@ function InviteMemberModal({
         }),
       });
 
+      const json = await res.json();
       if (!res.ok) {
-        const json = await res.json();
         setError(json.error?.message ?? "Errore nell'invito");
         setInviting(null);
         return;
       }
 
-      onInvited();
+      // directAdd = own creature added immediately, otherwise invite sent
+      onInvited(json.data?.directAdd ? 'direct' : 'invite');
     } catch {
       setError("Errore di rete");
       setInviting(null);

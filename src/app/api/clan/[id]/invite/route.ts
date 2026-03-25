@@ -120,6 +120,34 @@ export async function POST(
     );
   }
 
+  // If the creature belongs to the SAME user (own creature), add directly — no invite needed
+  if (creature.userId === session.userId) {
+    await db.insert(clanMemberships).values({
+      clanId,
+      creatureId,
+      userId: session.userId,
+      role: 'soldato',
+    });
+
+    // Update clan member count + status
+    const newTotal = clan.totalMembers + 1;
+    await db.update(clans).set({
+      totalMembers: newTotal,
+      status: newTotal >= 3 ? 'active' : 'forming',
+      updatedAt: new Date(),
+    }).where(eq(clans.id, clanId));
+
+    return NextResponse.json({
+      data: {
+        directAdd: true,
+        creatureId,
+        creatureName: creature.name,
+        message: `${creature.name} è entrato nel clan!`,
+      },
+    });
+  }
+
+  // For OTHER players' creatures: create an invitation
   // Check no pending invitation already exists
   const [existingInvite] = await db
     .select()
