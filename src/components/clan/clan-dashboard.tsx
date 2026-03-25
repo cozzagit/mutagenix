@@ -511,17 +511,8 @@ export function ClanDashboard({ userId }: { userId: string }) {
         <ClanWarsTab clanId={clanData.id} isBoss={myRole === "boss"} emblemColor={emblemColor} />
       )}
 
-      {/* CLASSIFICA tab */}
-      {activeTab === "classifica" && (
-        <div className="py-8 text-center">
-          <Link
-            href="/clans"
-            className="rounded-lg border border-border/30 bg-surface/50 px-6 py-3 text-sm font-bold text-foreground transition hover:bg-surface"
-          >
-            Vai alla Classifica Clan
-          </Link>
-        </div>
-      )}
+      {/* CLASSIFICA tab — inline leaderboard */}
+      {activeTab === "classifica" && <InlineClanLeaderboard />}
 
       {/* Leave Clan button */}
       <div className="mt-8 border-t border-border/20 pt-6">
@@ -1698,6 +1689,99 @@ function ChallengeModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Inline Clan Leaderboard (shown in Classifica tab)                   */
+/* ------------------------------------------------------------------ */
+
+interface LeaderboardClan {
+  id: string;
+  name: string;
+  emblemColor: string | null;
+  status: string;
+  clanElo: number;
+  prestige: number;
+  clanWins: number;
+  clanLosses: number;
+  totalMembers: number;
+  bossCreatureName?: string;
+  bossOwnerName?: string;
+}
+
+function InlineClanLeaderboard() {
+  const [clans, setClans] = useState<LeaderboardClan[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchClans() {
+      try {
+        const res = await fetch("/api/clans");
+        if (!res.ok) return;
+        const json = await res.json();
+        setClans(json.data ?? []);
+      } catch { /* ignore */ }
+      finally { setLoading(false); }
+    }
+    fetchClans();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-12 rounded-lg bg-surface-2/50 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (clans.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-sm text-muted">Nessun clan attivo.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="hidden md:grid md:grid-cols-[2.5rem_1fr_5rem_5rem_5rem_4rem] gap-2 px-3 py-1.5 text-[10px] text-muted uppercase tracking-wider border-b border-border/30">
+        <span>#</span>
+        <span>Clan</span>
+        <span>ELO</span>
+        <span>Prestige</span>
+        <span>V/S</span>
+        <span>Membri</span>
+      </div>
+      {clans.map((clan, i) => (
+        <div
+          key={clan.id}
+          className="grid grid-cols-[2rem_1fr_auto] md:grid-cols-[2.5rem_1fr_5rem_5rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10"
+        >
+          <span className="font-mono text-muted">{i + 1}</span>
+          <div className="flex items-center gap-2 truncate">
+            {clan.emblemColor && (
+              <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: clan.emblemColor, boxShadow: `0 0 6px ${clan.emblemColor}44` }} />
+            )}
+            <span className="font-bold text-foreground truncate">{clan.name}</span>
+          </div>
+          {/* Mobile right side */}
+          <div className="flex items-center gap-2 md:hidden">
+            <span className="font-mono font-bold text-foreground">{clan.clanElo}</span>
+            <span className="text-[9px] text-muted">{clan.totalMembers}m</span>
+          </div>
+          {/* Desktop columns */}
+          <span className="hidden md:block font-mono text-foreground">{clan.clanElo}</span>
+          <span className="hidden md:block font-mono text-amber-400">{clan.prestige}</span>
+          <span className="hidden md:block text-muted">
+            <span className="text-accent">{clan.clanWins}V</span> <span className="text-danger">{clan.clanLosses}S</span>
+          </span>
+          <span className="hidden md:block text-muted">{clan.totalMembers}</span>
+        </div>
+      ))}
     </div>
   );
 }
