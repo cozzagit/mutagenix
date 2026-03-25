@@ -708,25 +708,26 @@ export async function GET(request: NextRequest) {
       }
 
       // Find bot creatures NOT in any clan, alive, not archived, ageDays >= 40
-      const eligible = allBotCreatures.filter((c) => {
-        if (creaturesInClan.has(c.id)) return false;
-        if (c.isDead) return false;
-        if (c.isArchived) return false;
-        if ((c.ageDays ?? 0) < 40) return false;
-        return true;
-      });
+      // Sort by strength (ageDays as proxy) — strongest first
+      const eligible = allBotCreatures
+        .filter((c) => {
+          if (creaturesInClan.has(c.id)) return false;
+          if (c.isDead) return false;
+          if (c.isArchived) return false;
+          if ((c.ageDays ?? 0) < 40) return false;
+          return true;
+        })
+        .sort((a, b) => (b.ageDays ?? 0) - (a.ageDays ?? 0));
 
       if (eligible.length === 0) {
         log.push(`[BOT BREEDING] Clan "${clan.name}": nessuna creatura bot eligible per reclutamento.`);
         continue;
       }
 
+      // Recruit the strongest available — no random skip, always pick the best
       for (const creature of eligible) {
         if (clanRecruits >= 2) break;
         if (clan.totalMembers + clanRecruits >= clan.maxMembers) break;
-
-        // 30% random chance per eligible creature per cycle
-        if (Math.random() > 0.30) continue;
 
         try {
           // Add creature to clan as 'soldato'
