@@ -22,6 +22,7 @@ import {
   type CreatureInput,
 } from '@/lib/game-engine/mutation-engine';
 import { TIME_CONFIG } from '@/lib/game-engine/time-config';
+import { calculateGeneticImprint } from '@/lib/game-engine/genetic-imprint';
 import { finalizeIfExpired } from '@/lib/game-engine/auto-finalize';
 import { getCreatureCariche } from '@/lib/game-engine/cariche-loader';
 
@@ -172,6 +173,15 @@ export async function POST(request: NextRequest) {
     totalCredits,
   });
 
+  // --- Genetic Imprint: calculate for Gen 1 creatures on first injection after day 15 ---
+  let creatureGeneticImprint = creature.geneticImprint ?? null;
+  if (!creatureGeneticImprint && creature.foundingElements && (creature.ageDays ?? 0) >= 15) {
+    creatureGeneticImprint = calculateGeneticImprint(creature.foundingElements);
+    await db.update(creatures)
+      .set({ geneticImprint: creatureGeneticImprint })
+      .where(eq(creatures.id, creature.id));
+  }
+
   // Run mutation engine
   const creatureInput: CreatureInput = {
     id: creature.id,
@@ -182,6 +192,7 @@ export async function POST(request: NextRequest) {
     day: newDay,
     foundingElements: creature.foundingElements ?? null,
     growthElements: creature.growthElements ?? null,
+    geneticImprint: creatureGeneticImprint,
   };
 
   const result = processDailyMutation(creatureInput, credits);

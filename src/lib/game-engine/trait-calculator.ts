@@ -12,6 +12,7 @@ import {
 } from './constants';
 
 import type { ElementLevels, TraitValues } from '@/types/game';
+import type { GeneticImprint } from './genetic-imprint';
 
 /**
  * Calculate how much each trait should change this tick based on current
@@ -20,6 +21,10 @@ import type { ElementLevels, TraitValues } from '@/types/game';
  * Growth slows with age and is modulated by creature stability:
  *   - Unstable creatures (stability < 0.3) mutate faster  (×1.5)
  *   - Stable creatures   (stability > 0.7) mutate slower  (×0.7)
+ *
+ * Genetic imprint modulates per-element injection efficiency:
+ *   - coefficient > 1 → element injections are more effective
+ *   - coefficient < 1 → element injections are less effective
  */
 export function calculateTraitDeltas(
   elementLevels: ElementLevels,
@@ -27,6 +32,7 @@ export function calculateTraitDeltas(
   ageDays: number,
   stability: number,
   allocation?: Partial<Record<ElementId, number>>,
+  geneticImprint?: GeneticImprint,
 ): Record<TraitId, number> {
   const growthRate =
     GAME_CONFIG.GROWTH_RATE_BASE / (1 + ageDays * 0.01);
@@ -49,7 +55,8 @@ export function calculateTraitDeltas(
     let creditSum = 0;
     let levelSum = 0;
     for (const el of ELEMENTS) {
-      creditSum += (credits[el] ?? 0) * ELEMENT_TRAIT_WEIGHTS[el][trait];
+      const imprintCoeff = geneticImprint?.[el] ?? 1.0;
+      creditSum += (credits[el] ?? 0) * ELEMENT_TRAIT_WEIGHTS[el][trait] * imprintCoeff;
       levelSum += elementLevels[el] * ELEMENT_TRAIT_WEIGHTS[el][trait];
     }
     // Main growth from credits, small boost from accumulated levels

@@ -114,67 +114,69 @@ function ClanGangCard({ group }: { group: ClanGroup }) {
         {group.members.length} membr{group.members.length === 1 ? 'o' : 'i'}
       </p>
 
-      {/* Gang photo arrangement */}
-      <div className="relative flex flex-col items-center gap-1">
-        {/* Back row: Soldati */}
-        {soldatiFiltered.length > 0 && (
-          <div className="flex items-end justify-center mb-[-10px] relative z-0">
-            {soldatiFiltered.map((s, i) => (
-              <div
-                key={s.id}
-                className="flex flex-col items-center"
-                style={{
-                  marginLeft: i > 0 ? '-8px' : '0',
-                  zIndex: i,
-                }}
-              >
-                <CreatureMini creature={s} size={50} />
-                <p className="text-[7px] text-muted/60 mt-0.5 max-w-[50px] truncate">
-                  {s.name}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Gang photo — packed group, overlapping, big creatures */}
+      <div className="relative flex items-end justify-center" style={{ minHeight: 220 }}>
 
-        {/* Middle row: Luogotenenti */}
-        {luogosFiltered.length > 0 && (
-          <div className="flex items-end justify-center gap-4 relative z-10">
-            {luogosFiltered.map((l) => (
-              <div key={l.id} className="flex flex-col items-center">
-                <div className="relative">
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px]">
-                    &#11088;
-                  </span>
-                  <CreatureMini creature={l} size={65} />
-                </div>
-                <p className="text-[8px] text-muted mt-0.5 max-w-[65px] truncate">
-                  {l.name}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Front center: Boss */}
-        {boss && (
-          <div className="flex flex-col items-center relative z-20 mt-[-5px]">
-            <div className="relative">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-sm">
-                &#128081;
-              </span>
-              <div
-                style={{
-                  filter: `drop-shadow(0 0 8px ${group.emblemColor}44)`,
-                }}
-              >
-                <CreatureMini creature={boss} size={85} />
-              </div>
+        {/* Layer 1 (back): Soldati — large, packed tight, overlapping */}
+        {soldatiFiltered.map((s, i) => {
+          const total = soldatiFiltered.length;
+          const spreadAngle = Math.min(total * 25, 120); // degrees of spread
+          const angle = total === 1 ? 0 : -spreadAngle/2 + (i / (total - 1)) * spreadAngle;
+          const radians = (angle * Math.PI) / 180;
+          const radius = 70 + total * 5;
+          const offsetX = Math.sin(radians) * radius;
+          const offsetY = -Math.abs(Math.cos(radians)) * 30 - 20;
+          return (
+            <div
+              key={s.id}
+              className="absolute"
+              style={{
+                left: `calc(50% + ${offsetX}px - 40px)`,
+                bottom: `calc(50% + ${offsetY}px)`,
+                zIndex: 10 + i,
+                opacity: 0.85,
+              }}
+            >
+              <CreatureMini creature={s} size={80} />
+              <p className="text-[7px] text-muted/50 text-center max-w-[80px] truncate mt-[-2px]">{s.name}</p>
             </div>
-            <p className="text-[10px] font-bold text-foreground mt-0.5">
-              {boss.name}
-            </p>
-            <p className="text-[8px] text-muted">{boss.ownerName}</p>
+          );
+        })}
+
+        {/* Layer 2 (middle): Luogotenenti — bigger, flanking */}
+        {luogosFiltered.map((l, i) => {
+          const side = i % 2 === 0 ? -1 : 1;
+          const offsetX = side * (55 + i * 20);
+          return (
+            <div
+              key={l.id}
+              className="absolute"
+              style={{
+                left: `calc(50% + ${offsetX}px - 50px)`,
+                bottom: 15,
+                zIndex: 30 + i,
+              }}
+            >
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs z-10">⭐</span>
+              <CreatureMini creature={l} size={100} />
+              <p className="text-[8px] text-muted text-center max-w-[100px] truncate mt-[-2px]">{l.name}</p>
+            </div>
+          );
+        })}
+
+        {/* Layer 3 (front center): Boss — biggest, glowing, dominant */}
+        {boss && (
+          <div
+            className="relative flex flex-col items-center"
+            style={{
+              zIndex: 50,
+              filter: `drop-shadow(0 0 12px ${group.emblemColor}66)`,
+            }}
+          >
+            <span className="text-lg mb-[-6px] relative z-10">👑</span>
+            <CreatureMini creature={boss} size={130} />
+            <p className="text-xs font-bold text-foreground mt-[-2px]">{boss.name}</p>
+            <p className="text-[9px] text-muted">{boss.ownerName}</p>
           </div>
         )}
 

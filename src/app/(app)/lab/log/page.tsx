@@ -80,6 +80,7 @@ export default async function EvolutionLogPage() {
         ageDays={creature.ageDays ?? 0}
         foundingElements={creature.foundingElements ?? null}
         growthElements={creature.growthElements ?? null}
+        geneticImprint={creature.geneticImprint ?? null}
         keySnapshots={[]}
         allSnapshotsForMilestones={[]}
       />
@@ -143,6 +144,7 @@ export default async function EvolutionLogPage() {
       ageDays={creature.ageDays ?? 0}
       foundingElements={creature.foundingElements ?? null}
       growthElements={creature.growthElements ?? null}
+      geneticImprint={creature.geneticImprint ?? null}
       keySnapshots={keySnapshots}
       allSnapshotsForMilestones={milestoneCandidates}
     />

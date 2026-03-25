@@ -225,6 +225,7 @@ export async function POST(
     stability: requesterCreature.stability ?? 0.5,
     foundingElements: requesterCreature.foundingElements ?? null,
     growthElements: requesterCreature.growthElements ?? null,
+    geneticImprint: requesterCreature.geneticImprint ?? null,
     ageDays: requesterCreature.ageDays ?? 0,
     familyGeneration: requesterCreature.familyGeneration,
   };
@@ -236,6 +237,7 @@ export async function POST(
     stability: targetCreature.stability ?? 0.5,
     foundingElements: targetCreature.foundingElements ?? null,
     growthElements: targetCreature.growthElements ?? null,
+    geneticImprint: targetCreature.geneticImprint ?? null,
     ageDays: targetCreature.ageDays ?? 0,
     familyGeneration: targetCreature.familyGeneration,
   };
@@ -271,6 +273,7 @@ export async function POST(
       stability: breedingResult.offspringA.stability,
       foundingElements: breedingResult.offspringA.foundingElements,
       growthElements: null,
+      geneticImprint: breedingResult.offspringA.geneticImprint,
       visualParams: offspringAVisual as unknown as Record<string, unknown>,
       isFounder: false,
       isArchived: false,
@@ -293,6 +296,7 @@ export async function POST(
       stability: breedingResult.offspringB.stability,
       foundingElements: breedingResult.offspringB.foundingElements,
       growthElements: null,
+      geneticImprint: breedingResult.offspringB.geneticImprint,
       visualParams: offspringBVisual as unknown as Record<string, unknown>,
       isFounder: false,
       isArchived: false,

@@ -14,6 +14,11 @@ import {
 } from './constants';
 
 import { BREEDING_CONFIG } from './breeding-config';
+import {
+  calculateGeneticImprint,
+  blendGeneticImprints,
+  type GeneticImprint,
+} from './genetic-imprint';
 
 // ---------------------------------------------------------------------------
 // Seeded PRNG (same pattern as mutation-engine.ts)
@@ -50,6 +55,7 @@ export interface BreedingParent {
   stability: number;
   foundingElements: Record<string, number> | null;
   growthElements: Record<string, number> | null;
+  geneticImprint?: Record<string, number> | null;
   ageDays: number;
   familyGeneration: number;
 }
@@ -60,6 +66,7 @@ export interface OffspringResult {
   stability: number;
   foundingElements: Record<string, number>;
   growthElements: Record<string, number> | null;
+  geneticImprint: Record<string, number>;
   familyGeneration: number;
 }
 
@@ -195,12 +202,22 @@ function calculateSingleOffspring(
     }
   }
 
+  // --- Genetic Imprint (blended from parents) ---
+  const dominantImprint = dominant.geneticImprint
+    ? (dominant.geneticImprint as GeneticImprint)
+    : calculateGeneticImprint(dominant.foundingElements);
+  const recessiveImprint = recessive.geneticImprint
+    ? (recessive.geneticImprint as GeneticImprint)
+    : calculateGeneticImprint(recessive.foundingElements);
+  const geneticImprint = blendGeneticImprints(dominantImprint, recessiveImprint);
+
   return {
     elementLevels,
     traitValues,
     stability,
     foundingElements,
     growthElements,
+    geneticImprint: geneticImprint as Record<string, number>,
     familyGeneration,
   };
 }

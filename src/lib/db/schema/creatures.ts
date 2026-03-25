@@ -89,6 +89,9 @@ export const creatures = pgTable('creatures', {
   foundingElements: jsonb('founding_elements').$type<Record<string, number>>(),  // sum of allocations days 1-15
   growthElements: jsonb('growth_elements').$type<Record<string, number>>(),      // sum of allocations days 16-40
 
+  // Genetic Imprint — per-element efficiency coefficients (0.7 to 1.3), fixed at birth
+  geneticImprint: jsonb('genetic_imprint').$type<Record<string, number>>(),
+
   // Gradual mutation target state
   targetElementLevels: jsonb('target_element_levels').$type<ElementLevels>(),
   targetTraitValues: jsonb('target_trait_values').$type<TraitValues>(),

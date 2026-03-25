@@ -39,6 +39,7 @@ interface EvolutionDiaryProps {
   ageDays: number;
   foundingElements: Record<string, number> | null;
   growthElements: Record<string, number> | null;
+  geneticImprint?: Record<string, number> | null;
   keySnapshots: KeySnapshot[];
   allSnapshotsForMilestones: MilestoneCandidate[];
 }
@@ -829,6 +830,96 @@ function CombatStats({ traitValues }: { traitValues: Record<string, number> }) {
 }
 
 // ---------------------------------------------------------------------------
+// Section: Genetic Imprint (Impronta Genetica)
+// ---------------------------------------------------------------------------
+
+function GeneticImprintDisplay({ imprint }: { imprint: Record<string, number> }) {
+  return (
+    <div className="rounded-2xl border border-border/30 bg-surface p-5">
+      <h2 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">
+        Impronta Genetica
+      </h2>
+      <p className="mb-4 text-[11px] text-muted">Efficienza genetica per elemento</p>
+
+      <div className="space-y-2">
+        {ELEMENTS.map((el) => {
+          const coeff = imprint[el] ?? 1.0;
+          const color = ELEMENT_COLORS[el];
+          // Map coefficient 0.7–1.3 to visual bar width (0%–100%)
+          // 0.7 → 0%, 1.0 → 50%, 1.3 → 100%
+          const barPct = Math.max(0, Math.min(100, ((coeff - 0.7) / 0.6) * 100));
+          // Center line at 50% (coefficient 1.0)
+          const isAboveAvg = coeff > 1.005;
+          const isBelowAvg = coeff < 0.995;
+          const accentColor = isAboveAvg ? color : isBelowAvg ? `${color}66` : `${color}88`;
+
+          return (
+            <div key={el} className="flex items-center gap-2.5">
+              {/* Element label */}
+              <span
+                className="w-[28px] shrink-0 text-[11px] font-black tracking-wide text-right"
+                style={{ color, textShadow: `0 0 6px ${color}44` }}
+              >
+                {el}
+              </span>
+
+              {/* Bar container */}
+              <div className="flex-1 h-[10px] rounded-full bg-background/60 overflow-hidden relative">
+                {/* Center line at 1.0 */}
+                <div
+                  className="absolute top-0 bottom-0 w-[1px] z-10"
+                  style={{
+                    left: '50%',
+                    backgroundColor: 'var(--color-border)',
+                    opacity: 0.5,
+                  }}
+                />
+
+                {/* Filled bar from left */}
+                <div
+                  className="h-full rounded-full relative"
+                  style={{
+                    width: `${barPct}%`,
+                    background: `linear-gradient(90deg, ${accentColor}33, ${accentColor})`,
+                    boxShadow: isAboveAvg ? `0 0 8px ${color}33` : 'none',
+                    transition: 'width 1s ease-out',
+                  }}
+                >
+                  {isAboveAvg && (
+                    <div
+                      className="absolute top-0 left-0 right-0 h-[3px] rounded-full"
+                      style={{ background: `linear-gradient(90deg, transparent, ${color}66, transparent)` }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Coefficient value */}
+              <span
+                className="w-[40px] shrink-0 text-right text-[10px] font-mono tabular-nums"
+                style={{
+                  color: isAboveAvg ? color : isBelowAvg ? 'var(--color-muted)' : 'var(--color-foreground)',
+                  fontWeight: isAboveAvg ? 700 : 400,
+                }}
+              >
+                {coeff.toFixed(2)}x
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="mt-3 pt-3 border-t border-border/20 flex items-center justify-between text-[9px] text-muted/60">
+        <span>0.70x (debole)</span>
+        <span>1.00x (neutro)</span>
+        <span>1.30x (forte)</span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Section: Key Milestones Timeline
 // ---------------------------------------------------------------------------
 
@@ -939,6 +1030,7 @@ export function EvolutionDiary({
   ageDays,
   foundingElements,
   growthElements,
+  geneticImprint,
   keySnapshots,
   allSnapshotsForMilestones,
 }: EvolutionDiaryProps) {
@@ -971,6 +1063,9 @@ export function EvolutionDiary({
       <div className="space-y-4">
         {/* 1. DNA Helix — the centerpiece */}
         <DnaHelix elementLevels={elLevels} />
+
+        {/* 1b. Genetic Imprint (if available) */}
+        {geneticImprint && <GeneticImprintDisplay imprint={geneticImprint} />}
 
         {/* 2. Genetic Identity Card */}
         <GeneticIdentityCard

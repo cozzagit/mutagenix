@@ -22,6 +22,7 @@ import type {
 
 import type { VisualParams } from './visual-mapper';
 import { calculateTraitDeltas } from './trait-calculator';
+import type { GeneticImprint } from './genetic-imprint';
 import { calculateSynergies } from './synergy-system';
 import { calculateDecay } from './decay-system';
 import { mapTraitsToVisuals } from './visual-mapper';
@@ -108,6 +109,7 @@ export interface CreatureInput {
   day: number;
   foundingElements?: Record<string, number> | null;
   growthElements?: Record<string, number> | null;
+  geneticImprint?: Record<string, number> | null;
 }
 
 /**
@@ -175,13 +177,17 @@ export function processDailyMutation(
         0.9,
       );
 
-  // --- 3. Trait growth deltas ---
+  // --- 3. Trait growth deltas (with genetic imprint efficiency) ---
+  const geneticImprint = creature.geneticImprint
+    ? (creature.geneticImprint as GeneticImprint)
+    : undefined;
   const growthDeltas = calculateTraitDeltas(
     newElementLevels,
     creature.traitValues,
     ageDays,
     newStability,
     allocation,
+    geneticImprint,
   );
 
   // --- 4. Synergy bonuses ---
