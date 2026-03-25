@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { TournamentDetail } from "./tournament-detail";
@@ -94,6 +94,114 @@ function FormatBadge({ format }: { format: string }) {
 /* Sub: TournamentCard                                                */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* Sub: Countdown hook for tournament start                           */
+/* ------------------------------------------------------------------ */
+
+function useCountdown(targetDate: string | null): string {
+  const [text, setText] = useState('');
+  useEffect(() => {
+    if (!targetDate) return;
+    const update = () => {
+      const diff = new Date(targetDate).getTime() - Date.now();
+      if (diff <= 0) { setText(''); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setText(`${h}h ${m}m`);
+    };
+    update();
+    const id = setInterval(update, 30000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+  return text;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sub: TournamentRulesCard                                           */
+/* ------------------------------------------------------------------ */
+
+function TournamentRulesCard({ tournament }: { tournament: TournamentSummary }) {
+  const countdown = useCountdown(tournament.startsAt);
+
+  return (
+    <div
+      className="col-span-full rounded-xl border-2 p-5"
+      style={{
+        borderColor: '#ffd60040',
+        backgroundColor: 'rgba(255, 214, 0, 0.04)',
+        boxShadow: '0 0 20px rgba(255, 214, 0, 0.08)',
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xl">{'\u{1F3C6}'}</span>
+        <h3 className="text-base font-black text-foreground uppercase tracking-tight">
+          {tournament.name}
+        </h3>
+      </div>
+
+      <div className="flex flex-col gap-2 text-[13px] text-muted mb-4">
+        <div className="flex items-start gap-2">
+          <span className="shrink-0">{'\u{1F4CB}'}</span>
+          <div>
+            <span className="font-bold text-foreground">Regole:</span>
+            <ul className="mt-1 flex flex-col gap-1">
+              <li>Eliminazione diretta 1v1</li>
+              <li>La tua creatura piu forte combatte</li>
+              <li>Chi perde viene eliminato</li>
+              <li>Il vincitore passa al turno successivo</li>
+              <li>Premi e gloria per i finalisti</li>
+              {tournament.entryFee === 0 && <li className="font-semibold text-accent">Ingresso gratuito</li>}
+            </ul>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 mt-1">
+          <div className="flex items-center gap-1.5">
+            <span>{'\u23F0'}</span>
+            <span>
+              Inizio:{" "}
+              <strong className="text-foreground">
+                {tournament.startsAt
+                  ? new Date(tournament.startsAt).toLocaleDateString("it-IT", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "Da definire"}
+              </strong>
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span>{'\u{1F4CA}'}</span>
+          <span>
+            Partecipanti:{" "}
+            <strong className="text-foreground">
+              {tournament.participantCount}
+              {tournament.maxParticipants ? `/${tournament.maxParticipants}` : ""}
+            </strong>
+          </span>
+          {countdown && (
+            <span
+              className="ml-auto rounded-lg px-2 py-0.5 text-[11px] font-mono font-bold"
+              style={{ color: '#ff9100', backgroundColor: 'rgba(255, 145, 0, 0.12)' }}
+            >
+              Tra {countdown}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Sub: TournamentCard                                                */
+/* ------------------------------------------------------------------ */
+
 function TournamentCard({
   tournament,
   onEnroll,
@@ -110,9 +218,27 @@ function TournamentCard({
     ? new Date(tournament.enrollmentEnd)
     : null;
   const enrollmentExpired = enrollmentEnd && enrollmentEnd < new Date();
+  const countdown = useCountdown(isEnrollment ? tournament.startsAt : null);
 
   return (
-    <div className="flex flex-col rounded-xl border border-border/50 bg-surface/80 p-4 transition-all hover:border-border hover:bg-surface">
+    <div
+      className="flex flex-col rounded-xl border-2 p-4 transition-all hover:bg-surface"
+      style={{
+        borderColor: isEnrollment ? '#ff910050' : 'var(--color-border)',
+        backgroundColor: isEnrollment ? 'rgba(255, 145, 0, 0.04)' : 'var(--color-surface)',
+        boxShadow: isEnrollment
+          ? '0 0 16px rgba(255, 145, 0, 0.1)'
+          : undefined,
+        animation: isEnrollment ? 'tournament-card-pulse 3s ease-in-out infinite alternate' : undefined,
+      }}
+    >
+      <style>{`
+        @keyframes tournament-card-pulse {
+          from { box-shadow: 0 0 12px rgba(255, 145, 0, 0.08); }
+          to { box-shadow: 0 0 22px rgba(255, 145, 0, 0.18); }
+        }
+      `}</style>
+
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="text-sm font-bold text-foreground leading-tight truncate flex-1">
@@ -124,7 +250,20 @@ function TournamentCard({
       {/* Meta */}
       <div className="flex items-center gap-2 mb-3">
         <FormatBadge format={tournament.battleFormat} />
-        <StatusBadge status={tournament.status} />
+        {isEnrollment ? (
+          <span
+            className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider"
+            style={{
+              color: '#ff9100',
+              backgroundColor: 'rgba(255, 145, 0, 0.15)',
+              animation: 'tournament-card-pulse 2s ease-in-out infinite alternate',
+            }}
+          >
+            ISCRIZIONI APERTE
+          </span>
+        ) : (
+          <StatusBadge status={tournament.status} />
+        )}
       </div>
 
       {/* Participants */}
@@ -136,16 +275,31 @@ function TournamentCard({
             {tournament.maxParticipants ? `/${tournament.maxParticipants}` : ""}
           </strong>
         </span>
-        {tournament.entryFee > 0 && (
+        {tournament.entryFee > 0 ? (
           <span>
             Costo:{" "}
             <strong className="text-warning">{tournament.entryFee} energia</strong>
           </span>
+        ) : (
+          <span className="text-accent font-semibold">Gratuito</span>
         )}
       </div>
 
+      {/* Countdown for enrollment */}
+      {isEnrollment && countdown && (
+        <div className="flex items-center gap-1.5 mb-3">
+          <span className="text-[10px]">{'\u23F0'}</span>
+          <span
+            className="text-[11px] font-mono font-bold"
+            style={{ color: '#ff9100' }}
+          >
+            Inizia tra {countdown}
+          </span>
+        </div>
+      )}
+
       {/* Dates */}
-      {enrollmentEnd && !enrollmentExpired && isEnrollment && (
+      {enrollmentEnd && !enrollmentExpired && isEnrollment && !countdown && (
         <p className="text-[10px] text-muted mb-3">
           Iscrizioni fino al{" "}
           {enrollmentEnd.toLocaleDateString("it-IT", {
@@ -174,8 +328,12 @@ function TournamentCard({
             onClick={() => onEnroll(tournament.id)}
             loading={enrolling === tournament.id}
             className="uppercase font-black tracking-wider text-[11px]"
+            style={{
+              background: 'linear-gradient(135deg, #ff6b00, #ff3d3d)',
+              border: 'none',
+            }}
           >
-            ISCRIVITI
+            {'\u2694\uFE0F'} ISCRIVITI
           </Button>
         )}
 
@@ -255,6 +413,12 @@ export function TournamentList() {
     [fetchTournaments, toast],
   );
 
+  // Sort: enrollment tournaments first, then active, then rest
+  const sorted = useMemo(() => {
+    const priority: Record<string, number> = { enrollment: 0, active: 1, resolving: 2, completed: 3 };
+    return [...tournaments].sort((a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9));
+  }, [tournaments]);
+
   if (selectedTournamentId) {
     return (
       <TournamentDetail
@@ -327,7 +491,12 @@ export function TournamentList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {tournaments.map((t) => (
+          {/* Rules card for the first enrollment tournament */}
+          {(() => {
+            const enrolling_t = sorted.find(t => t.status === 'enrollment');
+            return enrolling_t ? <TournamentRulesCard tournament={enrolling_t} /> : null;
+          })()}
+          {sorted.map((t) => (
             <TournamentCard
               key={t.id}
               tournament={t}

@@ -238,16 +238,28 @@ export default function AppLayout({
     setMoreMenuOpen(false);
   }, [pathname]);
 
-  // Fetch unread arena battles
+  // Fetch unread arena battles + tournament enrollment
   useEffect(() => {
     if (isActive("/arena")) { setArenaBadge(0); return; }
     let cancelled = false;
     async function fetchUnread() {
       try {
-        const res = await fetch("/api/arena/unread");
-        if (!res.ok || cancelled) return;
-        const json = await res.json();
-        setArenaBadge(json.data?.unseenBattles ?? 0);
+        const [battleRes, tournamentRes] = await Promise.all([
+          fetch("/api/arena/unread"),
+          fetch("/api/arena/tournaments?status=enrollment"),
+        ]);
+        if (cancelled) return;
+        let count = 0;
+        if (battleRes.ok) {
+          const bJson = await battleRes.json();
+          count += bJson.data?.unseenBattles ?? 0;
+        }
+        if (tournamentRes.ok) {
+          const tJson = await tournamentRes.json();
+          const enrolling = tJson.data ?? [];
+          if (enrolling.length > 0) count = Math.max(count, 1);
+        }
+        setArenaBadge(count);
       } catch { /* silently ignore */ }
     }
     fetchUnread();

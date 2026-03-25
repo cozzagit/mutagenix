@@ -456,7 +456,9 @@ export default function GuidaPage() {
               </div>
 
               <ul className="flex flex-col gap-1.5 text-[13px]">
-                <li>&bull; <strong className="text-foreground">Iscrizione:</strong> iscriviti nella tab TORNEI, potrebbe costare energia</li>
+                <li>&bull; <strong className="text-foreground">Come iscriversi:</strong> vai in Arena &rarr; Tornei &rarr; clicca <strong className="text-accent">ISCRIVITI</strong> sul torneo con iscrizioni aperte</li>
+                <li>&bull; <strong className="text-foreground">Cosa succede all&apos;inizio:</strong> il tabellone viene generato automaticamente e i match vengono assegnati in base al formato del torneo</li>
+                <li>&bull; <strong className="text-foreground">Eliminazione diretta:</strong> chi perde viene eliminato dal torneo. Il vincitore avanza al turno successivo fino alla finale</li>
                 <li>&bull; <strong className="text-foreground">Squadra snapshot:</strong> la tua squadra viene salvata all&apos;iscrizione</li>
                 <li>&bull; <strong className="text-danger">Danno persistente:</strong> i danni subiti si accumulano tra un match e l&apos;altro &mdash; le creature iniziano ogni match con l&apos;HP residuo dal precedente</li>
                 <li>&bull; <strong className="text-foreground">Punteggio campionato:</strong> Vittoria = 3pt, Pareggio = 1pt, Sconfitta = 0pt</li>

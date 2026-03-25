@@ -182,6 +182,46 @@ export function LabDashboard({
   const [showWellnessModal, setShowWellnessModal] = useState(false);
   const [liveWellness, setLiveWellness] = useState(wellness);
 
+  // --- Tournament enrollment banner ---
+  const [activeTournament, setActiveTournament] = useState<{id: string; name: string; startsAt: string; participantCount: number; status: string} | null>(null);
+  const [tournamentDismissed, setTournamentDismissed] = useState(false);
+  const [tournamentCountdown, setTournamentCountdown] = useState('');
+
+  useEffect(() => {
+    async function checkTournament() {
+      try {
+        const res = await fetch('/api/arena/tournaments?status=enrollment,active');
+        if (!res.ok) return;
+        const json = await res.json();
+        const tournaments = json.data ?? [];
+        if (tournaments.length > 0) {
+          setActiveTournament(tournaments[0]);
+        }
+      } catch { /* ignore */ }
+    }
+    checkTournament();
+  }, []);
+
+  // Countdown timer for tournament
+  useEffect(() => {
+    if (!activeTournament?.startsAt) return;
+    const update = () => {
+      const now = Date.now();
+      const start = new Date(activeTournament.startsAt).getTime();
+      const diff = start - now;
+      if (diff <= 0) {
+        setTournamentCountdown('');
+        return;
+      }
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      setTournamentCountdown(`${hours}h ${minutes}m`);
+    };
+    update();
+    const interval = setInterval(update, 30000);
+    return () => clearInterval(interval);
+  }, [activeTournament?.startsAt]);
+
   const _phase: Phase = mutationActive
     ? 'mutating'
     : panelOpen
@@ -776,6 +816,83 @@ export function LabDashboard({
       {/* RIGHT AREA — Name/day ABOVE creature, countdown/button BELOW   */}
       {/* ============================================================= */}
       <div className="flex flex-1 flex-col items-center overflow-y-auto overflow-x-hidden">
+        {/* Tournament enrollment banner */}
+        {activeTournament && !tournamentDismissed && (
+          <div className="w-full shrink-0 px-4 pt-2">
+            <div
+              className="relative overflow-hidden rounded-xl border-2 px-4 py-3"
+              style={{
+                borderColor: activeTournament.status === 'enrollment' ? '#ff910080' : '#3d5afe80',
+                backgroundColor: activeTournament.status === 'enrollment' ? 'rgba(255, 145, 0, 0.08)' : 'rgba(61, 90, 254, 0.08)',
+                boxShadow: activeTournament.status === 'enrollment'
+                  ? '0 0 20px rgba(255, 145, 0, 0.15), inset 0 0 20px rgba(255, 145, 0, 0.05)'
+                  : '0 0 20px rgba(61, 90, 254, 0.15), inset 0 0 20px rgba(61, 90, 254, 0.05)',
+                animation: activeTournament.status === 'enrollment' ? 'tournament-glow 2s ease-in-out infinite alternate' : undefined,
+              }}
+            >
+              <style>{`
+                @keyframes tournament-glow {
+                  from { box-shadow: 0 0 15px rgba(255, 145, 0, 0.1), inset 0 0 15px rgba(255, 145, 0, 0.03); }
+                  to { box-shadow: 0 0 25px rgba(255, 145, 0, 0.25), inset 0 0 25px rgba(255, 145, 0, 0.08); }
+                }
+              `}</style>
+
+              {/* Dismiss */}
+              <button
+                onClick={() => setTournamentDismissed(true)}
+                className="absolute right-2 top-2 shrink-0 rounded p-0.5 text-muted/60 hover:text-foreground z-10"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </button>
+
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{'\u{1F3C6}'}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black text-foreground leading-tight">
+                    {activeTournament.name}
+                  </p>
+                  {activeTournament.status === 'enrollment' ? (
+                    <>
+                      <p className="text-xs font-bold mt-0.5" style={{ color: '#ff9100' }}>
+                        Iscrizioni aperte! Inizia il 26 Marzo alle 20:00
+                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-[11px] text-muted">
+                          {activeTournament.participantCount} partecipanti iscritti
+                        </span>
+                        {tournamentCountdown && (
+                          <span className="text-[11px] font-mono font-bold" style={{ color: '#ff9100' }}>
+                            Inizia tra {tournamentCountdown}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs font-bold mt-0.5" style={{ color: '#3d5afe' }}>
+                      Torneo in corso!
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {activeTournament.status === 'enrollment' && (
+                <Link
+                  href="/arena"
+                  className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:brightness-110"
+                  style={{
+                    background: 'linear-gradient(135deg, #ff6b00, #ff3d3d)',
+                    boxShadow: '0 0 12px rgba(255, 107, 0, 0.3)',
+                  }}
+                >
+                  <span>{'\u2694\uFE0F'}</span> ISCRIVITI ORA
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Wellness status summary banner */}
         {liveWellness && (
           <div className="w-full shrink-0 px-4 pt-2">
