@@ -85,6 +85,7 @@ const SECONDARY_NAV: NavItem[] = [
   {
     href: "/clan",
     label: "Clan",
+    badgeKey: 'clan',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L9 7H4l3.5 5L6 18h4l2 4 2-4h4l-1.5-6L20 7h-5L12 2Z" />
@@ -211,6 +212,7 @@ export default function AppLayout({
   const pathname = usePathname();
   const [arenaBadge, setArenaBadge] = useState(0);
   const [breedingBadge, setBreedingBadge] = useState(0);
+  const [clanBadge, setClanBadge] = useState(0);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   function isActive(href: string) {
@@ -269,9 +271,27 @@ export default function AppLayout({
     return () => { cancelled = true; };
   }, [pathname]);
 
+  // Fetch pending clan invitations for badge
+  useEffect(() => {
+    if (isActive("/clan")) { setClanBadge(0); return; }
+    let cancelled = false;
+    async function fetchClanInvites() {
+      try {
+        const res = await fetch("/api/clan/invitations");
+        if (!res.ok || cancelled) return;
+        const json = await res.json();
+        const inviteCount = (json.data?.invites ?? []).length;
+        setClanBadge(inviteCount);
+      } catch { /* silently ignore */ }
+    }
+    fetchClanInvites();
+    return () => { cancelled = true; };
+  }, [pathname]);
+
   function getBadge(item: NavItem): number | undefined {
     if (item.badgeKey === 'arena') return arenaBadge;
     if (item.badgeKey === 'breeding') return breedingBadge;
+    if (item.badgeKey === 'clan') return clanBadge;
     return undefined;
   }
 
@@ -305,19 +325,27 @@ export default function AppLayout({
         <>
           <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setMoreMenuOpen(false)} />
           <div className="fixed bottom-[calc(48px+env(safe-area-inset-bottom,0px))] right-2 z-50 w-44 rounded-xl border border-border/50 bg-surface/95 p-2 shadow-xl shadow-black/30 backdrop-blur-xl md:hidden">
-            {SECONDARY_NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMoreMenuOpen(false)}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium transition-colors ${
-                  isActive(item.href) ? 'text-primary bg-primary/10' : 'text-muted hover:text-foreground hover:bg-surface-2'
-                }`}
-              >
-                <span className="[&_svg]:h-4 [&_svg]:w-4">{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
+            {SECONDARY_NAV.map((item) => {
+              const badge = getBadge(item);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMoreMenuOpen(false)}
+                  className={`relative flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium transition-colors ${
+                    isActive(item.href) ? 'text-primary bg-primary/10' : 'text-muted hover:text-foreground hover:bg-surface-2'
+                  }`}
+                >
+                  <span className="[&_svg]:h-4 [&_svg]:w-4">{item.icon}</span>
+                  {item.label}
+                  {badge !== undefined && badge > 0 && (
+                    <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold text-white">
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </>
       )}

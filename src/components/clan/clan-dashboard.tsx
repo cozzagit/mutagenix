@@ -51,6 +51,7 @@ interface InvitationItem {
   creatureName: string;
   creatureOwnerName: string;
   direction: string;
+  status?: string;
   message: string | null;
   expiresAt: string;
   visualParams: Record<string, unknown>;
@@ -102,6 +103,7 @@ export function ClanDashboard({ userId }: { userId: string }) {
   // Invitations state
   const [invites, setInvites] = useState<InvitationItem[]>([]);
   const [requests, setRequests] = useState<InvitationItem[]>([]);
+  const [outgoing, setOutgoing] = useState<InvitationItem[]>([]);
 
   // Create modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -114,8 +116,12 @@ export function ClanDashboard({ userId }: { userId: string }) {
   // Invite modal
   const [showInviteModal, setShowInviteModal] = useState(false);
 
+  // Leave clan state
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
   // Active tab
-  const [activeTab, setActiveTab] = useState<"famiglia" | "inviti" | "classifica">("famiglia");
+  const [activeTab, setActiveTab] = useState<"famiglia" | "inviti" | "classifica" | "guerre">("famiglia");
 
   // Responding state
   const [responding, setResponding] = useState<string | null>(null);
@@ -148,6 +154,7 @@ export function ClanDashboard({ userId }: { userId: string }) {
       const json = await res.json();
       setInvites(json.data?.invites ?? []);
       setRequests(json.data?.requests ?? []);
+      setOutgoing(json.data?.outgoing ?? []);
     } catch {
       // silently ignore
     }
@@ -313,6 +320,7 @@ export function ClanDashboard({ userId }: { userId: string }) {
           [
             { key: "famiglia" as const, label: "Famiglia" },
             { key: "inviti" as const, label: "Inviti", badge: pendingInvitationsCount },
+            { key: "guerre" as const, label: "Guerre" },
             { key: "classifica" as const, label: "Classifica" },
           ] as const
         ).map((tab) => (
@@ -459,7 +467,7 @@ export function ClanDashboard({ userId }: { userId: string }) {
           )}
 
           {invites.length > 0 && (
-            <div>
+            <div className="mb-6">
               <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">
                 Inviti Ricevuti
               </h2>
@@ -477,12 +485,30 @@ export function ClanDashboard({ userId }: { userId: string }) {
             </div>
           )}
 
-          {invites.length === 0 && requests.length === 0 && (
+          {isBossOrLuogo && outgoing.length > 0 && (
+            <div className="mb-6">
+              <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">
+                Inviti Inviati
+              </h2>
+              <div className="space-y-3">
+                {outgoing.map((inv) => (
+                  <OutgoingInviteCard key={inv.id} invitation={inv} emblemColor={emblemColor} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {invites.length === 0 && requests.length === 0 && outgoing.length === 0 && (
             <p className="py-8 text-center text-sm text-muted">
               Nessun invito o richiesta pendente.
             </p>
           )}
         </div>
+      )}
+
+      {/* GUERRE tab */}
+      {activeTab === "guerre" && (
+        <ClanWarsTab clanId={clanData.id} isBoss={myRole === "boss"} emblemColor={emblemColor} />
       )}
 
       {/* CLASSIFICA tab */}
@@ -494,6 +520,82 @@ export function ClanDashboard({ userId }: { userId: string }) {
           >
             Vai alla Classifica Clan
           </Link>
+        </div>
+      )}
+
+      {/* Leave Clan button */}
+      <div className="mt-8 border-t border-border/20 pt-6">
+        <button
+          onClick={() => setShowLeaveModal(true)}
+          className="rounded-lg border border-danger/20 bg-danger/5 px-4 py-2 text-xs font-bold text-danger/80 transition hover:bg-danger/10 hover:text-danger"
+        >
+          Lascia La Famiglia
+        </button>
+      </div>
+
+      {/* Leave confirmation modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowLeaveModal(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-danger/30 bg-background p-6 shadow-2xl shadow-black/50">
+            <div className="mb-2 text-center text-3xl">&#x2620;&#xFE0F;</div>
+            <h2
+              className="mb-2 text-center text-lg font-black uppercase tracking-wider text-danger"
+              style={{ textShadow: "0 0 20px rgba(220, 38, 38, 0.4)" }}
+            >
+              Il Prezzo del Tradimento
+            </h2>
+            <p className="mb-4 text-center text-sm leading-relaxed text-muted">
+              Attenzione! Lasciare la Famiglia ha un prezzo.
+              I tuoi ex-compagni ti attaccheranno e perderai permanentemente il{" "}
+              <span className="font-bold text-danger">10-20% delle tue stats combat</span>.
+              Vuoi davvero tradire?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                className="flex-1 rounded-lg border border-border/30 bg-surface/50 py-2.5 text-xs font-medium text-muted transition hover:text-foreground"
+              >
+                Resta
+              </button>
+              <button
+                onClick={async () => {
+                  setLeaving(true);
+                  try {
+                    const res = await fetch(`/api/clan/${clanData.id}/leave`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ creatureId: myCreatureId }),
+                    });
+                    if (res.ok) {
+                      const json = await res.json();
+                      if (json.data?.betrayalId) {
+                        // Store betrayal data for the cinematic scene
+                        try {
+                          sessionStorage.setItem(
+                            `betrayal-${json.data.betrayalId}`,
+                            JSON.stringify(json.data.betrayalResult),
+                          );
+                        } catch { /* silently ignore */ }
+                        window.location.href = `/clan/esecuzione/${json.data.betrayalId}`;
+                      } else {
+                        window.location.reload();
+                      }
+                    }
+                  } catch {
+                    // silently ignore
+                  } finally {
+                    setLeaving(false);
+                    setShowLeaveModal(false);
+                  }
+                }}
+                disabled={leaving}
+                className="flex-1 rounded-lg bg-danger/80 py-2.5 text-xs font-black uppercase text-white transition hover:bg-danger disabled:opacity-50"
+              >
+                {leaving ? "..." : "Tradisci"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1194,6 +1296,405 @@ function InviteMemberModal({
             className="w-full rounded-lg border border-border/30 bg-surface/50 py-2.5 text-xs font-medium text-muted transition hover:text-foreground"
           >
             Chiudi
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Outgoing Invite Card (read-only, shows status)
+// ---------------------------------------------------------------------------
+
+function OutgoingInviteCard({
+  invitation,
+  emblemColor,
+}: {
+  invitation: InvitationItem;
+  emblemColor: string;
+}) {
+  const statusLabels: Record<string, { label: string; color: string }> = {
+    pending: { label: "In Attesa", color: "#d97706" },
+    accepted: { label: "Accettato", color: "#16a34a" },
+    rejected: { label: "Rifiutato", color: "#dc2626" },
+  };
+  const st = statusLabels[invitation.status ?? "pending"] ?? statusLabels.pending;
+
+  return (
+    <div
+      className="rounded-xl border bg-surface/30 p-4"
+      style={{ borderColor: `${emblemColor}22` }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="h-[50px] w-[50px] shrink-0">
+          <CreatureRenderer
+            params={invitation.visualParams as unknown as VisualParams ?? DEFAULT_VISUAL_PARAMS}
+            size={50}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-bold text-foreground">
+            {invitation.creatureName}
+          </div>
+          <div className="text-[10px] text-muted">
+            di {invitation.creatureOwnerName}
+          </div>
+          {invitation.message && (
+            <p className="mt-1 text-xs italic text-muted">
+              &ldquo;{invitation.message}&rdquo;
+            </p>
+          )}
+          <div className="mt-1.5 flex items-center gap-2">
+            <span
+              className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase"
+              style={{
+                backgroundColor: `${st.color}22`,
+                color: st.color,
+              }}
+            >
+              {st.label}
+            </span>
+            <span className="text-[9px] text-muted">
+              Scade {new Date(invitation.expiresAt).toLocaleDateString("it-IT")}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Clan Wars Tab
+// ---------------------------------------------------------------------------
+
+interface ClanWarSummary {
+  id: string;
+  challengerClanId: string;
+  challengerClanName: string;
+  defenderClanId: string;
+  defenderClanName: string;
+  format: string;
+  status: string;
+  challengerWins: number;
+  defenderWins: number;
+  winnerClanId: string | null;
+  createdAt: string;
+}
+
+function ClanWarsTab({
+  clanId,
+  isBoss,
+  emblemColor,
+}: {
+  clanId: string;
+  isBoss: boolean;
+  emblemColor: string;
+}) {
+  const [wars, setWars] = useState<ClanWarSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+
+  useEffect(() => {
+    async function fetchWars() {
+      try {
+        const res = await fetch(`/api/clan-war?clanId=${clanId}`);
+        if (res.ok) {
+          const json = await res.json();
+          setWars(json.data ?? []);
+        }
+      } catch {
+        // silently ignore
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchWars();
+  }, [clanId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary" />
+      </div>
+    );
+  }
+
+  const activeWars = wars.filter((w) => w.status === "in_progress" || w.status === "pending" || w.status === "accepted");
+  const completedWars = wars.filter((w) => w.status === "completed" || w.status === "declined");
+
+  return (
+    <div>
+      {isBoss && (
+        <div className="mb-4">
+          <button
+            onClick={() => setShowChallengeModal(true)}
+            className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-2 text-xs font-bold text-danger transition hover:bg-danger/20"
+          >
+            Sfida un Clan
+          </button>
+        </div>
+      )}
+
+      {activeWars.length > 0 && (
+        <div className="mb-6">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">
+            Guerre Attive
+          </h2>
+          <div className="space-y-3">
+            {activeWars.map((war) => (
+              <WarCard key={war.id} war={war} clanId={clanId} emblemColor={emblemColor} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {completedWars.length > 0 && (
+        <div className="mb-6">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">
+            Storico Guerre
+          </h2>
+          <div className="space-y-3">
+            {completedWars.map((war) => (
+              <WarCard key={war.id} war={war} clanId={clanId} emblemColor={emblemColor} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {wars.length === 0 && (
+        <p className="py-8 text-center text-sm text-muted">
+          Nessuna guerra dichiarata. Il Boss pu&ograve; sfidare altri clan.
+        </p>
+      )}
+
+      {showChallengeModal && (
+        <ChallengeModal
+          clanId={clanId}
+          onClose={() => setShowChallengeModal(false)}
+          onChallenged={() => {
+            setShowChallengeModal(false);
+            // Refetch wars
+            fetch(`/api/clan-war?clanId=${clanId}`)
+              .then((r) => r.json())
+              .then((json) => setWars(json.data ?? []))
+              .catch(() => {});
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// War Card
+// ---------------------------------------------------------------------------
+
+function WarCard({
+  war,
+  clanId,
+  emblemColor,
+}: {
+  war: ClanWarSummary;
+  clanId: string;
+  emblemColor: string;
+}) {
+  const isChallenger = war.challengerClanId === clanId;
+  const opponentName = isChallenger ? war.defenderClanName : war.challengerClanName;
+  const myWins = isChallenger ? war.challengerWins : war.defenderWins;
+  const opponentWins = isChallenger ? war.defenderWins : war.challengerWins;
+  const won = war.winnerClanId === clanId;
+  const lost = war.winnerClanId !== null && war.winnerClanId !== clanId;
+
+  const statusColors: Record<string, { label: string; color: string }> = {
+    pending: { label: "In Attesa", color: "#d97706" },
+    accepted: { label: "Accettata", color: "#3d5afe" },
+    in_progress: { label: "In Corso", color: "#16a34a" },
+    completed: { label: won ? "VITTORIA" : lost ? "SCONFITTA" : "Completata", color: won ? "#16a34a" : lost ? "#dc2626" : "#6b7280" },
+    declined: { label: "Rifiutata", color: "#6b7280" },
+  };
+  const st = statusColors[war.status] ?? statusColors.pending;
+
+  const formatMap: Record<string, string> = { bo3: "Bo3", bo5: "Bo5", bo7: "Bo7" };
+
+  return (
+    <Link
+      href={`/clan/guerra/${war.id}`}
+      className="block rounded-xl border bg-surface/30 p-4 transition hover:bg-surface/50"
+      style={{ borderColor: `${emblemColor}22` }}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-bold text-foreground">
+            vs {opponentName}
+          </div>
+          <div className="mt-1 flex items-center gap-2">
+            <span
+              className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase"
+              style={{ backgroundColor: `${st.color}22`, color: st.color }}
+            >
+              {st.label}
+            </span>
+            <span className="text-[10px] text-muted">
+              {formatMap[war.format] ?? war.format}
+            </span>
+          </div>
+        </div>
+        {war.status !== "pending" && war.status !== "declined" && (
+          <div className="text-center">
+            <div className="text-lg font-black text-foreground">
+              {myWins} - {opponentWins}
+            </div>
+            <div className="text-[9px] text-muted uppercase">Match</div>
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Challenge Modal
+// ---------------------------------------------------------------------------
+
+function ChallengeModal({
+  clanId,
+  onClose,
+  onChallenged,
+}: {
+  clanId: string;
+  onClose: () => void;
+  onChallenged: () => void;
+}) {
+  const [clansToChallenge, setClansToChallenge] = useState<Array<{ id: string; name: string; clanElo: number; totalMembers: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedClan, setSelectedClan] = useState("");
+  const [format, setFormat] = useState("bo5");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchClans() {
+      try {
+        const res = await fetch("/api/clan-war/available-clans");
+        if (res.ok) {
+          const json = await res.json();
+          setClansToChallenge((json.data ?? []).filter((c: { id: string }) => c.id !== clanId));
+        }
+      } catch {
+        // silently ignore
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchClans();
+  }, [clanId]);
+
+  async function handleChallenge() {
+    if (!selectedClan) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/clan-war/challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ defenderClanId: selectedClan, format }),
+      });
+      if (!res.ok) {
+        const json = await res.json();
+        setError(json.error?.message ?? "Errore nella sfida");
+        setSubmitting(false);
+        return;
+      }
+      onChallenged();
+    } catch {
+      setError("Errore di rete");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-danger/20 bg-background p-6 shadow-2xl shadow-black/40">
+        <h2
+          className="mb-1 text-lg font-black uppercase tracking-wider text-foreground"
+          style={{ textShadow: "0 0 15px rgba(220, 38, 38, 0.3)" }}
+        >
+          Sfida di Clan
+        </h2>
+        <p className="mb-5 text-xs text-muted">
+          Scegli il clan avversario e il formato della guerra.
+        </p>
+
+        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">
+          Formato
+        </label>
+        <div className="mb-4 flex gap-2">
+          {(["bo3", "bo5", "bo7"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFormat(f)}
+              className={`flex-1 rounded-lg border py-2 text-xs font-bold uppercase transition ${
+                format === f
+                  ? "border-danger/40 bg-danger/10 text-danger"
+                  : "border-border/30 bg-surface/30 text-muted hover:text-foreground"
+              }`}
+            >
+              {f.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">
+          Clan Avversario
+        </label>
+        {loading ? (
+          <div className="flex h-24 items-center justify-center">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-primary" />
+          </div>
+        ) : clansToChallenge.length === 0 ? (
+          <p className="mb-4 text-center text-xs text-muted">
+            Nessun clan disponibile per la sfida.
+          </p>
+        ) : (
+          <div className="mb-4 max-h-48 space-y-2 overflow-y-auto">
+            {clansToChallenge.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedClan(c.id)}
+                className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left transition ${
+                  selectedClan === c.id
+                    ? "border-danger/40 bg-danger/10"
+                    : "border-border/20 bg-surface/30 hover:bg-surface/50"
+                }`}
+              >
+                <div>
+                  <div className="text-sm font-bold text-foreground">{c.name}</div>
+                  <div className="text-[10px] text-muted">{c.totalMembers} membri</div>
+                </div>
+                <div className="text-sm font-bold text-muted">{c.clanElo}</div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {error && <p className="mb-3 text-xs text-danger">{error}</p>}
+
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-lg border border-border/30 bg-surface/50 py-2.5 text-xs font-medium text-muted transition hover:text-foreground"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={handleChallenge}
+            disabled={!selectedClan || submitting}
+            className="flex-1 rounded-lg bg-danger/80 py-2.5 text-xs font-black uppercase text-white transition hover:bg-danger disabled:opacity-50"
+          >
+            {submitting ? "..." : "Dichiara Guerra"}
           </button>
         </div>
       </div>

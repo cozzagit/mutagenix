@@ -1033,6 +1033,91 @@ export default function GuidaPage() {
           </div>
         </GuideCard>
 
+        {/* La Famiglia (Clan System) */}
+        <GuideCard title="La Famiglia (Clan)">
+          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted">
+            <p>
+              I clan sono organizzazioni criminali composte da creature dello stesso padrone
+              e di padroni diversi. La Famiglia &egrave; tutto: protezione, prestigio, e potere.
+            </p>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Come Fondare un Clan</p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; Serve una creatura con almeno <strong className="text-foreground">40 giorni</strong> di vita</li>
+                <li>&bull; Scegli un nome, un motto e un colore emblema</li>
+                <li>&bull; Il fondatore diventa automaticamente il <strong className="text-danger">Boss</strong></li>
+                <li>&bull; Con 3 membri il clan diventa <strong className="text-accent">attivo</strong></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Ruoli della Famiglia</p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; <strong className="text-danger">Boss</strong> &mdash; Leader supremo. Pu&ograve; promuovere, invitare, dichiarare guerra</li>
+                <li>&bull; <strong className="text-foreground">Luogotenente</strong> &mdash; Braccio destro. Pu&ograve; invitare nuovi membri</li>
+                <li>&bull; <strong className="text-muted">Soldato</strong> &mdash; Combattente della Famiglia</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Inviti e Richieste</p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; Il Boss o Luogotenente pu&ograve; <strong className="text-foreground">invitare</strong> creature di altri giocatori</li>
+                <li>&bull; I giocatori possono <strong className="text-foreground">richiedere</strong> l&apos;ingresso in un clan aperto</li>
+                <li>&bull; Gli inviti scadono dopo 7 giorni</li>
+                <li>&bull; Puoi aggiungere le tue creature direttamente senza invito</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-danger">Il Prezzo del Tradimento</p>
+              <p className="text-[13px] mb-2">
+                Lasciare la Famiglia non &egrave; senza conseguenze. Quando una creatura abbandona il clan,
+                i suoi ex-compagni la attaccano in una <strong className="text-danger">Esecuzione</strong>.
+              </p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; Ogni membro del clan sferra un colpo al traditore</li>
+                <li>&bull; La creatura perde permanentemente il <strong className="text-danger">10-20%</strong> delle stats combat</li>
+                <li>&bull; Riceve il marchio <strong className="text-danger">TRADITORE</strong> per sempre</li>
+                <li>&bull; Se il Boss lascia, il Luogotenente pi&ugrave; fedele prende il comando</li>
+                <li>&bull; Se l&apos;ultimo membro lascia, il clan viene sciolto</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-2 font-semibold text-foreground">Sfide di Clan (Guerre)</p>
+              <p className="text-[13px] mb-2">
+                Il Boss pu&ograve; dichiarare guerra a un altro clan attivo. Le guerre sono serie di duelli 1v1
+                tra i membri delle due Famiglie.
+              </p>
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                <li>&bull; <strong className="text-foreground">Formati:</strong> Best of 3, Best of 5, Best of 7</li>
+                <li>&bull; Il clan difensore deve accettare la sfida</li>
+                <li>&bull; Le creature combattono in ordine &mdash; ogni match &egrave; un duello reale</li>
+                <li>&bull; Chi vince la maggioranza dei match vince la guerra</li>
+                <li>&bull; Il vincitore guadagna <strong className="text-accent">ELO</strong> e <strong className="text-accent">Prestigio</strong></li>
+                <li>&bull; Il perdente perde ELO e met&agrave; del Prestigio in palio</li>
+              </ul>
+            </div>
+
+            <div
+              className="rounded-lg px-4 py-3 text-[13px]"
+              style={{
+                borderLeft: '3px solid #dc2626',
+                backgroundColor: 'rgba(220, 38, 38, 0.05)',
+                color: '#ccc',
+              }}
+            >
+              <p className="font-semibold text-danger mb-1">Lealt&agrave; o Morte</p>
+              <p>
+                La Famiglia &egrave; per sempre... o quasi. Pensaci bene prima di tradire:
+                le cicatrici del tradimento non guariscono mai.
+              </p>
+            </div>
+          </div>
+        </GuideCard>
+
         {/* Back to lab */}
         <div className="flex justify-center pt-2">
           <Link

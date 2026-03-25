@@ -116,3 +116,13 @@ export {
   type TournamentResult,
   type NewTournamentResult,
 } from './tournament-results';
+export {
+  clanWars,
+  type ClanWar,
+  type NewClanWar,
+} from './clan-wars';
+export {
+  clanWarMatches,
+  type ClanWarMatch,
+  type NewClanWarMatch,
+} from './clan-war-matches';
