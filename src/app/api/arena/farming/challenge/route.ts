@@ -233,17 +233,32 @@ export async function POST(request: NextRequest) {
   }
 
   // Validate challenger creatures are warrior phase (ageDays >= 40)
-  for (const c of team1Data.creatures) {
-    if ((c.ageDays ?? 0) < 40) {
+  // For 1v1: if active creature isn't warrior, try to find one that is
+  if (duelCount === 1 && team1Data.creatures.length === 1 && (team1Data.creatures[0].ageDays ?? 0) < 40) {
+    const [warrior] = await db.select().from(creatures).where(
+      and(
+        eq(creatures.userId, session.userId),
+        eq(creatures.isArchived, false),
+        eq(creatures.isDead, false),
+        sql`${creatures.ageDays} >= 40`,
+      ),
+    );
+    if (warrior) {
+      team1Data.creatures = [warrior];
+    } else {
       return NextResponse.json(
-        {
-          error: {
-            code: 'NOT_WARRIOR',
-            message: `La creatura "${c.name}" non ha raggiunto la fase guerriero (giorno 40).`,
-          },
-        },
+        { error: { code: 'NOT_WARRIOR', message: 'Nessuna creatura ha raggiunto la fase guerriero (giorno 40).' } },
         { status: 422 },
       );
+    }
+  } else {
+    for (const c of team1Data.creatures) {
+      if ((c.ageDays ?? 0) < 40) {
+        return NextResponse.json(
+          { error: { code: 'NOT_WARRIOR', message: `La creatura "${c.name}" non ha raggiunto la fase guerriero (giorno 40).` } },
+          { status: 422 },
+        );
+      }
     }
   }
 
