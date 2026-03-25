@@ -112,18 +112,18 @@ function BattleResultModal({
   const oVp = { ...DEFAULT_VISUAL_PARAMS, ...(opponentVisualParams as Partial<VisualParams>) } as VisualParams;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm p-0 md:p-4 overflow-y-auto">
-      <div className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-border/50 bg-surface p-5 md:p-6 md:my-auto md:max-h-[90dvh] md:overflow-y-auto max-h-[85dvh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto" style={{ paddingBottom: 'calc(16px + 48px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="w-full max-w-md rounded-2xl border border-border/50 bg-surface p-5 md:p-6 my-auto max-h-[85dvh] overflow-y-auto">
         {/* Creatures side by side */}
         <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
           <div className="text-center">
-            <CreatureRenderer params={wVp} size={120} animated />
+            <CreatureRenderer params={wVp} size={100} animated />
             <p className="text-[10px] md:text-xs text-muted mt-1 truncate max-w-[100px] md:max-w-[120px]">{warrior.name}</p>
           </div>
           <span className="text-base md:text-lg font-black text-muted">VS</span>
           <div className="text-center">
             <div style={{ transform: "scaleX(-1)" }}>
-              <CreatureRenderer params={oVp} size={120} animated />
+              <CreatureRenderer params={oVp} size={100} animated />
             </div>
             <p className="text-[10px] md:text-xs text-muted mt-1 truncate max-w-[100px] md:max-w-[120px]">{opponentName}</p>
           </div>
