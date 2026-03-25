@@ -9,7 +9,10 @@ import {
   tournamentParticipants,
   tournamentMatches,
   users,
+  creatures,
 } from '@/lib/db/schema';
+import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
+import type { TraitValues, ElementLevels } from '@/types/game';
 import { eq, and, sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
@@ -58,11 +61,54 @@ export async function GET(
       status: tournamentParticipants.status,
       accumulatedDamage: tournamentParticipants.accumulatedDamage,
       enrolledAt: tournamentParticipants.enrolledAt,
+      squadSnapshot: tournamentParticipants.squadSnapshot,
     })
     .from(tournamentParticipants)
     .innerJoin(users, eq(users.id, tournamentParticipants.userId))
     .where(eq(tournamentParticipants.tournamentId, id))
     .orderBy(sql`${tournamentParticipants.seed} ASC NULLS LAST`);
+
+  // Fetch creature names for participants' squads
+  const creatureIds = new Set<string>();
+  for (const p of participantRows) {
+    const snap = p.squadSnapshot as { starters?: string[] } | null;
+    if (snap?.starters) {
+      for (const cid of snap.starters) creatureIds.add(cid);
+    }
+  }
+
+  const creatureDataMap = new Map<string, { name: string; ageDays: number; visualParams: Record<string, unknown> }>();
+  if (creatureIds.size > 0) {
+    const creatureRows = await db
+      .select()
+      .from(creatures)
+      .where(sql`${creatures.id} IN (${sql.join([...creatureIds].map(cid => sql`${cid}`), sql`, `)})`);
+    for (const c of creatureRows) {
+      const vp = mapTraitsToVisuals(
+        c.traitValues as unknown as TraitValues,
+        c.elementLevels as unknown as ElementLevels,
+        [], c.foundingElements, c.growthElements,
+      );
+      creatureDataMap.set(c.id, {
+        name: c.name,
+        ageDays: c.ageDays ?? 0,
+        visualParams: vp as unknown as Record<string, unknown>,
+      });
+    }
+  }
+
+  // Add creature data to each participant
+  const participantsWithCreature = participantRows.map(p => {
+    const snap = p.squadSnapshot as { starters?: string[] } | null;
+    const creatureId = snap?.starters?.[0];
+    const cd = creatureId ? creatureDataMap.get(creatureId) : null;
+    return {
+      ...p,
+      creatureName: cd?.name ?? null,
+      creatureAgeDays: cd?.ageDays ?? null,
+      creatureVisualParams: cd?.visualParams ?? null,
+    };
+  });
 
   // Fetch matches
   const matchRows = await db
@@ -80,7 +126,7 @@ export async function GET(
   return NextResponse.json({
     data: {
       tournament,
-      participants: participantRows,
+      participants: participantsWithCreature,
       matches: matchRows,
       isEnrolled,
       myParticipantId: myParticipant?.id ?? null,

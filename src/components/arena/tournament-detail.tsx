@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { TournamentBracket } from "./tournament-bracket";
+import { CreatureRenderer, DEFAULT_VISUAL_PARAMS } from "@/components/creature/creature-renderer";
+import type { VisualParams } from "@/lib/game-engine/visual-mapper";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -30,6 +32,9 @@ interface ParticipantData {
   id: string;
   userId: string;
   displayName: string;
+  creatureName?: string | null;
+  creatureAgeDays?: number | null;
+  creatureVisualParams?: Record<string, unknown> | null;
   seed: number | null;
   matchesPlayed: number;
   matchesWon: number;
@@ -449,27 +454,38 @@ export function TournamentDetail({
             Partecipanti iscritti ({participants.length}{tournament.maxParticipants ? `/${tournament.maxParticipants}` : ''})
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {participants.map((p, i) => (
-              <div
-                key={p.id}
-                className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${
-                  p.isEliminated ? 'border-danger/20 bg-danger/5 opacity-50' :
-                  p.id === myParticipantId ? 'border-accent/40 bg-accent/5' :
-                  'border-border/15 bg-surface/20'
-                }`}
-              >
-                <span className="text-[10px] font-mono text-muted w-4">{i + 1}</span>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate">
-                    {p.displayName}
-                    {p.id === myParticipantId && <span className="text-accent ml-1">(tu)</span>}
-                  </p>
-                  <p className="text-[9px] text-muted">
-                    {p.isEliminated ? 'Eliminato' : p.matchesPlayed > 0 ? `${p.matchesWon}V ${p.matchesLost}S` : 'In attesa'}
-                  </p>
+            {participants.map((p, i) => {
+              const vp = p.creatureVisualParams
+                ? { ...DEFAULT_VISUAL_PARAMS, ...(p.creatureVisualParams as Partial<VisualParams>) } as VisualParams
+                : null;
+              return (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${
+                    p.isEliminated ? 'border-danger/20 bg-danger/5 opacity-50' :
+                    p.id === myParticipantId ? 'border-accent/40 bg-accent/5' :
+                    'border-border/15 bg-surface/20'
+                  }`}
+                >
+                  {vp && (
+                    <div className={`shrink-0 ${p.isEliminated ? 'grayscale' : ''}`}>
+                      <CreatureRenderer params={vp} size={40} animated={false} seed={42} />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-foreground truncate">
+                      {p.creatureName ?? p.displayName}
+                      {p.id === myParticipantId && <span className="text-accent ml-1">(tu)</span>}
+                    </p>
+                    <p className="text-[9px] text-muted truncate">
+                      {p.displayName}
+                      {p.creatureAgeDays != null && ` · G${p.creatureAgeDays}`}
+                      {p.isEliminated ? ' · Eliminato' : p.matchesPlayed > 0 ? ` · ${p.matchesWon}V ${p.matchesLost}S` : ''}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
