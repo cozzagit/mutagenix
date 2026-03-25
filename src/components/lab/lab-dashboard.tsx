@@ -183,7 +183,7 @@ export function LabDashboard({
   const [liveWellness, setLiveWellness] = useState(wellness);
 
   // --- Tournament enrollment banner ---
-  const [activeTournament, setActiveTournament] = useState<{id: string; name: string; startsAt: string; participantCount: number; status: string} | null>(null);
+  const [activeTournament, setActiveTournament] = useState<{id: string; name: string; startsAt: string; participantCount: number; status: string; isEnrolled?: boolean} | null>(null);
   const [tournamentDismissed, setTournamentDismissed] = useState(false);
   const [tournamentCountdown, setTournamentCountdown] = useState('');
 
@@ -195,7 +195,15 @@ export function LabDashboard({
         const json = await res.json();
         const tournaments = json.data ?? [];
         if (tournaments.length > 0) {
-          setActiveTournament(tournaments[0]);
+          const t = tournaments[0];
+          try {
+            const detailRes = await fetch('/api/arena/tournaments/' + t.id);
+            if (detailRes.ok) {
+              const dj = await detailRes.json();
+              t.isEnrolled = !!dj.data?.myParticipantId;
+            }
+          } catch { /* ignore */ }
+          setActiveTournament(t);
         }
       } catch { /* ignore */ }
     }
@@ -877,7 +885,7 @@ export function LabDashboard({
                 </div>
               </div>
 
-              {activeTournament.status === 'enrollment' && (
+              {activeTournament.status === 'enrollment' && !activeTournament.isEnrolled && (
                 <Link
                   href="/arena"
                   className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:brightness-110"
@@ -888,6 +896,12 @@ export function LabDashboard({
                 >
                   <span>{'\u2694\uFE0F'}</span> ISCRIVITI ORA
                 </Link>
+              )}
+              {activeTournament.status === 'enrollment' && activeTournament.isEnrolled && (
+                <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg bg-accent/15 border border-accent/30 px-4 py-2">
+                  <span className="text-accent text-sm">{'\u2705'}</span>
+                  <span className="text-[11px] font-bold text-accent">Sei iscritto! Preparati per la battaglia.</span>
+                </div>
               )}
             </div>
           </div>

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const POLL_INTERVAL_MS = 60_000;
 const NOTIFICATION_TAG = 'mutagenix-battle';
+const TOURNAMENT_TAG = 'mutagenix-tournament';
 const DEFAULT_TITLE = 'Mutagenix';
 
 export function BattleNotifier() {
@@ -105,6 +106,28 @@ export function BattleNotifier() {
         }
 
         lastCountRef.current = count;
+
+        // Also check for enrollment tournaments — notify once
+        try {
+          const tourneyNotified = sessionStorage.getItem('mx-tourney-notified');
+          if (!tourneyNotified) {
+            const tRes = await fetch('/api/arena/tournaments?status=enrollment');
+            if (tRes.ok) {
+              const tJson = await tRes.json();
+              const enrolling = tJson.data ?? [];
+              if (enrolling.length > 0 && permissionGranted && 'Notification' in window) {
+                new Notification(DEFAULT_TITLE, {
+                  body: `${enrolling[0].name} — Iscrizioni aperte! Iscriviti prima che sia troppo tardi.`,
+                  icon: '/icon-192.png',
+                  badge: '/icon-192.png',
+                  tag: TOURNAMENT_TAG,
+                  renotify: true,
+                } as NotificationOptions & { renotify: boolean });
+                sessionStorage.setItem('mx-tourney-notified', enrolling[0].id);
+              }
+            }
+          }
+        } catch { /* ignore */ }
       } catch {
         // Network error — silently ignore, will retry on next interval
       }

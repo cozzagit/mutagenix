@@ -442,6 +442,38 @@ export function TournamentDetail({
         </div>
       </div>
 
+      {/* Enrolled participants list */}
+      {participants.length > 0 && (
+        <div className="mb-4 rounded-xl border border-border/20 bg-surface/30 p-4">
+          <h3 className="text-xs font-black text-muted uppercase tracking-wider mb-3">
+            Partecipanti iscritti ({participants.length}{tournament.maxParticipants ? `/${tournament.maxParticipants}` : ''})
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {participants.map((p, i) => (
+              <div
+                key={p.id}
+                className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${
+                  p.isEliminated ? 'border-danger/20 bg-danger/5 opacity-50' :
+                  p.id === myParticipantId ? 'border-accent/40 bg-accent/5' :
+                  'border-border/15 bg-surface/20'
+                }`}
+              >
+                <span className="text-[10px] font-mono text-muted w-4">{i + 1}</span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-foreground truncate">
+                    {p.displayName}
+                    {p.id === myParticipantId && <span className="text-accent ml-1">(tu)</span>}
+                  </p>
+                  <p className="text-[9px] text-muted">
+                    {p.isEliminated ? 'Eliminato' : p.matchesPlayed > 0 ? `${p.matchesWon}V ${p.matchesLost}S` : 'In attesa'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* My playable matches */}
       {myPlayableMatches.length > 0 && (
         <div className="mb-4 rounded-xl border border-danger/30 bg-danger/5 p-4">
