@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
       eloDelta: myEloAfter - myEloBefore,
       eloBefore: myEloBefore,
       eloAfter: myEloAfter,
+      wasChallenger: isChallenger,
       roundsPlayed: b.roundsPlayed,
       date: b.createdAt.toISOString(),
       replayUrl: `/api/arena/battles/${b.id}`,

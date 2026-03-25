@@ -44,6 +44,7 @@ interface BattleHistoryEntry {
   battleId: string;
   opponentName: string;
   myCreatureName: string;
+  wasChallenger?: boolean;
   result: "victory" | "defeat" | "draw";
   eloDelta: number;
   eloBefore: number;
@@ -605,15 +606,31 @@ function CronologiaTab({ activeCreatureName }: { activeCreatureName: string }) {
           <span className="text-muted font-mono text-[10px]">
             {new Date(entry.date).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
           </span>
-          {/* Mobile: "MiaCreatura vs Avversario" in one column */}
+          {/* Mobile: "Attacker → Defender" in one column */}
           <span className="text-foreground truncate md:hidden">
-            <span className="text-primary">{entry.myCreatureName}</span>
-            <span className="text-muted"> vs </span>
+            {entry.wasChallenger ? (
+              <>
+                <span className="text-primary">{entry.myCreatureName}</span>
+                <span className="text-danger/60"> &rarr; </span>
+                {entry.opponentName}
+              </>
+            ) : (
+              <>
+                {entry.opponentName}
+                <span className="text-danger/60"> &rarr; </span>
+                <span className="text-primary">{entry.myCreatureName}</span>
+              </>
+            )}
+          </span>
+          {/* Desktop: separate columns with arrow */}
+          <span className="hidden md:flex items-center gap-1 text-primary truncate">
+            {entry.myCreatureName}
+            {entry.wasChallenger && <span className="text-danger/50 text-[9px]">&rarr;</span>}
+          </span>
+          <span className="hidden md:flex items-center gap-1 text-foreground truncate">
+            {!entry.wasChallenger && <span className="text-danger/50 text-[9px]">&rarr;</span>}
             {entry.opponentName}
           </span>
-          {/* Desktop: separate columns */}
-          <span className="hidden md:block text-primary truncate">{entry.myCreatureName}</span>
-          <span className="hidden md:block text-foreground truncate">{entry.opponentName}</span>
           <span className={`font-bold ${resultColor(entry.result)}`}>
             {resultLabel(entry.result)}
           </span>
