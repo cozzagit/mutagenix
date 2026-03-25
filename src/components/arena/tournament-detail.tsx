@@ -447,42 +447,69 @@ export function TournamentDetail({
         </div>
       </div>
 
-      {/* Enrolled participants list */}
+      {/* Enrolled participants — fighter cards */}
       {participants.length > 0 && (
-        <div className="mb-4 rounded-xl border border-border/20 bg-surface/30 p-4">
-          <h3 className="text-xs font-black text-muted uppercase tracking-wider mb-3">
-            Partecipanti iscritti ({participants.length}{tournament.maxParticipants ? `/${tournament.maxParticipants}` : ''})
+        <div className="mb-4">
+          <h3 className="text-xs font-black text-muted uppercase tracking-wider mb-3 px-1">
+            Combattenti ({participants.length}{tournament.maxParticipants ? `/${tournament.maxParticipants}` : ''})
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {participants.map((p, i) => {
               const vp = p.creatureVisualParams
                 ? { ...DEFAULT_VISUAL_PARAMS, ...(p.creatureVisualParams as Partial<VisualParams>) } as VisualParams
                 : null;
+              const isMe = p.id === myParticipantId;
               return (
                 <div
                   key={p.id}
-                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${
-                    p.isEliminated ? 'border-danger/20 bg-danger/5 opacity-50' :
-                    p.id === myParticipantId ? 'border-accent/40 bg-accent/5' :
-                    'border-border/15 bg-surface/20'
+                  className={`relative flex flex-col items-center rounded-xl border p-3 transition-all ${
+                    p.isEliminated
+                      ? 'border-danger/20 bg-danger/5 opacity-40'
+                      : isMe
+                        ? 'border-accent/50 bg-accent/5 shadow-[0_0_12px_rgba(0,229,160,0.1)]'
+                        : 'border-border/30 bg-surface/40 hover:border-border/50'
                   }`}
                 >
+                  {/* Seed number */}
+                  <span className="absolute top-2 left-2.5 text-[10px] font-mono text-muted/40">#{i + 1}</span>
+                  {isMe && <span className="absolute top-2 right-2.5 text-[9px] font-bold text-accent">TU</span>}
+
+                  {/* Creature SVG */}
                   {vp && (
-                    <div className={`shrink-0 ${p.isEliminated ? 'grayscale' : ''}`}>
-                      <CreatureRenderer params={vp} size={40} animated={false} seed={42} />
+                    <div className={`mb-2 ${p.isEliminated ? 'grayscale' : ''}`}>
+                      <CreatureRenderer params={vp} size={90} animated={false} seed={42} />
                     </div>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-foreground truncate">
-                      {p.creatureName ?? p.displayName}
-                      {p.id === myParticipantId && <span className="text-accent ml-1">(tu)</span>}
-                    </p>
-                    <p className="text-[9px] text-muted truncate">
-                      {p.displayName}
-                      {p.creatureAgeDays != null && ` · G${p.creatureAgeDays}`}
-                      {p.isEliminated ? ' · Eliminato' : p.matchesPlayed > 0 ? ` · ${p.matchesWon}V ${p.matchesLost}S` : ''}
-                    </p>
+
+                  {/* Creature name */}
+                  <p className="text-sm font-bold text-foreground truncate max-w-full text-center">
+                    {p.creatureName ?? '???'}
+                  </p>
+
+                  {/* Owner */}
+                  <p className="text-[10px] text-muted truncate max-w-full text-center">
+                    {p.displayName}
+                  </p>
+
+                  {/* Day + Status */}
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    {p.creatureAgeDays != null && (
+                      <span className="text-[9px] text-muted">Giorno {p.creatureAgeDays}</span>
+                    )}
+                    {p.isEliminated && (
+                      <span className="rounded-sm bg-danger/20 px-1.5 py-0.5 text-[8px] font-bold text-danger uppercase">Eliminato</span>
+                    )}
                   </div>
+
+                  {/* Battle stats if tournament has started */}
+                  {p.matchesPlayed > 0 && (
+                    <div className="flex items-center gap-2 mt-1.5 text-[10px]">
+                      <span className="font-bold text-accent">{p.matchesWon}V</span>
+                      <span className="font-bold text-danger">{p.matchesLost}S</span>
+                      {p.matchesDrawn > 0 && <span className="font-bold text-warning">{p.matchesDrawn}P</span>}
+                      <span className="text-muted">· {p.points}pt</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
