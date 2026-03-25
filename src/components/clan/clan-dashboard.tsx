@@ -118,6 +118,8 @@ export function ClanDashboard({ userId }: { userId: string }) {
 
   // Leave clan state
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  // Add own creatures modal
+  const [showAddOwnModal, setShowAddOwnModal] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
   // Active tab
@@ -409,16 +411,22 @@ export function ClanDashboard({ userId }: { userId: string }) {
           </div>
 
           {/* Invite button (boss/luogotenente) */}
-          {isBossOrLuogo && (
-            <div className="mb-4">
+          <div className="mb-4 flex items-center gap-2 flex-wrap">
+            {isBossOrLuogo && (
               <button
                 onClick={() => setShowInviteModal(true)}
                 className="rounded-lg border border-border/30 bg-surface/50 px-4 py-2 text-xs font-bold text-muted transition hover:bg-surface hover:text-foreground"
               >
                 + Invita Membro
               </button>
-            </div>
-          )}
+            )}
+            <button
+              onClick={() => setShowAddOwnModal(true)}
+              className="rounded-lg border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-bold text-accent transition hover:bg-accent/20"
+            >
+              {isBossOrLuogo ? '+ Aggiungi i Miei' : '+ Proponi i Miei'}
+            </button>
+          </div>
 
           {/* Members Grid */}
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">
@@ -609,6 +617,19 @@ export function ClanDashboard({ userId }: { userId: string }) {
           onClose={() => setShowInviteModal(false)}
           onInvited={() => {
             setShowInviteModal(false);
+            fetchClan();
+          }}
+        />
+      )}
+
+      {showAddOwnModal && clanData && (
+        <AddOwnCreaturesModal
+          clanId={clanData.id}
+          isBoss={myRole === 'boss'}
+          existingMemberIds={members.map((m) => m.creatureId)}
+          onClose={() => setShowAddOwnModal(false)}
+          onDone={() => {
+            setShowAddOwnModal(false);
             fetchClan();
           }}
         />
@@ -1782,6 +1803,176 @@ function InlineClanLeaderboard() {
           <span className="hidden md:block text-muted">{clan.totalMembers}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Add Own Creatures Modal                                             */
+/* ------------------------------------------------------------------ */
+
+function AddOwnCreaturesModal({
+  clanId,
+  isBoss,
+  existingMemberIds,
+  onClose,
+  onDone,
+}: {
+  clanId: string;
+  isBoss: boolean;
+  existingMemberIds: string[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [myCreatures, setMyCreatures] = useState<Array<{
+    id: string; name: string; ageDays: number | null; visualParams: Record<string, unknown>;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+  const [results, setResults] = useState<Array<{ name: string; ok: boolean; msg: string }>>([]);
+
+  useEffect(() => {
+    async function fetchMine() {
+      try {
+        const res = await fetch("/api/creatures");
+        if (!res.ok) return;
+        const json = await res.json();
+        const eligible = (json.data ?? []).filter((c: { id: string; ageDays: number | null; isDead: boolean }) =>
+          !existingMemberIds.includes(c.id) && (c.ageDays ?? 0) >= 40 && !c.isDead
+        );
+        setMyCreatures(eligible);
+      } catch { /* ignore */ }
+      finally { setLoading(false); }
+    }
+    fetchMine();
+  }, [existingMemberIds]);
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleSubmit() {
+    if (selected.size === 0) return;
+    setSubmitting(true);
+    const newResults: typeof results = [];
+
+    for (const creatureId of selected) {
+      try {
+        if (isBoss) {
+          // Boss: add directly via invite endpoint (which handles own creatures directly)
+          const res = await fetch(`/api/clan/${clanId}/invite`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ creatureId }),
+          });
+          const json = await res.json();
+          const name = myCreatures.find(c => c.id === creatureId)?.name ?? '?';
+          newResults.push({ name, ok: res.ok, msg: res.ok ? 'Aggiunto!' : (json.error?.message ?? 'Errore') });
+        } else {
+          // Non-boss: send request for each creature
+          const res = await fetch(`/api/clan/${clanId}/request`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ creatureId }),
+          });
+          const json = await res.json();
+          const name = myCreatures.find(c => c.id === creatureId)?.name ?? '?';
+          newResults.push({ name, ok: res.ok, msg: res.ok ? 'Richiesta inviata!' : (json.error?.message ?? 'Errore') });
+        }
+      } catch {
+        const name = myCreatures.find(c => c.id === creatureId)?.name ?? '?';
+        newResults.push({ name, ok: false, msg: 'Errore di rete' });
+      }
+    }
+
+    setResults(newResults);
+    setSubmitting(false);
+
+    // If all succeeded, close after a short delay
+    if (newResults.every(r => r.ok)) {
+      setTimeout(onDone, 1000);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-border/30 bg-background p-5 shadow-2xl shadow-black/40 my-auto max-h-[85dvh] overflow-y-auto">
+        <h2 className="mb-1 text-lg font-bold text-foreground">
+          {isBoss ? 'Aggiungi le Tue Creature' : 'Proponi le Tue Creature'}
+        </h2>
+        <p className="mb-4 text-xs text-muted">
+          {isBoss
+            ? 'Seleziona le creature da aggiungere direttamente alla Famiglia.'
+            : 'Seleziona le creature da proporre al Boss per l\'ingresso nella Famiglia.'}
+        </p>
+
+        {loading ? (
+          <div className="space-y-2">
+            {[1,2,3].map(i => <div key={i} className="h-12 rounded-lg bg-surface-2 animate-pulse" />)}
+          </div>
+        ) : myCreatures.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted">Nessuna creatura idonea disponibile.</p>
+        ) : (
+          <>
+            <div className="space-y-1.5 mb-4">
+              {myCreatures.map((c) => {
+                const isSelected = selected.has(c.id);
+                const result = results.find(r => r.name === c.name);
+                const vp = { ...DEFAULT_VISUAL_PARAMS, ...(c.visualParams as Partial<VisualParams>) } as VisualParams;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => !result && toggleSelect(c.id)}
+                    disabled={!!result}
+                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all ${
+                      result
+                        ? result.ok ? 'border-accent/40 bg-accent/5' : 'border-danger/40 bg-danger/5'
+                        : isSelected
+                          ? 'border-accent/50 bg-accent/10'
+                          : 'border-border/20 bg-surface/40 hover:border-border/40'
+                    }`}
+                  >
+                    <div className="shrink-0">
+                      <CreatureRenderer params={vp} size={40} animated={false} seed={42} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate">{c.name}</p>
+                      <p className="text-[10px] text-muted">Giorno {c.ageDays ?? 0}</p>
+                    </div>
+                    {result ? (
+                      <span className={`text-[10px] font-bold ${result.ok ? 'text-accent' : 'text-danger'}`}>
+                        {result.msg}
+                      </span>
+                    ) : isSelected ? (
+                      <span className="text-accent text-sm">✓</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={onClose} className="flex-1 rounded-lg border border-border/30 py-2 text-xs font-bold text-muted transition hover:text-foreground">
+                Chiudi
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={selected.size === 0 || submitting}
+                className="flex-1 rounded-lg bg-accent/20 border border-accent/30 py-2 text-xs font-bold text-accent transition hover:bg-accent/30 disabled:opacity-50"
+              >
+                {submitting ? '...' : isBoss
+                  ? `Aggiungi ${selected.size} creatur${selected.size === 1 ? 'a' : 'e'}`
+                  : `Proponi ${selected.size} creatur${selected.size === 1 ? 'a' : 'e'}`}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
