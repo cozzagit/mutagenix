@@ -584,9 +584,10 @@ function CronologiaTab({ activeCreatureName }: { activeCreatureName: string }) {
   return (
     <div>
       {/* Header (desktop) */}
-      <div className="hidden md:grid md:grid-cols-[7rem_1fr_1fr_3rem_5rem_4rem] gap-2 px-3 py-1.5 text-[10px] text-muted uppercase tracking-wider border-b border-border/30">
+      <div className="hidden md:grid md:grid-cols-[7rem_1fr_2rem_1fr_3rem_5rem_4rem] gap-2 px-3 py-1.5 text-[10px] text-muted uppercase tracking-wider border-b border-border/30">
         <span>Data</span>
         <span>La tua creatura</span>
+        <span></span>
         <span>Avversario</span>
         <span>Esito</span>
         <span>ELO</span>
@@ -599,7 +600,7 @@ function CronologiaTab({ activeCreatureName }: { activeCreatureName: string }) {
         <button
           key={entry.battleId}
           onClick={() => router.push(`/arena/battle/${entry.battleId}`)}
-          className={`w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-[7rem_1fr_1fr_3rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10 transition-colors text-left ${
+          className={`w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-[7rem_1fr_2rem_1fr_3rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10 transition-colors text-left ${
             isActive ? 'bg-primary/[0.04] hover:bg-primary/[0.08] border-l-2 border-l-primary/40' : 'hover:bg-surface-2'
           }`}
         >
@@ -622,15 +623,12 @@ function CronologiaTab({ activeCreatureName }: { activeCreatureName: string }) {
               </>
             )}
           </span>
-          {/* Desktop: separate columns with arrow */}
-          <span className="hidden md:flex items-center gap-1 text-primary truncate">
-            {entry.myCreatureName}
-            {entry.wasChallenger && <span className="text-danger/50 text-[9px]">&rarr;</span>}
+          {/* Desktop: 3 columns — my creature | arrow | opponent */}
+          <span className="hidden md:block text-primary truncate">{entry.myCreatureName}</span>
+          <span className="hidden md:flex items-center justify-center text-danger/60 text-sm">
+            {entry.wasChallenger ? '\u2192' : '\u2190'}
           </span>
-          <span className="hidden md:flex items-center gap-1 text-foreground truncate">
-            {!entry.wasChallenger && <span className="text-danger/50 text-[9px]">&rarr;</span>}
-            {entry.opponentName}
-          </span>
+          <span className="hidden md:block text-foreground truncate">{entry.opponentName}</span>
           <span className={`font-bold ${resultColor(entry.result)}`}>
             {resultLabel(entry.result)}
           </span>
