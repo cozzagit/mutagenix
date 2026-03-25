@@ -210,29 +210,77 @@ export function WarriorCard({ warrior, compact = false }: WarriorCardProps) {
     PERSONALITY_LABELS[warrior.dominantPersonality] ?? PERSONALITY_LABELS.aggression;
   const statMax = 80; // bar scale max
 
-  /* ---- COMPACT MODE ---- */
+  /* ---- COMPACT MODE (mobile) — now with full info ---- */
   if (compact) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-surface/80 px-3 py-2">
-        <div className="shrink-0">
-          <CreatureRenderer params={vp} size={64} animated={false} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-bold text-foreground truncate">{warrior.name}</span>
-            <span className="text-bio-cyan text-[10px]">&#9889;</span>
-            <span className="text-xs font-black font-mono text-foreground">{warrior.eloRating}</span>
-            <span className="text-[10px] font-mono text-accent">{warrior.wins}V</span>
+      <div className="rounded-xl border border-border/50 bg-surface/80 p-3">
+        {/* Top: creature + name + ELO */}
+        <div className="flex items-center gap-3">
+          <div className="shrink-0">
+            <CreatureRenderer params={vp} size={64} animated={false} />
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            <TierBadge tier={warrior.tier} />
-            <AxpBadgeFromValue axp={warrior.axp} />
-            <StabilityBadge stability={warrior.stability} />
-            {warrior.cariche && warrior.cariche.length > 0 && warrior.cariche.map((cId) => (
-              <CaricaBadge key={cId} caricaId={cId} compact />
-            ))}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-bold text-foreground truncate">{warrior.name}</span>
+            </div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-bio-cyan text-[10px]">&#9889;</span>
+              <span className="text-base font-black font-mono text-foreground">{warrior.eloRating}</span>
+              <span className="text-[10px] font-mono text-accent ml-1">{warrior.wins}V</span>
+              <span className="text-[10px] font-mono text-danger">{warrior.losses}S</span>
+              {warrior.draws > 0 && <span className="text-[10px] font-mono text-warning">{warrior.draws}P</span>}
+            </div>
+            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+              <TierBadge tier={warrior.tier} />
+              <AxpBadgeFromValue axp={warrior.axp} />
+              <StabilityBadge stability={warrior.stability} />
+              {warrior.cariche && warrior.cariche.length > 0 && warrior.cariche.map((cId) => (
+                <CaricaBadge key={cId} caricaId={cId} compact />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats bars */}
+        <div className="mt-2.5 rounded-lg bg-surface-2/60 p-2 flex flex-col gap-1">
+          <StatBar icon="&#9876;" value={warrior.attackPower} max={statMax} color="bg-danger" />
+          <StatBar icon="&#128737;" value={warrior.defense} max={statMax} color="bg-primary" />
+          <StatBar icon="&#9889;" value={warrior.speed} max={statMax} color="bg-bio-cyan" />
+          <StatBar icon="&#10084;" value={warrior.stamina} max={statMax} color="bg-bio-green" />
+          <StatBar icon="&#10024;" value={warrior.specialAttack} max={statMax} color="bg-bio-purple" />
+        </div>
+
+        {/* Wellness + Battles remaining */}
+        <div className="mt-2 flex items-center justify-between">
+          {warrior.wellness && (
+            <div className="flex items-center gap-1">
+              {([
+                { key: 'activity' as const, icon: '\u26A1' },
+                { key: 'hunger' as const, icon: '\uD83E\uDDEA' },
+                { key: 'boredom' as const, icon: '\u2694\uFE0F' },
+                { key: 'fatigue' as const, icon: '\uD83D\uDCA4' },
+              ]).map((ind) => {
+                const val = warrior.wellness![ind.key];
+                const col = val >= 70 ? '#00e5a0' : val >= 40 ? '#ff9100' : '#ff3d3d';
+                return (
+                  <div key={ind.key} className="flex flex-col items-center gap-0.5">
+                    <span className="text-[9px]">{ind.icon}</span>
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: col }} />
+                  </div>
+                );
+              })}
+              <span className="text-[9px] font-bold ml-0.5" style={{ color: warrior.wellness.composite >= 60 ? '#00e5a0' : warrior.wellness.composite >= 30 ? '#ff9100' : '#ff3d3d' }}>
+                {warrior.wellness.composite}%
+              </span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-[10px]">
+            <span className="text-muted">Sfide rimaste: <strong className="text-foreground">{warrior.battlesRemaining}</strong></span>
             {warrior.recovery.active && (
-              <span className="text-[9px] text-warning font-bold uppercase">Recupero</span>
+              <span className="text-warning font-bold uppercase">In recupero</span>
+            )}
+            {warrior.trauma.active && (
+              <span className="text-danger font-bold uppercase">Trauma</span>
             )}
           </div>
         </div>
