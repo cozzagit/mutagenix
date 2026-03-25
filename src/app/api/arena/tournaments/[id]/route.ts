@@ -71,10 +71,9 @@ export async function GET(
   // Fetch creature names for participants' squads
   const creatureIds = new Set<string>();
   for (const p of participantRows) {
-    const snap = p.squadSnapshot as { starters?: string[] } | null;
-    if (snap?.starters) {
-      for (const cid of snap.starters) creatureIds.add(cid);
-    }
+    const snap = p.squadSnapshot as { starters?: string[]; creatureIds?: string[] } | null;
+    const ids = snap?.starters ?? snap?.creatureIds ?? [];
+    for (const cid of ids) creatureIds.add(cid);
   }
 
   const creatureDataMap = new Map<string, { name: string; ageDays: number; visualParams: Record<string, unknown> }>();
@@ -99,8 +98,8 @@ export async function GET(
 
   // Add creature data to each participant
   const participantsWithCreature = participantRows.map(p => {
-    const snap = p.squadSnapshot as { starters?: string[] } | null;
-    const creatureId = snap?.starters?.[0];
+    const snap = p.squadSnapshot as { starters?: string[]; creatureIds?: string[] } | null;
+    const creatureId = (snap?.starters ?? snap?.creatureIds)?.[0];
     const cd = creatureId ? creatureDataMap.get(creatureId) : null;
     return {
       ...p,
