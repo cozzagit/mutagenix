@@ -97,7 +97,7 @@ function ClanGangCard({ group }: { group: ClanGroup }) {
 
   return (
     <div
-      className="rounded-2xl border bg-surface/30 p-5 text-center"
+      className="rounded-2xl border bg-surface/30 p-5 text-center overflow-visible"
       style={{ borderColor: `${group.emblemColor}33` }}
     >
       {/* Clan name with emblem glow */}
@@ -115,7 +115,7 @@ function ClanGangCard({ group }: { group: ClanGroup }) {
       </p>
 
       {/* Gang photo — packed group, overlapping, big creatures */}
-      <div className="relative flex items-end justify-center" style={{ minHeight: 220 }}>
+      <div className="relative flex items-end justify-center overflow-visible" style={{ minHeight: Math.max(250, 180 + soldatiFiltered.length * 15) }}>
 
         {/* Layer 1 (back): Soldati — large, packed tight, overlapping */}
         {soldatiFiltered.map((s, i) => {
