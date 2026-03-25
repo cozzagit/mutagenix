@@ -567,9 +567,10 @@ export function LabDashboard({
 
       {/* Slide-out panel */}
       <div
-        className={`fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-border/50 bg-surface/95 backdrop-blur-md transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed left-0 top-0 z-50 flex w-[260px] flex-col border-r border-border/50 bg-surface/95 backdrop-blur-md transition-transform duration-300 ease-out md:hidden ${
           statsOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ height: 'calc(100dvh - 48px - env(safe-area-inset-bottom, 0px))' }}
       >
         {/* Panel header */}
         <div className="flex items-center justify-between border-b border-border/30 px-4 py-3">
