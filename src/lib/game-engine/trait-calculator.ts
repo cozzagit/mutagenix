@@ -33,6 +33,7 @@ export function calculateTraitDeltas(
   stability: number,
   allocation?: Partial<Record<ElementId, number>>,
   geneticImprint?: GeneticImprint,
+  familyGeneration?: number,
 ): Record<TraitId, number> {
   const growthRate =
     GAME_CONFIG.GROWTH_RATE_BASE / (1 + ageDays * 0.01);
@@ -55,7 +56,8 @@ export function calculateTraitDeltas(
     let creditSum = 0;
     let levelSum = 0;
     for (const el of ELEMENTS) {
-      const imprintCoeff = geneticImprint?.[el] ?? 1.0;
+      // Genetic imprint only applies to offspring (Gen 2+), not founders
+      const imprintCoeff = (familyGeneration && familyGeneration > 1) ? (geneticImprint?.[el] ?? 1.0) : 1.0;
       creditSum += (credits[el] ?? 0) * ELEMENT_TRAIT_WEIGHTS[el][trait] * imprintCoeff;
       levelSum += elementLevels[el] * ELEMENT_TRAIT_WEIGHTS[el][trait];
     }

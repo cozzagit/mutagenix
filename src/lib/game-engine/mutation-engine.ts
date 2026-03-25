@@ -110,6 +110,7 @@ export interface CreatureInput {
   foundingElements?: Record<string, number> | null;
   growthElements?: Record<string, number> | null;
   geneticImprint?: Record<string, number> | null;
+  familyGeneration?: number;
 }
 
 /**
@@ -188,6 +189,7 @@ export function processDailyMutation(
     newStability,
     allocation,
     geneticImprint,
+    creature.familyGeneration,
   );
 
   // --- 4. Synergy bonuses ---

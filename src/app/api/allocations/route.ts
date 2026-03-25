@@ -193,6 +193,7 @@ export async function POST(request: NextRequest) {
     foundingElements: creature.foundingElements ?? null,
     growthElements: creature.growthElements ?? null,
     geneticImprint: creatureGeneticImprint,
+    familyGeneration: creature.familyGeneration,
   };
 
   const result = processDailyMutation(creatureInput, credits);
