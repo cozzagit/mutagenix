@@ -536,7 +536,7 @@ function ClassificaTab({ myCreatureId }: { myCreatureId: string }) {
 /* Tab: Cronologia                                                    */
 /* ------------------------------------------------------------------ */
 
-function CronologiaTab() {
+function CronologiaTab({ activeCreatureName }: { activeCreatureName: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const [history, setHistory] = useState<BattleHistoryEntry[]>([]);
@@ -592,11 +592,15 @@ function CronologiaTab() {
         <span>Round</span>
       </div>
 
-      {history.map((entry) => (
+      {history.map((entry) => {
+        const isActive = entry.myCreatureName === activeCreatureName;
+        return (
         <button
           key={entry.battleId}
           onClick={() => router.push(`/arena/battle/${entry.battleId}`)}
-          className="w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-[7rem_1fr_1fr_3rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10 hover:bg-surface-2 transition-colors text-left"
+          className={`w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-[7rem_1fr_1fr_3rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10 transition-colors text-left ${
+            isActive ? 'bg-primary/[0.04] hover:bg-primary/[0.08] border-l-2 border-l-primary/40' : 'hover:bg-surface-2'
+          }`}
         >
           <span className="text-muted font-mono text-[10px]">
             {new Date(entry.date).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
@@ -623,7 +627,8 @@ function CronologiaTab() {
             {entry.eloDelta >= 0 ? "+" : ""}{entry.eloDelta}
           </span>
         </button>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -730,7 +735,7 @@ export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false
           {sfideTab === "ranked" && <SfidaTab warrior={warrior} />}
           {sfideTab === "farming" && <FarmingPage />}
           {sfideTab === "classifica" && <ClassificaTab myCreatureId={warrior.creatureId} />}
-          {sfideTab === "cronologia" && <CronologiaTab />}
+          {sfideTab === "cronologia" && <CronologiaTab activeCreatureName={warrior.name} />}
         </>
       )}
 
