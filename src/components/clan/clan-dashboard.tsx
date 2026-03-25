@@ -1735,6 +1735,9 @@ interface LeaderboardClan {
 function InlineClanLeaderboard() {
   const [clans, setClans] = useState<LeaderboardClan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedClanId, setExpandedClanId] = useState<string | null>(null);
+  const [clanMembers, setClanMembers] = useState<Array<{ name: string; ownerName: string; role: string; visualParams: Record<string, unknown> }>>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   useEffect(() => {
     async function fetchClans() {
@@ -1748,6 +1751,23 @@ function InlineClanLeaderboard() {
     }
     fetchClans();
   }, []);
+
+  async function toggleClanDetail(clanId: string) {
+    if (expandedClanId === clanId) {
+      setExpandedClanId(null);
+      return;
+    }
+    setExpandedClanId(clanId);
+    setLoadingMembers(true);
+    try {
+      const res = await fetch(`/api/clan/${clanId}`);
+      if (res.ok) {
+        const json = await res.json();
+        setClanMembers(json.data?.members ?? []);
+      }
+    } catch { /* ignore */ }
+    finally { setLoadingMembers(false); }
+  }
 
   if (loading) {
     return (
@@ -1777,32 +1797,104 @@ function InlineClanLeaderboard() {
         <span>V/S</span>
         <span>Membri</span>
       </div>
-      {clans.map((clan, i) => (
-        <div
-          key={clan.id}
-          className="grid grid-cols-[2rem_1fr_auto] md:grid-cols-[2.5rem_1fr_5rem_5rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10"
-        >
-          <span className="font-mono text-muted">{i + 1}</span>
-          <div className="flex items-center gap-2 truncate">
-            {clan.emblemColor && (
-              <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: clan.emblemColor, boxShadow: `0 0 6px ${clan.emblemColor}44` }} />
+      {clans.map((clan, i) => {
+        const isExpanded = expandedClanId === clan.id;
+        return (
+          <div key={clan.id}>
+            <button
+              onClick={() => toggleClanDetail(clan.id)}
+              className={`w-full grid grid-cols-[2rem_1fr_auto] md:grid-cols-[2.5rem_1fr_5rem_5rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10 text-left transition-colors ${
+                isExpanded ? 'bg-surface-2/50' : 'hover:bg-surface-2/30'
+              }`}
+            >
+              <span className="font-mono text-muted">{i + 1}</span>
+              <div className="flex items-center gap-2 truncate">
+                {clan.emblemColor && (
+                  <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: clan.emblemColor, boxShadow: `0 0 6px ${clan.emblemColor}44` }} />
+                )}
+                <span className="font-bold text-foreground truncate">{clan.name}</span>
+                <span className="text-[9px] text-muted/40">{isExpanded ? '▲' : '▼'}</span>
+              </div>
+              <div className="flex items-center gap-2 md:hidden">
+                <span className="font-mono font-bold text-foreground">{clan.clanElo}</span>
+                <span className="text-[9px] text-muted">{clan.totalMembers}m</span>
+              </div>
+              <span className="hidden md:block font-mono text-foreground">{clan.clanElo}</span>
+              <span className="hidden md:block font-mono text-amber-400">{clan.prestige}</span>
+              <span className="hidden md:block text-muted">
+                <span className="text-accent">{clan.clanWins}V</span> <span className="text-danger">{clan.clanLosses}S</span>
+              </span>
+              <span className="hidden md:block text-muted">{clan.totalMembers}</span>
+            </button>
+            {/* Expanded: gang photo */}
+            {isExpanded && (
+              <div className="border-b border-border/10 bg-surface/20 px-4 py-4">
+                {loadingMembers ? (
+                  <div className="flex justify-center py-4">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-primary" />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    {/* Back row: Soldati */}
+                    {(() => {
+                      const soldati = clanMembers.filter(m => m.role === 'soldato' || m.role === 'member');
+                      if (soldati.length === 0) return null;
+                      return (
+                        <div className="flex items-end justify-center relative z-0 mb-[-8px]">
+                          {soldati.map((s, si) => {
+                            const vp = { ...DEFAULT_VISUAL_PARAMS, ...(s.visualParams as Partial<VisualParams>) } as VisualParams;
+                            return (
+                              <div key={si} className="flex flex-col items-center" style={{ marginLeft: si > 0 ? '-6px' : '0', zIndex: si }}>
+                                <CreatureRenderer params={vp} size={45} animated={false} seed={42} />
+                                <p className="text-[7px] text-muted/50 max-w-[45px] truncate">{s.name}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                    {/* Middle: Luogotenenti */}
+                    {(() => {
+                      const luogos = clanMembers.filter(m => m.role === 'luogotenente');
+                      if (luogos.length === 0) return null;
+                      return (
+                        <div className="flex items-end justify-center gap-6 relative z-10 mb-[-5px]">
+                          {luogos.map((l, li) => {
+                            const vp = { ...DEFAULT_VISUAL_PARAMS, ...(l.visualParams as Partial<VisualParams>) } as VisualParams;
+                            return (
+                              <div key={li} className="flex flex-col items-center">
+                                <span className="text-[9px] mb-[-2px]">⭐</span>
+                                <CreatureRenderer params={vp} size={60} animated={false} seed={42} />
+                                <p className="text-[8px] text-muted max-w-[60px] truncate">{l.name}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                    {/* Front: Boss */}
+                    {(() => {
+                      const boss = clanMembers.find(m => m.role === 'boss');
+                      if (!boss) return null;
+                      const vp = { ...DEFAULT_VISUAL_PARAMS, ...(boss.visualParams as Partial<VisualParams>) } as VisualParams;
+                      return (
+                        <div className="flex flex-col items-center relative z-20">
+                          <span className="text-sm mb-[-4px]">👑</span>
+                          <div style={{ filter: `drop-shadow(0 0 8px ${clan.emblemColor}44)` }}>
+                            <CreatureRenderer params={vp} size={75} animated={false} seed={42} />
+                          </div>
+                          <p className="text-[10px] font-bold text-foreground">{boss.name}</p>
+                          <p className="text-[8px] text-muted">{boss.ownerName}</p>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             )}
-            <span className="font-bold text-foreground truncate">{clan.name}</span>
           </div>
-          {/* Mobile right side */}
-          <div className="flex items-center gap-2 md:hidden">
-            <span className="font-mono font-bold text-foreground">{clan.clanElo}</span>
-            <span className="text-[9px] text-muted">{clan.totalMembers}m</span>
-          </div>
-          {/* Desktop columns */}
-          <span className="hidden md:block font-mono text-foreground">{clan.clanElo}</span>
-          <span className="hidden md:block font-mono text-amber-400">{clan.prestige}</span>
-          <span className="hidden md:block text-muted">
-            <span className="text-accent">{clan.clanWins}V</span> <span className="text-danger">{clan.clanLosses}S</span>
-          </span>
-          <span className="hidden md:block text-muted">{clan.totalMembers}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

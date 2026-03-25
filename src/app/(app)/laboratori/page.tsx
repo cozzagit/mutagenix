@@ -152,15 +152,17 @@ export default async function LaboratoriPage() {
       creatureId: clanMemberships.creatureId,
       clanName: clans.name,
       emblemColor: clans.emblemColor,
+      role: clanMemberships.role,
     })
     .from(clanMemberships)
     .innerJoin(clans, eq(clans.id, clanMemberships.clanId));
 
-  const clanMap = new Map<string, { name: string; emblemColor: string }>();
+  const clanMap = new Map<string, { name: string; emblemColor: string; role: string }>();
   for (const cm of allClanMemberships) {
     clanMap.set(cm.creatureId, {
       name: cm.clanName,
       emblemColor: cm.emblemColor ?? '#6b7280',
+      role: cm.role,
     });
   }
 

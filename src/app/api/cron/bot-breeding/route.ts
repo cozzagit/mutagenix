@@ -17,8 +17,10 @@ import {
   breedingRequests,
   breedingRecords,
   creatureLineage,
+  clans,
+  clanMemberships,
 } from '@/lib/db/schema';
-import { eq, and, ne, sql, inArray } from 'drizzle-orm';
+import { eq, and, ne, sql, inArray, notInArray } from 'drizzle-orm';
 import {
   calculateOffspring,
   type BreedingParent,
@@ -665,11 +667,110 @@ export async function GET(request: NextRequest) {
   }
 
   // =========================================================================
-  // 7. Riepilogo finale
+  // 7. Phase 4: Clan recruitment — bot clans recruit clanless bot creatures
+  // =========================================================================
+  log.push('[BOT BREEDING] === Fase 4: Reclutamento clan bot ===');
+
+  let clanRecruits = 0;
+
+  // Find all clans owned by bot users
+  const botClans = await db
+    .select()
+    .from(clans)
+    .where(
+      and(
+        inArray(clans.ownerId, botUserIds),
+        ne(clans.status, 'disbanded'),
+      ),
+    );
+
+  if (botClans.length === 0) {
+    log.push('[BOT BREEDING] Nessun clan bot trovato.');
+  } else {
+    log.push(`[BOT BREEDING] Trovati ${botClans.length} clan bot.`);
+
+    // Get all creature IDs already in a clan
+    const allMemberships = await db
+      .select({ creatureId: clanMemberships.creatureId })
+      .from(clanMemberships);
+    const creaturesInClan = new Set(allMemberships.map((m) => m.creatureId));
+
+    for (const clan of botClans) {
+      if (clanRecruits >= 2) {
+        log.push(`[BOT BREEDING] Limite reclutamenti raggiunto (${clanRecruits}/2), stop.`);
+        break;
+      }
+
+      // Check max members
+      if (clan.totalMembers >= clan.maxMembers) {
+        log.push(`[BOT BREEDING] Clan "${clan.name}": pieno (${clan.totalMembers}/${clan.maxMembers}), salto.`);
+        continue;
+      }
+
+      // Find bot creatures NOT in any clan, alive, not archived, ageDays >= 40
+      const eligible = allBotCreatures.filter((c) => {
+        if (creaturesInClan.has(c.id)) return false;
+        if (c.isDead) return false;
+        if (c.isArchived) return false;
+        if ((c.ageDays ?? 0) < 40) return false;
+        return true;
+      });
+
+      if (eligible.length === 0) {
+        log.push(`[BOT BREEDING] Clan "${clan.name}": nessuna creatura bot eligible per reclutamento.`);
+        continue;
+      }
+
+      for (const creature of eligible) {
+        if (clanRecruits >= 2) break;
+        if (clan.totalMembers + clanRecruits >= clan.maxMembers) break;
+
+        // 30% random chance per eligible creature per cycle
+        if (Math.random() > 0.30) continue;
+
+        try {
+          // Add creature to clan as 'soldato'
+          await db.insert(clanMemberships).values({
+            clanId: clan.id,
+            creatureId: creature.id,
+            userId: creature.userId,
+            role: 'soldato',
+          });
+
+          // Update clan totalMembers and status
+          const newTotal = clan.totalMembers + clanRecruits + 1;
+          await db
+            .update(clans)
+            .set({
+              totalMembers: sql`${clans.totalMembers} + 1`,
+              status: newTotal >= 3 ? 'active' : clan.status,
+              updatedAt: now,
+            })
+            .where(eq(clans.id, clan.id));
+
+          creaturesInClan.add(creature.id);
+          clanRecruits++;
+
+          log.push(
+            `[BOT BREEDING] Reclutato "${creature.name}" nel clan "${clan.name}" come soldato.`,
+          );
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          log.push(`[BOT BREEDING] ERRORE reclutamento "${creature.name}": ${errMsg}`);
+        }
+      }
+    }
+  }
+
+  log.push(`[BOT BREEDING] Reclutamenti clan completati: ${clanRecruits}`);
+
+  // =========================================================================
+  // 8. Riepilogo finale
   // =========================================================================
   log.push(
     `[BOT BREEDING] Ciclo completato. Riproduzioni: ${breedingResults.length}, ` +
-    `Auto-accept: ${autoAccepted}, Proposte: ${proposalsSent}`,
+    `Auto-accept: ${autoAccepted}, Proposte: ${proposalsSent}, ` +
+    `Reclutamenti clan: ${clanRecruits}`,
   );
 
   return NextResponse.json({
@@ -677,6 +778,7 @@ export async function GET(request: NextRequest) {
       breedings: breedingResults.length,
       autoAccepted,
       proposals: proposalsSent,
+      clanRecruits,
       results: breedingResults,
       log,
     },

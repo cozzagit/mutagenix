@@ -11,6 +11,7 @@ import { CaricaBadge } from '@/components/cariche/carica-badge';
 import { ClanBadge } from '@/components/clan/clan-badge';
 import { COMBAT_TRAITS } from '@/lib/game-engine/constants';
 import { StirpiView } from './stirpi-view';
+import { ClanGangView } from './clan-gang-view';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,7 +44,7 @@ export interface LaboratoriCreature {
   cariche?: string[];
   isDead?: boolean;
   isBot?: boolean;
-  clanInfo?: { name: string; emblemColor: string } | null;
+  clanInfo?: { name: string; emblemColor: string; role?: string } | null;
 }
 
 interface LaboratoriDirectoryProps {
@@ -722,7 +723,7 @@ function CreatureDetailDrawer({
 // ---------------------------------------------------------------------------
 
 export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
-  const [view, setView] = useState<'grid' | 'stirpi'>('grid');
+  const [view, setView] = useState<'grid' | 'stirpi' | 'clan'>('grid');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('potenza');
   const [tierFilter, setTierFilter] = useState<TierFilter>('all');
@@ -835,6 +836,13 @@ export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
             >
               Stirpi
             </button>
+            <button
+              type="button"
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === 'clan' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+              onClick={() => setView('clan')}
+            >
+              Clan
+            </button>
           </div>
         </div>
       </div>
@@ -921,7 +929,11 @@ export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
       </div>
 
       {/* Main content area */}
-      {view === 'stirpi' ? (
+      {view === 'clan' ? (
+        <div className="relative z-10">
+          <ClanGangView creatures={creatures} />
+        </div>
+      ) : view === 'stirpi' ? (
         <div className="relative z-10">
           <StirpiView creatures={creatures} />
         </div>
