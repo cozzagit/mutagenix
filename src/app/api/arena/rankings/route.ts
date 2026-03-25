@@ -4,6 +4,8 @@ import {
   creatures,
   creatureRankings,
   cariche as caricheTable,
+  clanMemberships,
+  clans,
 } from '@/lib/db/schema';
 import { users } from '@/lib/db/schema/users';
 import { eq, desc, and, sql } from 'drizzle-orm';
@@ -66,6 +68,26 @@ export async function GET(request: NextRequest) {
     if (u.email?.includes('@mutagenix.io')) botUserIdSet.add(u.id);
   }
 
+  // Batch load clan memberships for ranked creatures
+  const allClanMemberships = rankings.length > 0
+    ? await db
+        .select({
+          creatureId: clanMemberships.creatureId,
+          clanName: clans.name,
+          emblemColor: clans.emblemColor,
+        })
+        .from(clanMemberships)
+        .innerJoin(clans, eq(clans.id, clanMemberships.clanId))
+    : [];
+
+  const clanInfoMap = new Map<string, { name: string; emblemColor: string }>();
+  for (const cm of allClanMemberships) {
+    clanInfoMap.set(cm.creatureId, {
+      name: cm.clanName,
+      emblemColor: cm.emblemColor ?? '#6b7280',
+    });
+  }
+
   // Add position (offset-based)
   const rankedList = rankings.map((r, i) => ({
     position: offset + i + 1,
@@ -82,6 +104,7 @@ export async function GET(request: NextRequest) {
     bestWinStreak: r.bestWinStreak,
     tier: r.rankTier,
     cariche: caricheMap.get(r.creatureId) ?? [],
+    clanInfo: clanInfoMap.get(r.creatureId) ?? null,
   }));
 
   // Try to get the requesting user's position (if authenticated)

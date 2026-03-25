@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getRequiredSession } from '@/lib/auth/get-session';
 import { db } from '@/lib/db';
-import { users, creatures, creatureRankings, cariche } from '@/lib/db/schema';
+import { users, creatures, creatureRankings, cariche, clanMemberships, clans } from '@/lib/db/schema';
 import { eq, and, sql, gte, gt, desc } from 'drizzle-orm';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import { calculateSynergies } from '@/lib/game-engine/synergy-system';
@@ -146,7 +146,25 @@ export default async function LaboratoriPage() {
     caricheMap.set(c.creatureId, arr);
   }
 
-  // 7. Build creature data with recalculated visuals and potenza
+  // 7. Batch load clan memberships
+  const allClanMemberships = await db
+    .select({
+      creatureId: clanMemberships.creatureId,
+      clanName: clans.name,
+      emblemColor: clans.emblemColor,
+    })
+    .from(clanMemberships)
+    .innerJoin(clans, eq(clans.id, clanMemberships.clanId));
+
+  const clanMap = new Map<string, { name: string; emblemColor: string }>();
+  for (const cm of allClanMemberships) {
+    clanMap.set(cm.creatureId, {
+      name: cm.clanName,
+      emblemColor: cm.emblemColor ?? '#6b7280',
+    });
+  }
+
+  // 8. Build creature data with recalculated visuals and potenza
   const creaturesData: LaboratoriCreature[] = allCreatures
     .map((c) => {
       const user = usersMap.get(c.userId);
@@ -215,6 +233,7 @@ export default async function LaboratoriPage() {
           parentA: c.parentACreatureId ? parentNameMap.get(c.parentACreatureId) ?? null : null,
           parentB: c.parentBCreatureId ? parentNameMap.get(c.parentBCreatureId) ?? null : null,
         } : null,
+        clanInfo: clanMap.get(c.id) ?? null,
       };
     })
     .filter((c) => c !== null)

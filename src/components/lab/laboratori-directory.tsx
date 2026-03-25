@@ -8,6 +8,7 @@ import {
 import type { VisualParams } from '@/lib/game-engine/visual-mapper';
 import { PersonalityRadar } from '@/components/lab/personality-radar';
 import { CaricaBadge } from '@/components/cariche/carica-badge';
+import { ClanBadge } from '@/components/clan/clan-badge';
 import { COMBAT_TRAITS } from '@/lib/game-engine/constants';
 import { StirpiView } from './stirpi-view';
 
@@ -42,6 +43,7 @@ export interface LaboratoriCreature {
   cariche?: string[];
   isDead?: boolean;
   isBot?: boolean;
+  clanInfo?: { name: string; emblemColor: string } | null;
 }
 
 interface LaboratoriDirectoryProps {
@@ -245,6 +247,11 @@ function SpecimenCard({
             {creature.ownerName}
             {creature.isBot && (
               <span className="ml-1 rounded-sm bg-surface-3 px-1 py-0.5 text-[7px] font-bold text-muted/60 uppercase">Bot</span>
+            )}
+            {creature.clanInfo && (
+              <span className="ml-1 inline-flex align-middle">
+                <ClanBadge clanName={creature.clanInfo.name} emblemColor={creature.clanInfo.emblemColor} />
+              </span>
             )}
           </p>
 

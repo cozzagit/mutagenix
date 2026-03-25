@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { WarriorCard, TierBadge, type WarriorData } from "./warrior-card";
 import { CaricaBadge } from "@/components/cariche/carica-badge";
+import { ClanBadge } from "@/components/clan/clan-badge";
 import { OpponentCard, type OpponentData } from "./opponent-card";
 import { BattleSuspense } from "./battle-suspense";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ interface RankingEntry {
   tier: string;
   cariche?: string[];
   isBot?: boolean;
+  clanInfo?: { name: string; emblemColor: string } | null;
 }
 
 interface BattleHistoryEntry {
@@ -484,6 +486,11 @@ function ClassificaTab({ myCreatureId }: { myCreatureId: string }) {
                   {entry.ownerName}
                   {entry.isBot && (
                     <span className="ml-1 rounded-sm bg-surface-3 px-1 py-0.5 text-[7px] font-bold text-muted/60 uppercase">Bot</span>
+                  )}
+                  {entry.clanInfo && (
+                    <span className="ml-1 inline-flex align-middle">
+                      <ClanBadge clanName={entry.clanInfo.name} emblemColor={entry.clanInfo.emblemColor} />
+                    </span>
                   )}
                 </span>
                 <span className="font-mono text-foreground">{entry.eloRating}</span>

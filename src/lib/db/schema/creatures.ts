@@ -110,6 +110,10 @@ export const creatures = pgTable('creatures', {
   archivedAt: timestamp('archived_at', { withTimezone: true }),
   archiveReason: text('archive_reason'), // 'reset' | 'failed' | null
 
+  // Clan traitor fields
+  isTraitor: boolean('is_traitor').notNull().default(false),
+  betrayedClanName: text('betrayed_clan_name'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

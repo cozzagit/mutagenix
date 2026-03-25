@@ -83,6 +83,16 @@ const PRIMARY_NAV: NavItem[] = [
 
 const SECONDARY_NAV: NavItem[] = [
   {
+    href: "/clan",
+    label: "Clan",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L9 7H4l3.5 5L6 18h4l2 4 2-4h4l-1.5-6L20 7h-5L12 2Z" />
+        <circle cx="12" cy="11" r="2" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
     href: "/profile",
     label: "Profilo",
     icon: (
