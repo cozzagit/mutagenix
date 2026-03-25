@@ -583,8 +583,9 @@ function CronologiaTab() {
   return (
     <div>
       {/* Header (desktop) */}
-      <div className="hidden md:grid md:grid-cols-[7rem_1fr_3rem_5rem_4rem] gap-2 px-3 py-1.5 text-[10px] text-muted uppercase tracking-wider border-b border-border/30">
+      <div className="hidden md:grid md:grid-cols-[7rem_1fr_1fr_3rem_5rem_4rem] gap-2 px-3 py-1.5 text-[10px] text-muted uppercase tracking-wider border-b border-border/30">
         <span>Data</span>
+        <span>La tua creatura</span>
         <span>Avversario</span>
         <span>Esito</span>
         <span>ELO</span>
@@ -595,12 +596,20 @@ function CronologiaTab() {
         <button
           key={entry.battleId}
           onClick={() => router.push(`/arena/battle/${entry.battleId}`)}
-          className="w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-[7rem_1fr_3rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10 hover:bg-surface-2 transition-colors text-left"
+          className="w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-[7rem_1fr_1fr_3rem_5rem_4rem] gap-2 px-3 py-2.5 text-xs items-center border-b border-border/10 hover:bg-surface-2 transition-colors text-left"
         >
           <span className="text-muted font-mono text-[10px]">
             {new Date(entry.date).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
           </span>
-          <span className="text-foreground truncate">{entry.opponentName}</span>
+          {/* Mobile: "MiaCreatura vs Avversario" in one column */}
+          <span className="text-foreground truncate md:hidden">
+            <span className="text-primary">{entry.myCreatureName}</span>
+            <span className="text-muted"> vs </span>
+            {entry.opponentName}
+          </span>
+          {/* Desktop: separate columns */}
+          <span className="hidden md:block text-primary truncate">{entry.myCreatureName}</span>
+          <span className="hidden md:block text-foreground truncate">{entry.opponentName}</span>
           <span className={`font-bold ${resultColor(entry.result)}`}>
             {resultLabel(entry.result)}
           </span>
