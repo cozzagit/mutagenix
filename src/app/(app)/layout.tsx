@@ -7,43 +7,27 @@ import { ToastProvider } from "@/components/ui/toast";
 import { BattleNotifier } from "@/components/pwa/battle-notifier";
 
 // Increment this on breaking changes to force client refresh
-const APP_VERSION = 5;
+const APP_VERSION = 6;
+
+/* ------------------------------------------------------------------ */
+/* Nav items — PRIMARY (always visible in bottom bar)                  */
+/* ------------------------------------------------------------------ */
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-}
-
-interface NavItemExt extends NavItem {
   activeColor?: 'red' | 'blue';
-  badgeKey?: string; // key for badge counter
+  badgeKey?: string;
 }
 
-const NAV_ITEMS: NavItemExt[] = [
+const PRIMARY_NAV: NavItem[] = [
   {
     href: "/lab",
     label: "Lab",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5m-4.75-11.396c.25.023.5.05.75.082M5 14.5l-1.456 1.456a1.5 1.5 0 0 0 1.06 2.544h14.792a1.5 1.5 0 0 0 1.06-2.544L19 14.5m-14 0h14"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "/lab/log",
-    label: "Diario",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5m-4.75-11.396c.25.023.5.05.75.082M5 14.5l-1.456 1.456a1.5 1.5 0 0 0 1.06 2.544h14.792a1.5 1.5 0 0 0 1.06-2.544L19 14.5m-14 0h14" />
       </svg>
     ),
   },
@@ -66,6 +50,8 @@ const NAV_ITEMS: NavItemExt[] = [
   {
     href: "/breeding",
     label: "DNA",
+    activeColor: 'blue',
+    badgeKey: 'breeding',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 4c0 6 8 6 8 12" />
@@ -76,8 +62,43 @@ const NAV_ITEMS: NavItemExt[] = [
         <line x1="8" y1="16.5" x2="16" y2="16.5" strokeLinecap="round" opacity="0.5" />
       </svg>
     ),
-    activeColor: 'blue',
-    badgeKey: 'breeding',
+  },
+  {
+    href: "/laboratori",
+    label: "Biosfera",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+        <circle cx="12" cy="12" r="9" />
+        <path strokeLinecap="round" d="M3 12h18" />
+        <path strokeLinecap="round" d="M12 3c-2.5 3-4 6.5-4 9s1.5 6 4 9" />
+        <path strokeLinecap="round" d="M12 3c2.5 3 4 6.5 4 9s-1.5 6-4 9" />
+      </svg>
+    ),
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/* Nav items — SECONDARY (inside "Altro" menu)                         */
+/* ------------------------------------------------------------------ */
+
+const SECONDARY_NAV: NavItem[] = [
+  {
+    href: "/profile",
+    label: "Profilo",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/lab/log",
+    label: "Diario",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+    ),
   },
   {
     href: "/cariche",
@@ -89,35 +110,23 @@ const NAV_ITEMS: NavItemExt[] = [
     ),
   },
   {
-    href: "/laboratori",
-    label: "Biosfera",
+    href: "/guida",
+    label: "Guida",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-        {/* Globe / ecosystem icon */}
-        <circle cx="12" cy="12" r="9" />
-        <path strokeLinecap="round" d="M3 12h18" />
-        <path strokeLinecap="round" d="M12 3c-2.5 3-4 6.5-4 9s1.5 6 4 9" />
-        <path strokeLinecap="round" d="M12 3c2.5 3 4 6.5 4 9s-1.5 6-4 9" />
-      </svg>
-    ),
-  },
-  {
-    href: "/profile",
-    label: "",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
-        />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 18h.01" />
       </svg>
     ),
   },
 ];
 
-function NavLink({ item, isActive, badge }: { item: NavItemExt; isActive: boolean; badge?: number }) {
+const ALL_NAV = [...PRIMARY_NAV, ...SECONDARY_NAV];
+
+/* ------------------------------------------------------------------ */
+/* Desktop NavLink                                                     */
+/* ------------------------------------------------------------------ */
+
+function NavLink({ item, isActive, badge }: { item: NavItem; isActive: boolean; badge?: number }) {
   const isRed = item.activeColor === 'red';
   const activeClass = isRed
     ? "text-danger [&_svg]:drop-shadow-[0_0_6px_#ff3d3d88]"
@@ -131,7 +140,7 @@ function NavLink({ item, isActive, badge }: { item: NavItemExt; isActive: boolea
       }`}
     >
       {item.icon}
-      {item.label && <span className="hidden md:inline">{item.label}</span>}
+      <span className="hidden md:inline">{item.label}</span>
       {badge !== undefined && badge > 0 && (
         <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold text-white">
           {badge > 9 ? '9+' : badge}
@@ -141,28 +150,48 @@ function NavLink({ item, isActive, badge }: { item: NavItemExt; isActive: boolea
   );
 }
 
-function MobileNavLink({ item, isActive, badge }: { item: NavItemExt; isActive: boolean; badge?: number }) {
+/* ------------------------------------------------------------------ */
+/* Mobile NavLink (with label)                                         */
+/* ------------------------------------------------------------------ */
+
+function MobileNavLink({ item, isActive, badge, onClick }: { item: NavItem; isActive: boolean; badge?: number; onClick?: () => void }) {
   const isRed = item.activeColor === 'red';
   const activeClass = isRed
     ? "text-danger [&_svg]:drop-shadow-[0_0_6px_#ff3d3d88]"
     : "text-primary [&_svg]:drop-shadow-[0_0_6px_#3d5afe88]";
 
+  const cls = `focus-ring relative flex flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[9px] font-medium transition-colors [&_svg]:h-[18px] [&_svg]:w-[18px] ${
+    isActive ? activeClass : "text-muted hover:text-foreground"
+  }`;
+
+  const badgeEl = badge !== undefined && badge > 0 ? (
+    <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-danger px-0.5 text-[8px] font-bold text-white">
+      {badge > 9 ? '9+' : badge}
+    </span>
+  ) : null;
+
+  if (onClick) {
+    return (
+      <button onClick={onClick} className={cls}>
+        {item.icon}
+        <span className="leading-none">{item.label}</span>
+        {badgeEl}
+      </button>
+    );
+  }
+
   return (
-    <Link
-      href={item.href}
-      className={`focus-ring relative flex items-center justify-center rounded-lg p-2 transition-colors [&_svg]:h-5 [&_svg]:w-5 ${
-        isActive ? activeClass : "text-muted hover:text-foreground"
-      }`}
-    >
+    <Link href={item.href} className={cls}>
       {item.icon}
-      {badge !== undefined && badge > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-danger px-0.5 text-[8px] font-bold text-white">
-          {badge > 9 ? '9+' : badge}
-        </span>
-      )}
+      <span className="leading-none">{item.label}</span>
+      {badgeEl}
     </Link>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Main Layout                                                         */
+/* ------------------------------------------------------------------ */
 
 export default function AppLayout({
   children,
@@ -172,10 +201,13 @@ export default function AppLayout({
   const pathname = usePathname();
   const [arenaBadge, setArenaBadge] = useState(0);
   const [breedingBadge, setBreedingBadge] = useState(0);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
   }
+
+  const isSecondaryActive = SECONDARY_NAV.some(item => isActive(item.href));
 
   // Force reload if client has stale version
   useEffect(() => {
@@ -184,19 +216,19 @@ export default function AppLayout({
     if (stored < APP_VERSION) {
       localStorage.setItem(key, String(APP_VERSION));
       if (stored > 0) {
-        // Only force reload if upgrading from a previous version (not first visit)
         window.location.reload();
       }
     }
   }, []);
 
-  // Fetch unread arena battles on mount and when not on arena page
+  // Close more menu on navigation
   useEffect(() => {
-    if (isActive("/arena")) {
-      setArenaBadge(0);
-      return;
-    }
+    setMoreMenuOpen(false);
+  }, [pathname]);
 
+  // Fetch unread arena battles
+  useEffect(() => {
+    if (isActive("/arena")) { setArenaBadge(0); return; }
     let cancelled = false;
     async function fetchUnread() {
       try {
@@ -204,9 +236,7 @@ export default function AppLayout({
         if (!res.ok || cancelled) return;
         const json = await res.json();
         setArenaBadge(json.data?.unseenBattles ?? 0);
-      } catch {
-        // silently ignore
-      }
+      } catch { /* silently ignore */ }
     }
     fetchUnread();
     return () => { cancelled = true; };
@@ -214,11 +244,7 @@ export default function AppLayout({
 
   // Fetch pending breeding requests for badge
   useEffect(() => {
-    if (isActive("/breeding")) {
-      setBreedingBadge(0);
-      return;
-    }
-
+    if (isActive("/breeding")) { setBreedingBadge(0); return; }
     let cancelled = false;
     async function fetchBreedingRequests() {
       try {
@@ -227,15 +253,13 @@ export default function AppLayout({
         const json = await res.json();
         const pending = (json.data ?? []).filter((r: { status: string }) => r.status === 'pending');
         setBreedingBadge(pending.length);
-      } catch {
-        // silently ignore
-      }
+      } catch { /* silently ignore */ }
     }
     fetchBreedingRequests();
     return () => { cancelled = true; };
   }, [pathname]);
 
-  function getBadge(item: NavItemExt): number | undefined {
+  function getBadge(item: NavItem): number | undefined {
     if (item.badgeKey === 'arena') return arenaBadge;
     if (item.badgeKey === 'breeding') return breedingBadge;
     return undefined;
@@ -253,29 +277,68 @@ export default function AppLayout({
           MX
         </Link>
         <nav className="flex items-center gap-1">
-          {NAV_ITEMS.map((item) => (
+          {ALL_NAV.map((item) => (
             <NavLink key={item.href} item={item} isActive={isActive(item.href)} badge={getBadge(item)} />
           ))}
         </nav>
       </header>
 
-      {/* Main content: fills all remaining space */}
+      {/* Main content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <ToastProvider>{children}</ToastProvider>
       </main>
 
       <BattleNotifier />
 
-      {/* Mobile: fixed bottom nav — icons only, always visible */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border/50 bg-surface/95 backdrop-blur-xl md:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', height: 'calc(48px + env(safe-area-inset-bottom, 0px))' }}
+      {/* Mobile: "Altro" popup menu */}
+      {moreMenuOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setMoreMenuOpen(false)} />
+          <div className="fixed bottom-[calc(48px+env(safe-area-inset-bottom,0px))] right-2 z-50 w-44 rounded-xl border border-border/50 bg-surface/95 p-2 shadow-xl shadow-black/30 backdrop-blur-xl md:hidden">
+            {SECONDARY_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMoreMenuOpen(false)}
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium transition-colors ${
+                  isActive(item.href) ? 'text-primary bg-primary/10' : 'text-muted hover:text-foreground hover:bg-surface-2'
+                }`}
+              >
+                <span className="[&_svg]:h-4 [&_svg]:w-4">{item.icon}</span>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Mobile: fixed bottom nav — 5 items with labels */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border/50 bg-surface/95 backdrop-blur-xl md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', height: 'calc(52px + env(safe-area-inset-bottom, 0px))' }}
       >
-        {NAV_ITEMS.map((item) => (
+        {PRIMARY_NAV.map((item) => (
           <MobileNavLink key={item.href} item={item} isActive={isActive(item.href)} badge={getBadge(item)} />
         ))}
+        {/* "Altro" button */}
+        <MobileNavLink
+          item={{
+            href: '',
+            label: 'Altro',
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+                <circle cx="12" cy="5" r="1.5" fill="currentColor" />
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                <circle cx="12" cy="19" r="1.5" fill="currentColor" />
+              </svg>
+            ),
+          }}
+          isActive={isSecondaryActive || moreMenuOpen}
+          onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+        />
       </nav>
-      {/* Spacer so content doesn't hide behind fixed nav on mobile */}
-      <div className="h-12 shrink-0 md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} />
+      {/* Spacer for fixed nav */}
+      <div className="shrink-0 md:hidden" style={{ height: 'calc(52px + env(safe-area-inset-bottom, 0px))' }} />
     </div>
   );
 }
