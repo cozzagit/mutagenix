@@ -494,9 +494,14 @@ function ClassificaTab({ myCreatureId }: { myCreatureId: string }) {
                 <span className="hidden md:block"><TierBadge tier={entry.tier} /></span>
                 <span className="hidden md:block text-muted">{entry.ageDays}</span>
 
-                {/* Mobile: right side */}
-                <div className="flex items-center gap-2 md:hidden">
-                  <span className="font-mono text-foreground">{entry.eloRating}</span>
+                {/* Mobile: right side — ELO + V/S + tier */}
+                <div className="flex items-center gap-1.5 md:hidden">
+                  <span className="font-mono font-bold text-foreground">{entry.eloRating}</span>
+                  <span className="text-[9px]">
+                    <span className="text-accent font-bold">{entry.wins}</span>
+                    <span className="text-muted">/</span>
+                    <span className="text-danger font-bold">{entry.losses}</span>
+                  </span>
                   <TierBadge tier={entry.tier} />
                 </div>
               </div>
