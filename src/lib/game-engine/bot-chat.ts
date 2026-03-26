@@ -28,18 +28,18 @@ const PERSONALITIES: Record<string, Omit<BotPersonality, 'userId'>> = {
     traits: ['aggressivo', 'tossico', 'competitivo'],
     rivalPlayerName: 'Samma',
     provocations: [
-      'SAMMA, la tua bestia puzza di zolfo stantio!',
-      'Acidmaw distruggerà quel pallone gonfiato di SAMMA!',
+      '@Samma, la tua bestia puzza di zolfo stantio!',
+      '#Acidmaw distruggerà quel pallone gonfiato di @Samma!',
       'Chi si avvicina al mio laboratorio ne esce intossicato. Letteralmente.',
       'Le vostre creature sono esperimenti falliti. Le mie sono ARMI.',
-      'SAMMA, preparati. Acidmaw ha fame.',
-      'Il veleno scorre nelle vene di Acidmaw. E presto scorrerà nelle vostre.',
-      'Ho visto creature più minacciose in un acquario per bambini.',
-      'SAMMA pensa di essere un genetista? Io lo chiamo dilettante.',
-      'Nella prossima battaglia, Acidmaw non lascerà nemmeno le ossa.',
-      'Il torneo sarà un massacro. Il MIO massacro.',
-      'SAMMA, il tuo DNA è più instabile della tua strategia!',
-      'Guardate le classifiche. Vedete dove siete? SOTTO di me.',
+      '@Samma, preparati. #Acidmaw ha fame.',
+      'Il veleno scorre nelle vene di #Acidmaw. E presto scorrerà nelle vostre.',
+      'Ho visto creature più minacciose in un acquario per bambini. Vero @Samma?',
+      '@Samma pensa di essere un genetista? Io lo chiamo dilettante.',
+      'Nella prossima battaglia, #Acidmaw non lascerà nemmeno le ossa.',
+      'Il torneo sarà un massacro. Il MIO massacro. Pronto @Samma?',
+      '@Samma, il tuo DNA è più instabile della tua strategia!',
+      'Guardate le classifiche. @Samma, vedete dove sei? SOTTO di me.',
     ],
     responses: {
       velenos: [
@@ -73,9 +73,9 @@ const PERSONALITIES: Record<string, Omit<BotPersonality, 'userId'>> = {
     provocations: [
       'La vostra strategia è elementare, cari colleghi. Elementare e sbagliata.',
       'Ho analizzato le vostre allocazioni. Patetico.',
-      'Neuronix ha un QI superiore alla somma di tutte le vostre creature.',
+      '#Neuraxis ha un QI superiore alla somma di tutte le vostre creature.',
       'La genetica non è un gioco. Beh, tecnicamente sì, ma voi non sapete giocarci.',
-      'Pubblicherò un paper sulla vostra incompetenza. Sarà un bestseller.',
+      'Pubblicherò un paper sulla vostra incompetenza. Sarà un bestseller, @Samma.',
       'Le vostre mutazioni sono... come dire... primitive.',
       'Osservo le vostre battaglie con la stessa curiosità con cui studio gli organismi monocellulari.',
       'Chi ha allocato quei nutrienti? Un generatore di numeri casuali avrebbe fatto meglio.',
@@ -109,9 +109,9 @@ const PERSONALITIES: Record<string, Omit<BotPersonality, 'userId'>> = {
     traits: ['stoica', 'guerriera', 'brutale'],
     provocations: [
       'Ferro e sangue. Nient\'altro.',
-      'Ironhide non conosce pietà. Nemmeno io.',
+      '#Ferrodon non conosce pietà. Nemmeno io.',
       'L\'arena è l\'unico posto dove le parole contano. E lì parlo con i fatti.',
-      'Allenatevi. Ne avrete bisogno.',
+      'Allenatevi. Ne avrete bisogno. Specialmente te, @Samma.',
       'La debolezza si paga. Sempre.',
       'Non parlo molto. Ironhide parla per me.',
       'Forza bruta > strategia complicata.',
@@ -147,9 +147,9 @@ const PERSONALITIES: Record<string, Omit<BotPersonality, 'userId'>> = {
     provocations: [
       'La luce rivela ciò che l\'ombra nasconde...',
       'Ho visto il futuro nelle sequenze genetiche. Non tutti sopravviveranno.',
-      'Phosphora danza tra le dimensioni. Voi vedete solo la superficie.',
+      '#Phosphex danza tra le dimensioni. Voi vedete solo la superficie.',
       'I nutrienti sono note. La mutazione è musica. Voi suonate stonati.',
-      'Le stelle parlano di una grande battaglia. Phosphora è pronta.',
+      'Le stelle parlano di una grande battaglia. #Phosphex è pronta.',
       'Ogni mutazione è un passo verso l\'illuminazione... o verso l\'oblio.',
       'Il fosforo illumina. Il fosforo brucia. Decidete voi cosa preferite.',
       'Nelle profondità del DNA, sussurra il destino...',
@@ -182,9 +182,9 @@ const PERSONALITIES: Record<string, Omit<BotPersonality, 'userId'>> = {
     displayName: 'Dr. Organix',
     traits: ['amichevole', 'competitivo', 'collaborativo'],
     provocations: [
-      'Symbion è pronto. E voi?',
+      '#Symbion è pronto. E voi?',
       'Bella giornata per un po\' di sana competizione, no?',
-      'Chi vuole allenarsi? Symbion ha bisogno di sparring partner!',
+      'Chi vuole allenarsi? #Symbion ha bisogno di sparring partner!',
       'Ho provato una nuova combinazione di nutrienti oggi. Risultati promettenti!',
       'L\'equilibrio è tutto. Troppo di un elemento e la creatura diventa instabile.',
       'Buona fortuna a tutti nel prossimo torneo! Ne avrete bisogno 😄',
@@ -263,13 +263,13 @@ export function generateBotProvocation(bot: BotPersonality | Omit<BotPersonality
   }
 
   // Otherwise pick a random provocation
-  // Sometimes address a random player
+  // Sometimes address a random player with @tag
   if (targetPlayers.length > 0 && Math.random() < 0.3) {
     const target = pickRandom(targetPlayers);
     const provocation = pickRandom(bot.provocations);
-    // If the provocation doesn't already mention someone specific, prepend
-    if (!provocation.includes('@') && !bot.rivalPlayerName) {
-      return `${target}, ${provocation.charAt(0).toLowerCase()}${provocation.slice(1)}`;
+    // If the provocation doesn't already mention someone, prepend @tag
+    if (!provocation.includes('@')) {
+      return `@${target}, ${provocation.charAt(0).toLowerCase()}${provocation.slice(1)}`;
     }
   }
 
@@ -287,9 +287,11 @@ export function generateBotResponse(
   // Check for trigger words in the bot's response map
   const lowerName = bot.displayName.toLowerCase().split(' ').pop() ?? '';
 
+  const tag = `@${mentionerName}`;
+
   // Check if the bot name was mentioned
   if (bot.responses[lowerName]) {
-    return pickRandom(bot.responses[lowerName]);
+    return `${tag} ${pickRandom(bot.responses[lowerName])}`;
   }
 
   // Check creature mentions
@@ -297,7 +299,7 @@ export function generateBotResponse(
     const lowerCreature = mentionedCreature.toLowerCase();
     for (const [trigger, responses] of Object.entries(bot.responses)) {
       if (lowerCreature.includes(trigger)) {
-        return pickRandom(responses);
+        return `${tag} ${pickRandom(responses)}`;
       }
     }
   }
@@ -310,8 +312,8 @@ export function generateBotResponse(
     }
   }
 
-  // Generic response
-  return pickRandom(bot.genericResponses);
+  // Generic response — tag the mentioner
+  return `${tag} ${pickRandom(bot.genericResponses)}`;
 }
 
 /**
