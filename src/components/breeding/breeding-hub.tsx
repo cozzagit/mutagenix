@@ -923,47 +923,93 @@ function getStabilityColor(stability: number): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* DNA connection between parents                                      */
+/* SVG connector between parents (horizontal with DNA helix + heart)   */
 /* ------------------------------------------------------------------ */
 
-function DnaConnection() {
+function ParentConnector() {
   return (
-    <div className="flex items-center gap-1 px-2 shrink-0">
-      <div className="h-[2px] w-6 md:w-8 bg-gradient-to-r from-primary/60 to-pink-400/60" />
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
-        <path
-          d="M6 3c0 4.97 5.37 8 12 8M18 3c0 4.97-5.37 8-12 8M6 21c0-4.97 5.37-8 12-8M18 21c0-4.97-5.37-8-12-8"
-          stroke="#e879a0"
-          strokeWidth={1.6}
-          strokeLinecap="round"
-          opacity={0.6}
-        />
+    <div className="flex items-center shrink-0 px-1">
+      <svg width="60" height="28" viewBox="0 0 60 28" fill="none" className="shrink-0">
+        {/* Glowing gradient line */}
+        <defs>
+          <linearGradient id="parentGrad" x1="0" y1="0.5" x2="1" y2="0.5">
+            <stop offset="0%" stopColor="#3d5afe" stopOpacity="0.6" />
+            <stop offset="50%" stopColor="#ec4899" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.15)" />
+          </linearGradient>
+          <filter id="parentGlow">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        {/* Main line */}
+        <path d="M 2 14 C 15 14, 20 8, 30 14 C 40 20, 45 14, 58 14" stroke="url(#parentGrad)" strokeWidth="2" strokeLinecap="round" filter="url(#parentGlow)" />
+        {/* DNA helix decoration */}
+        <path d="M 18 8 C 22 12, 26 16, 30 14 C 34 12, 38 8, 42 12" stroke="#ec4899" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+        <path d="M 18 20 C 22 16, 26 12, 30 14 C 34 16, 38 20, 42 16" stroke="#b26eff" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+        {/* Heart center */}
+        <text x="30" y="17" textAnchor="middle" fontSize="10" fill="#ec4899" opacity="0.7">{'\u2764'}</text>
       </svg>
-      <span className="text-pink-400 text-sm">&#9829;</span>
-      <div className="h-[2px] w-6 md:w-8 bg-gradient-to-r from-pink-400/60 to-border/40" />
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Vertical line connecting parent to offspring                        */
+/* SVG curved lines from parents to offspring                          */
 /* ------------------------------------------------------------------ */
 
-function VerticalLine({ mine }: { mine: boolean }) {
-  if (mine) {
-    return (
-      <div
-        className="w-[2px] h-8 mx-auto"
-        style={{
-          background: "linear-gradient(to bottom, rgba(61,90,254,0.6), rgba(178,110,255,0.6))",
-          boxShadow: "0 0 6px rgba(61,90,254,0.3)",
-        }}
-      />
-    );
-  }
+function OffspringConnectors({ hasMyOffspring, hasPartnerOffspring }: { hasMyOffspring: boolean; hasPartnerOffspring: boolean }) {
+  if (!hasMyOffspring && !hasPartnerOffspring) return null;
+
+  const w = 320;
+  const h = 50;
+  const midX = w / 2;
+  const leftX = w * 0.25;
+  const rightX = w * 0.75;
+
   return (
-    <div className="h-8 mx-auto flex justify-center">
-      <div className="w-[2px] border-l-2 border-dashed border-border/30 h-full" />
+    <div className="flex justify-center">
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none" className="shrink-0">
+        <defs>
+          <linearGradient id="myLineGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0%" stopColor="#ec4899" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#3d5afe" stopOpacity="0.7" />
+          </linearGradient>
+          <linearGradient id="partnerLineGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0%" stopColor="#ec4899" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.15)" />
+          </linearGradient>
+          <filter id="lineGlow">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        {/* Junction dot at top center */}
+        <circle cx={midX} cy={4} r={3} fill="#ec4899" opacity={0.6} filter="url(#lineGlow)" />
+
+        {/* My offspring — solid glowing curve */}
+        {hasMyOffspring && (
+          <path
+            d={`M ${midX} 4 C ${midX} 25, ${leftX} 20, ${leftX} ${h - 2}`}
+            stroke="url(#myLineGrad)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            filter="url(#lineGlow)"
+          />
+        )}
+
+        {/* Partner offspring — dashed subtle curve */}
+        {hasPartnerOffspring && (
+          <path
+            d={`M ${midX} 4 C ${midX} 25, ${rightX} 20, ${rightX} ${h - 2}`}
+            stroke="url(#partnerLineGrad)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeDasharray="4 3"
+          />
+        )}
+      </svg>
     </div>
   );
 }
@@ -1104,23 +1150,52 @@ function BreedingEventCard({
   event: BreedingEvent;
   depth: number;
 }) {
+  const parentSize = depth === 0 ? 70 : 60;
+  const offspringSize = depth === 0 ? 58 : 50;
+  const hasOffspring = !!(event.myOffspring || event.partnerOffspring);
+  const genC = getGenColor(primaryParent.familyGeneration);
+  const nextGenC = getGenColor(primaryParent.familyGeneration + 1);
+
   return (
     <div className="flex flex-col items-center">
+      {/* Breeding number badge */}
+      {depth === 0 && (
+        <div className="mb-2 flex items-center gap-1.5">
+          <div className="h-px flex-1 min-w-8" style={{ background: `linear-gradient(to right, transparent, ${genC.color}40)` }} />
+          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ color: genC.color, backgroundColor: `${genC.color}15` }}>
+            Accoppiamento
+          </span>
+          <div className="h-px flex-1 min-w-8" style={{ background: `linear-gradient(to left, transparent, ${genC.color}40)` }} />
+        </div>
+      )}
+
       {/* Parent pair row */}
       <div className="flex items-center justify-center">
-        <FamilyCreatureCard creature={primaryParent} role="mine" size={depth === 0 ? 70 : 60} />
-        <DnaConnection />
-        <FamilyCreatureCard creature={event.partnerParent} role="partner" size={depth === 0 ? 70 : 60} />
+        <FamilyCreatureCard creature={primaryParent} role="mine" size={parentSize} />
+        <ParentConnector />
+        <FamilyCreatureCard creature={event.partnerParent} role="partner" size={parentSize} />
       </div>
 
+      {/* SVG curved connections to offspring */}
+      {hasOffspring && (
+        <OffspringConnectors
+          hasMyOffspring={!!event.myOffspring}
+          hasPartnerOffspring={!!event.partnerOffspring}
+        />
+      )}
+
       {/* Offspring row */}
-      {(event.myOffspring || event.partnerOffspring) && (
+      {hasOffspring && (
         <div className="flex items-start justify-center gap-6 md:gap-10">
-          {/* My offspring (left) */}
+          {/* My offspring (left) — solid border, glow */}
           <div className="flex flex-col items-center">
-            <VerticalLine mine={true} />
             {event.myOffspring ? (
-              <FamilyCreatureCard creature={event.myOffspring} role="mine" size={55} />
+              <>
+                <div className="mb-1 text-center">
+                  <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: nextGenC.color }}>Tuo figlio</span>
+                </div>
+                <FamilyCreatureCard creature={event.myOffspring} role="mine" size={offspringSize} />
+              </>
             ) : (
               <div className="rounded-xl border border-dashed border-border/20 p-3 text-center" style={{ minWidth: 130 }}>
                 <p className="text-[9px] text-muted">Nessun figlio tuo</p>
@@ -1128,40 +1203,47 @@ function BreedingEventCard({
             )}
           </div>
 
-          {/* Partner offspring (right) */}
+          {/* Partner offspring (right) — dashed border, faded */}
           <div className="flex flex-col items-center">
-            <VerticalLine mine={false} />
             {event.partnerOffspring ? (
-              <FamilyCreatureCard creature={event.partnerOffspring} role="partner" size={55} />
+              <>
+                <div className="mb-1 text-center">
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-muted/50">Figlio partner</span>
+                </div>
+                <FamilyCreatureCard creature={event.partnerOffspring} role="partner" size={offspringSize} />
+              </>
             ) : (
-              <div className="rounded-xl border border-dashed border-border/20 p-3 text-center opacity-70" style={{ minWidth: 130 }}>
-                <p className="text-[9px] text-muted">Nessun figlio partner</p>
+              <div className="rounded-xl border border-dashed border-border/20 p-3 text-center opacity-50" style={{ minWidth: 130 }}>
+                <p className="text-[9px] text-muted">Figlio partner</p>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Recursive: if my offspring has child breedings, render them below */}
+      {/* Recursive: if my offspring has child breedings, show next generation */}
       {event.myOffspring && event.childBreedings.length > 0 && (
-        <div className="flex flex-col items-center mt-2">
-          {/* Connection line from offspring down to next breeding */}
-          <div
-            className="w-[2px] h-6"
-            style={{
-              background: `linear-gradient(to bottom, ${getGenColor(event.myOffspring.familyGeneration).color}, ${getGenColor(event.myOffspring.familyGeneration + 1).color})`,
-              boxShadow: `0 0 6px ${getGenColor(event.myOffspring.familyGeneration).glow}`,
-            }}
-          />
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0 my-1">
+        <div className="flex flex-col items-center mt-3">
+          {/* Curved connection line from offspring down to next breeding */}
+          <svg width="40" height="36" viewBox="0 0 40 36" fill="none">
+            <defs>
+              <linearGradient id={`nextGen-${depth}`} x1="0.5" y1="0" x2="0.5" y2="1">
+                <stop offset="0%" stopColor={nextGenC.color} stopOpacity="0.6" />
+                <stop offset="100%" stopColor={getGenColor(primaryParent.familyGeneration + 2).color} stopOpacity="0.6" />
+              </linearGradient>
+            </defs>
             <path
-              d="M6 3c0 4.97 5.37 8 12 8M18 3c0 4.97-5.37 8-12 8M6 21c0-4.97 5.37-8 12-8M18 21c0-4.97-5.37-8-12-8"
-              stroke={getGenColor(event.myOffspring.familyGeneration + 1).color}
-              strokeWidth={1.6}
+              d={`M 20 0 C 20 12, 20 24, 20 36`}
+              stroke={`url(#nextGen-${depth})`}
+              strokeWidth="2"
               strokeLinecap="round"
-              opacity={0.7}
+              filter="url(#lineGlow)"
             />
+            {/* DNA helix marker */}
+            <circle cx="20" cy="18" r="4" fill="none" stroke={nextGenC.color} strokeWidth="1" opacity="0.5" />
+            <circle cx="20" cy="18" r="1.5" fill={nextGenC.color} opacity="0.6" />
           </svg>
+
           {event.childBreedings.map((childEvent) => (
             <BreedingEventCard
               key={childEvent.breedingId}
