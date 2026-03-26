@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { CreatureRenderer, DEFAULT_VISUAL_PARAMS } from "@/components/creature/creature-renderer";
 import type { VisualParams } from "@/lib/game-engine/visual-mapper";
 import { Button } from "@/components/ui/button";
@@ -143,7 +142,6 @@ function FlashOverlay({ type, visible, damage }: { type: string; visible: boolea
 /* ------------------------------------------------------------------ */
 
 export function BattleReplay({ battle, tournamentId }: { battle: BattleReplayData; tournamentId?: string | null }) {
-  const router = useRouter();
   const [currentRound, setCurrentRound] = useState(0);
   const [autoPlaying, setAutoPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -305,15 +303,15 @@ export function BattleReplay({ battle, tournamentId }: { battle: BattleReplayDat
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
       {/* Back button */}
-      <button
-        onClick={() => router.push(tournamentId ? `/arena?tournament=${tournamentId}` : "/arena")}
+      <a
+        href={tournamentId ? `/arena?tournament=${tournamentId}` : "/arena"}
         className="flex items-center gap-1 text-xs text-muted hover:text-foreground transition-colors mb-4"
       >
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
           <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
         </svg>
         {tournamentId ? 'Torna al Torneo' : 'Torna all\u0027Arena'}
-      </button>
+      </a>
 
       {/* Battle arena */}
       <div className="rounded-2xl border border-border/50 bg-surface/80 p-4 md:p-6">
@@ -493,8 +491,8 @@ export function BattleReplay({ battle, tournamentId }: { battle: BattleReplayDat
           </div>
 
           <div className="flex gap-3 justify-center mt-6">
-            <Button variant="secondary" size="sm" onClick={() => router.push(tournamentId ? `/arena?tournament=${tournamentId}` : "/arena")}>
-              {tournamentId ? 'TORNA AL TORNEO' : 'TORNA ALL\u0027ARENA'}
+            <Button variant="secondary" size="sm" onClick={() => { goFirst(); setShowResult(false); }}>
+              RIVEDI REPLAY
             </Button>
           </div>
         </div>
