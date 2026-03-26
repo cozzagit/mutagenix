@@ -222,7 +222,17 @@ export function executeSquadBattle(
     } else if (team2TotalHp > team1TotalHp) {
       winnerUserId = team2.userId;
     } else {
-      winnerUserId = null; // true draw
+      // Tiebreaker: compare total attack power, then speed
+      const t1Attack = team1.creatures.reduce((s, c) => s + c.attackPower, 0);
+      const t2Attack = team2.creatures.reduce((s, c) => s + c.attackPower, 0);
+      if (t1Attack > t2Attack) {
+        winnerUserId = team1.userId;
+      } else if (t2Attack > t1Attack) {
+        winnerUserId = team2.userId;
+      } else {
+        // Final tiebreaker: team1 wins (higher seed / first listed)
+        winnerUserId = team1.userId;
+      }
     }
   }
 
