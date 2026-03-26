@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
 /* ------------------------------------------------------------------ */
@@ -14,6 +16,7 @@ interface BracketMatch {
   winnerId: string | null;
   winnerName: string | null;
   status: string;
+  battleId?: string | null;
 }
 
 interface TournamentBracketProps {
@@ -82,6 +85,19 @@ function MatchNode({
           <span className="text-accent ml-1 shrink-0">&#10003;</span>
         )}
       </div>
+
+      {/* Replay link */}
+      {isCompleted && match.battleId && (
+        <Link
+          href={`/arena/battle/${match.battleId}`}
+          className="flex items-center justify-center gap-1 px-2 py-1 text-[9px] font-bold text-primary hover:text-foreground bg-primary/5 hover:bg-primary/10 border-t border-border/20 transition-colors"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+            <path d="M6.3 2.84A1.5 1.5 0 0 0 4 4.11v11.78a1.5 1.5 0 0 0 2.3 1.27l9.344-5.891a1.5 1.5 0 0 0 0-2.538L6.3 2.841Z" />
+          </svg>
+          REPLAY
+        </Link>
+      )}
     </div>
   );
 }

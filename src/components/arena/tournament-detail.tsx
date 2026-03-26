@@ -57,6 +57,7 @@ interface MatchData {
   winnerName?: string | null;
   completedAt: string | null;
   duelResults: unknown;
+  battleId?: string | null;
 }
 
 interface StandingData {

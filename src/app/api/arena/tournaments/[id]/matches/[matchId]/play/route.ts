@@ -392,7 +392,7 @@ export async function POST(
         : tournamentParticipants.matchesDrawn,
       points: sql`${tournamentParticipants.points} + ${points1}`,
       accumulatedDamage: newAccDamage1,
-      isEliminated: isKnockout && !participant1Won ? true : undefined,
+      isEliminated: isKnockout ? !participant1Won : false,
     })
     .where(eq(tournamentParticipants.id, participant1.id));
 
@@ -412,7 +412,7 @@ export async function POST(
         : tournamentParticipants.matchesDrawn,
       points: sql`${tournamentParticipants.points} + ${points2}`,
       accumulatedDamage: newAccDamage2,
-      isEliminated: isKnockout && !participant2Won ? true : undefined,
+      isEliminated: isKnockout ? !participant2Won : false,
     })
     .where(eq(tournamentParticipants.id, participant2.id));
 

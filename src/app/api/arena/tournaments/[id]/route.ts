@@ -8,6 +8,7 @@ import {
   tournaments,
   tournamentParticipants,
   tournamentMatches,
+  battles,
   users,
   creatures,
 } from '@/lib/db/schema';
@@ -118,6 +119,28 @@ export async function GET(
       sql`${tournamentMatches.roundNumber} ASC, ${tournamentMatches.createdAt} ASC`,
     );
 
+  // Fetch battle IDs for completed matches (for replay links)
+  const completedMatchIds = matchRows.filter(m => m.status === 'completed').map(m => m.id);
+  const battleIdMap = new Map<string, string>();
+  if (completedMatchIds.length > 0) {
+    const battleRows = await db
+      .select({ id: battles.id, tournamentMatchId: battles.tournamentMatchId })
+      .from(battles)
+      .where(sql`${battles.tournamentMatchId} IN (${sql.join(completedMatchIds.map(id => sql`${id}`), sql`, `)})`)
+      .orderBy(sql`${battles.duelIndex} ASC`);
+    // Use first battle per match (for 1v1 there's only one)
+    for (const b of battleRows) {
+      if (b.tournamentMatchId && !battleIdMap.has(b.tournamentMatchId)) {
+        battleIdMap.set(b.tournamentMatchId, b.id);
+      }
+    }
+  }
+
+  const matchesWithBattleId = matchRows.map(m => ({
+    ...m,
+    battleId: battleIdMap.get(m.id) ?? null,
+  }));
+
   // Check if user is enrolled + collect enrolled creature IDs
   const myEntries = participantRows.filter((p) => p.userId === session.userId);
   const isEnrolled = myEntries.length > 0;
@@ -140,7 +163,7 @@ export async function GET(
     data: {
       tournament,
       participants: participantsWithCreature,
-      matches: matchRows,
+      matches: matchesWithBattleId,
       isEnrolled,
       myParticipantId: myParticipant?.id ?? null,
       myEnrolledCreatureIds,
