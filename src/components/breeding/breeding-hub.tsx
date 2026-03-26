@@ -1155,10 +1155,28 @@ function FamilyCreatureCard({
 /*     |    [GrandChild]                                               */
 /* ------------------------------------------------------------------ */
 
+/** Max breedings per creature */
+const MAX_BREEDINGS = 3;
+
+/** Empty slot placeholder for unused breeding slots */
+function EmptySlot({ label }: { label: string }) {
+  return (
+    <div
+      className="rounded-xl border-2 border-dashed p-2.5 flex flex-col items-center justify-center"
+      style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.015)', minWidth: 130, maxWidth: 170, minHeight: 100 }}
+    >
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1.2} className="mb-1.5">
+        <circle cx="12" cy="12" r="9" strokeDasharray="3 3" />
+        <path d="M12 9v6M9 12h6" strokeLinecap="round" />
+      </svg>
+      <p className="text-[8px] text-muted/40 uppercase tracking-wider font-bold">{label}</p>
+    </div>
+  );
+}
+
 /**
  * A single breeding column: shows partner, then offspring below.
  * The "parent" creature is NOT re-rendered — it's already visible above.
- * Lines connect FROM the parent (above) TO the partner and offspring.
  */
 function BreedingColumn({
   event,
@@ -1174,75 +1192,81 @@ function BreedingColumn({
 
   return (
     <div className="flex flex-col items-center">
-      {/* Partner (the only new creature at this level) */}
+      {/* Partner card with heart */}
       <div className="relative">
         <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[8px] text-pink-400/60">{'\u2764'}</span>
-        <FamilyCreatureCard creature={event.partnerParent} role="partner" size={depth === 0 ? 60 : 52} />
+        <FamilyCreatureCard creature={event.partnerParent} role="partner" size={depth === 0 ? 58 : 50} />
       </div>
 
-      {/* Curved SVG lines down to each offspring */}
+      {/* SVG curve to offspring */}
       {offspring.length > 0 && (
         <>
-          <svg width={offspring.length * 150} height="32" viewBox={`0 0 ${offspring.length * 150} 32`} fill="none" className="shrink-0">
-            <defs>
-              <filter id={`cGlow-${event.breedingId}`}>
-                <feGaussianBlur stdDeviation="2" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-            </defs>
-            {/* Junction dot */}
+          <svg width={offspring.length * 150} height="30" viewBox={`0 0 ${offspring.length * 150} 30`} fill="none" className="shrink-0">
             <circle cx={offspring.length * 75} cy={3} r={2.5} fill={childGenC.color} opacity={0.5} />
             {offspring.map((child, i) => {
               const midX = offspring.length * 75;
               const childX = offspring.length === 1 ? midX : 75 + i * 150;
               return (
-                <path
-                  key={child.creatureId}
-                  d={`M ${midX} 3 C ${midX} 16, ${childX} 14, ${childX} 30`}
+                <path key={child.creatureId}
+                  d={`M ${midX} 3 C ${midX} 15, ${childX} 13, ${childX} 28`}
                   stroke={child.isMine ? childGenC.color : "rgba(255,255,255,0.15)"}
-                  strokeWidth={child.isMine ? 2 : 1.5}
-                  strokeLinecap="round"
+                  strokeWidth={child.isMine ? 2 : 1.5} strokeLinecap="round"
                   strokeDasharray={child.isMine ? "none" : "4 3"}
                   opacity={child.isMine ? 0.7 : 0.4}
-                  filter={child.isMine ? `url(#cGlow-${event.breedingId})` : undefined}
                 />
               );
             })}
           </svg>
 
-          {/* Offspring row */}
           <div className="flex items-start gap-3">
-            {offspring.map((child) => (
-              <div key={child.creatureId} className="flex flex-col items-center">
-                <span className="text-[7px] font-bold uppercase tracking-wider mb-0.5"
-                  style={{ color: child.isMine ? childGenC.color : 'rgba(255,255,255,0.25)' }}>
-                  {child.isMine ? 'Tuo' : 'Partner'}
-                </span>
-                <FamilyCreatureCard creature={child} role={child.isMine ? "mine" : "partner"} size={depth === 0 ? 52 : 45} />
+            {offspring.map((child) => {
+              // Count this child's actual breedings
+              const childBreedingCount = (child.creatureId === event.myOffspring?.creatureId)
+                ? event.childBreedings.length : 0;
 
-                {/* If this child has breedings, show them directly below (no re-rendering the child) */}
-                {child.creatureId === event.myOffspring?.creatureId && event.childBreedings.length > 0 && (
-                  <div className="flex flex-col items-center mt-1">
-                    {/* Vertical connector from offspring down to their breeding columns */}
-                    <svg width="2" height="16" viewBox="0 0 2 16" fill="none">
-                      <line x1="1" y1="0" x2="1" y2="16" stroke={childGenC.color} strokeWidth="1.5" opacity="0.4" />
-                    </svg>
+              return (
+                <div key={child.creatureId} className="flex flex-col items-center">
+                  <span className="text-[7px] font-bold uppercase tracking-wider mb-0.5"
+                    style={{ color: child.isMine ? childGenC.color : 'rgba(255,255,255,0.25)' }}>
+                    {child.isMine ? 'Tuo' : 'Partner'}
+                  </span>
+                  <FamilyCreatureCard creature={child} role={child.isMine ? "mine" : "partner"} size={depth === 0 ? 50 : 44} />
 
-                    {/* Sub-breedings side by side */}
-                    <div className="flex items-start gap-4">
-                      {event.childBreedings.map((childEvent) => (
-                        <BreedingColumn
-                          key={childEvent.breedingId}
-                          event={childEvent}
-                          parentGen={child.familyGeneration}
-                          depth={depth + 1}
-                        />
-                      ))}
+                  {/* Sub-breedings: show actual + empty slots up to MAX_BREEDINGS */}
+                  {child.isMine && (
+                    <div className="flex flex-col items-center mt-1">
+                      {(childBreedingCount > 0 || true) && (
+                        <>
+                          {/* Vertical connector */}
+                          <svg width="2" height="14" viewBox="0 0 2 14" fill="none">
+                            <line x1="1" y1="0" x2="1" y2="14" stroke={childGenC.color} strokeWidth="1.5"
+                              opacity={childBreedingCount > 0 ? 0.4 : 0.15}
+                              strokeDasharray={childBreedingCount > 0 ? "none" : "3 3"} />
+                          </svg>
+
+                          {/* Sub-breeding columns + empty slots */}
+                          <div className="flex items-start gap-3">
+                            {/* Actual breedings */}
+                            {child.creatureId === event.myOffspring?.creatureId && event.childBreedings.map((childEvent) => (
+                              <BreedingColumn
+                                key={childEvent.breedingId}
+                                event={childEvent}
+                                parentGen={child.familyGeneration}
+                                depth={depth + 1}
+                              />
+                            ))}
+                            {/* Empty slots for remaining breeding capacity */}
+                            {Array.from({ length: MAX_BREEDINGS - childBreedingCount }).map((_, i) => (
+                              <EmptySlot key={`empty-${child.creatureId}-${i}`} label="Slot libero" />
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
         </>
       )}
@@ -1251,69 +1275,70 @@ function BreedingColumn({
 }
 
 /**
- * Full family tree: root on top, breeding columns below.
+ * Full family tree: root on top, ALWAYS 3 breeding slots below.
  * Each creature appears exactly ONCE.
  */
 function FamilyTreeLayout({ root, breedings }: { root: TreeCreature; breedings: BreedingEvent[] }) {
   const genC = getGenColor(root.familyGeneration);
-  const numBreedings = breedings.length;
+  const emptyCount = MAX_BREEDINGS - breedings.length;
+  const totalSlots = MAX_BREEDINGS;
 
   return (
     <div className="flex flex-col items-center">
       {/* Root creature — shown ONCE at the top */}
       <FamilyCreatureCard creature={root} role="mine" size={75} />
 
-      {/* SVG trunk: curved lines from root down to each partner column */}
-      {numBreedings > 0 && (
-        <svg
-          width={Math.max(numBreedings * 200, 200)}
-          height="36"
-          viewBox={`0 0 ${Math.max(numBreedings * 200, 200)} 36`}
-          fill="none"
-          className="shrink-0"
-        >
-          <defs>
-            <filter id="trunkGlow">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-          {(() => {
-            const totalW = Math.max(numBreedings * 200, 200);
-            const midX = totalW / 2;
-            return breedings.map((b, i) => {
-              const branchX = numBreedings === 1
-                ? midX
-                : (totalW * (i + 1)) / (numBreedings + 1);
-              return (
-                <path
-                  key={b.breedingId}
-                  d={`M ${midX} 2 C ${midX} 18, ${branchX} 14, ${branchX} 34`}
-                  stroke={genC.color}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  opacity="0.45"
-                  filter="url(#trunkGlow)"
-                />
-              );
-            });
-          })()}
-        </svg>
-      )}
+      {/* SVG trunk: 3 curved lines from root down (solid for active, dashed for empty) */}
+      <svg
+        width={totalSlots * 200}
+        height="36"
+        viewBox={`0 0 ${totalSlots * 200} 36`}
+        fill="none"
+        className="shrink-0"
+      >
+        <defs>
+          <filter id="trunkGlow">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        {Array.from({ length: totalSlots }).map((_, i) => {
+          const totalW = totalSlots * 200;
+          const midX = totalW / 2;
+          const branchX = (totalW * (i + 1)) / (totalSlots + 1);
+          const isActive = i < breedings.length;
 
-      {/* Breeding columns side by side — each shows ONLY the partner + offspring */}
-      {numBreedings > 0 && (
-        <div className="flex items-start justify-center gap-6 md:gap-8 flex-wrap">
-          {breedings.map((event) => (
-            <BreedingColumn
-              key={event.breedingId}
-              event={event}
-              parentGen={root.familyGeneration}
-              depth={0}
+          return (
+            <path
+              key={i}
+              d={`M ${midX} 2 C ${midX} 18, ${branchX} 14, ${branchX} 34`}
+              stroke={genC.color}
+              strokeWidth={isActive ? 2 : 1}
+              strokeLinecap="round"
+              opacity={isActive ? 0.45 : 0.12}
+              strokeDasharray={isActive ? "none" : "4 4"}
+              filter={isActive ? "url(#trunkGlow)" : undefined}
             />
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </svg>
+
+      {/* 3 columns: actual breedings + empty slots */}
+      <div className="flex items-start justify-center gap-5 md:gap-7">
+        {/* Actual breeding columns */}
+        {breedings.map((event) => (
+          <BreedingColumn
+            key={event.breedingId}
+            event={event}
+            parentGen={root.familyGeneration}
+            depth={0}
+          />
+        ))}
+        {/* Empty breeding slots */}
+        {Array.from({ length: emptyCount }).map((_, i) => (
+          <EmptySlot key={`root-empty-${i}`} label="Slot libero" />
+        ))}
+      </div>
     </div>
   );
 }
