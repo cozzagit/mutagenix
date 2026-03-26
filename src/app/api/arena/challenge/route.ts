@@ -189,6 +189,7 @@ export async function POST(request: NextRequest) {
     .where(
       and(
         eq(battles.challengerUserId, session.userId),
+        eq(battles.battleType, 'ranked'),
         gte(battles.createdAt, todayStart),
       ),
     );
