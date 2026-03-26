@@ -160,10 +160,16 @@ function initFighter(creature: BattleCreature): FighterState {
   // Sangue synergy: +10% effective stamina
   const staminaMultiplier = hasSynergy(creature, 'sangue') ? 1.10 : 1.0;
 
-  // Tier combat bonuses (Immortale +10%, Divinità +20%)
+  // Tier combat bonuses (Immortale +10%, Divinità +20%, Eterno +25%)
   if (creature.ageDays !== undefined) {
     const tier = getRankTier(creature.ageDays);
-    if (tier === 'divine') {
+    if (tier === 'eternal') {
+      const bonus = 1.25; // +25% — looks amazing, but senescence eats it
+      maxHp *= bonus;
+      effectiveAtk *= bonus;
+      effectiveDef *= bonus;
+      effectiveSpd *= bonus;
+    } else if (tier === 'divine') {
       const bonus = 1 + GAME_CONFIG.DIVINE_COMBAT_BONUS;
       maxHp *= bonus;
       effectiveAtk *= bonus;
@@ -1036,6 +1042,7 @@ export function calculateEloChange(
 // ---------------------------------------------------------------------------
 
 export function getRankTier(ageDays: number): RankTier {
+  if (ageDays >= 1000) return 'eternal';
   if (ageDays >= 500) return 'divine';
   if (ageDays >= 300) return 'immortal';
   if (ageDays <= 60) return 'novice';

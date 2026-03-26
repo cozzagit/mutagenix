@@ -50,7 +50,8 @@ const ADJACENT_TIERS: Record<RankTier, RankTier[]> = {
   veteran: ['intermediate', 'veteran', 'legend'],
   legend: ['veteran', 'legend', 'immortal'],
   immortal: ['legend', 'immortal', 'divine'],
-  divine: ['immortal', 'divine', 'legend'],
+  divine: ['immortal', 'divine', 'eternal'],
+  eternal: ['divine', 'eternal'],
 };
 
 // ---------------------------------------------------------------------------
@@ -360,11 +361,13 @@ export async function GET(request: NextRequest) {
 
     // Calcola crediti massimi (tier bonus)
     const creatureTier = getRankTier(creature.ageDays ?? 0);
-    const bonusCredits = creatureTier === 'divine'
-      ? GAME_CONFIG.DIVINE_CREDIT_BONUS
-      : creatureTier === 'immortal'
-        ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
-        : 0;
+    const bonusCredits = creatureTier === 'eternal'
+      ? GAME_CONFIG.ETERNAL_CREDIT_BONUS
+      : creatureTier === 'divine'
+        ? GAME_CONFIG.DIVINE_CREDIT_BONUS
+        : creatureTier === 'immortal'
+          ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
+          : 0;
     const maxCredits = GAME_CONFIG.DAILY_CREDITS + bonusCredits;
 
     // Scala la ricetta se supera il massimo

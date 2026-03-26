@@ -24,7 +24,7 @@ export interface LaboratoriCreature {
   ageDays: number;
   generation: number;
   stability: number;
-  level: string; // 'embryo' | 'novice' | 'intermediate' | 'veteran' | 'legend' | 'immortal' | 'divine'
+  level: string; // 'embryo' | 'novice' | 'intermediate' | 'veteran' | 'legend' | 'immortal' | 'divine' | 'eternal'
   potenza: number;
   visualParams: Record<string, unknown>;
   elementLevels: Record<string, number>;
@@ -52,7 +52,7 @@ interface LaboratoriDirectoryProps {
 }
 
 type SortMode = 'potenza' | 'elo' | 'day' | 'wellness' | 'nome';
-type TierFilter = 'all' | 'embryo' | 'novice' | 'intermediate' | 'veteran' | 'legend' | 'immortal' | 'divine';
+type TierFilter = 'all' | 'embryo' | 'novice' | 'intermediate' | 'veteran' | 'legend' | 'immortal' | 'divine' | 'eternal';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66,10 +66,12 @@ const LEVEL_BADGES: Record<string, { label: string; color: string; bg: string; d
   legend: { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15', dot: '#fbbf24' },
   immortal: { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15', dot: '#f87171' },
   divine: { label: 'Divinita', color: 'badge-divine text-amber-400', bg: 'bg-amber-500/20 border border-amber-400/30', dot: '#ec4899' },
+  eternal: { label: 'Eterno', color: 'text-amber-300 animate-pulse', bg: 'bg-gradient-to-r from-amber-500/20 via-yellow-300/20 to-amber-500/20 border border-amber-300/50 shadow-[0_0_8px_rgba(252,211,77,0.3)]', dot: '#fcd34d' },
 };
 
 const TIER_FILTER_OPTIONS: { key: TierFilter; label: string }[] = [
   { key: 'all', label: 'Tutti' },
+  { key: 'eternal', label: 'Eterno' },
   { key: 'divine', label: 'Divinita' },
   { key: 'immortal', label: 'Immortale' },
   { key: 'legend', label: 'Leggenda' },
@@ -140,6 +142,7 @@ const TIER_LABELS: Record<string, string> = {
   legend: 'Leggenda',
   immortal: 'Immortale',
   divine: 'Divinita',
+  eternal: 'Eterno',
 };
 
 // ---------------------------------------------------------------------------

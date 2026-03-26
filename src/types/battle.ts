@@ -88,4 +88,4 @@ export interface BattleResult {
 export type BattleType = 'ranked' | 'direct' | 'tournament';
 
 /** Rank tiers based on creature age. */
-export type RankTier = 'novice' | 'intermediate' | 'veteran' | 'legend' | 'immortal' | 'divine';
+export type RankTier = 'novice' | 'intermediate' | 'veteran' | 'legend' | 'immortal' | 'divine' | 'eternal';

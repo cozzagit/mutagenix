@@ -110,7 +110,8 @@ function getLevelBadge(ageDays: number, tier?: string): { label: string; color: 
     return { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' };
   }
   // Always derive tier from age (DB ranking tier may be stale)
-  const effectiveTier = ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice';
+  const effectiveTier = ageDays >= 1000 ? 'eternal' : ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : 'novice';
+  if (effectiveTier === 'eternal') return { label: 'Eterno', color: 'text-amber-300 animate-pulse', bg: 'bg-gradient-to-r from-amber-500/20 via-yellow-300/20 to-amber-500/20 border border-amber-300/50 shadow-[0_0_8px_rgba(252,211,77,0.3)]' };
   if (effectiveTier === 'divine') return { label: 'Divinità', color: 'badge-divine text-amber-400', bg: 'bg-amber-500/20 border border-amber-400/30' };
   if (effectiveTier === 'immortal') return { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15' };
   if (effectiveTier === 'legend') return { label: 'Leggenda', color: 'text-amber-400', bg: 'bg-amber-500/15' };
@@ -289,8 +290,8 @@ export function LabDashboard({
           const prevDay = prevDayRef.current;
           const newDay = d.ageDays;
           if (newDay > prevDay) {
-            const thresholds = [500, 300, 151, 101, 61, 40];
-            const tierKeys = ['divine', 'immortal', 'legend', 'veteran', 'intermediate', 'novice'];
+            const thresholds = [1000, 500, 300, 151, 101, 61, 40];
+            const tierKeys = ['eternal', 'divine', 'immortal', 'legend', 'veteran', 'intermediate', 'novice'];
             for (let i = 0; i < thresholds.length; i++) {
               if (newDay >= thresholds[i] && prevDay < thresholds[i]) {
                 setTierCelebration(tierKeys[i]);
@@ -396,11 +397,13 @@ export function LabDashboard({
 
   // --- Tier bonus credits ---
   const creatureTier = getRankTier(ageDays);
-  const bonusCredits = creatureTier === 'divine'
-    ? GAME_CONFIG.DIVINE_CREDIT_BONUS
-    : creatureTier === 'immortal'
-      ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
-      : 0;
+  const bonusCredits = creatureTier === 'eternal'
+    ? GAME_CONFIG.ETERNAL_CREDIT_BONUS
+    : creatureTier === 'divine'
+      ? GAME_CONFIG.DIVINE_CREDIT_BONUS
+      : creatureTier === 'immortal'
+        ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
+        : 0;
 
   // --- Warrior phase detection ---
   const isWarrior = ageDays >= GAME_CONFIG.WARRIOR_PHASE_START;

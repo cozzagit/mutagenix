@@ -68,6 +68,7 @@ function getTierLabel(tier: string): string {
     legend: "Leggenda",
     immortal: "Immortale",
     divine: "Divinit\u00E0",
+    eternal: "Eterno",
   };
   return map[tier] ?? tier;
 }
@@ -80,6 +81,7 @@ function getTierColor(tier: string): string {
     legend: "bg-amber-500/15 text-amber-400",
     immortal: "bg-red-500/15 text-red-400",
     divine: "bg-amber-500/20 text-amber-400 border border-amber-400/30",
+    eternal: "bg-gradient-to-r from-amber-500/20 via-yellow-300/20 to-amber-500/20 text-amber-300 border border-amber-300/50 shadow-[0_0_8px_rgba(252,211,77,0.3)]",
   };
   return map[tier] ?? "bg-muted/15 text-muted";
 }

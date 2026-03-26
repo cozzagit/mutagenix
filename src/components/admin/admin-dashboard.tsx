@@ -143,6 +143,7 @@ const TIER_LABELS: Record<string, string> = {
   legend: 'Leggenda',
   immortal: 'Immortale',
   divine: 'Divinità',
+  eternal: 'Eterno',
 };
 
 /** Extract the active creature for a user (first non-archived), or null. */
@@ -235,13 +236,15 @@ function UserGridCard({
 
   // Level badge: based on age (not registration status)
   const ageDays = active?.ageDays ?? 0;
-  const tierFromAge = ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : ageDays >= 40 ? 'novice' : 'embryo';
+  const tierFromAge = ageDays >= 1000 ? 'eternal' : ageDays >= 500 ? 'divine' : ageDays >= 300 ? 'immortal' : ageDays > 150 ? 'legend' : ageDays > 100 ? 'veteran' : ageDays > 60 ? 'intermediate' : ageDays >= 40 ? 'novice' : 'embryo';
   const tierLabel = active?.ranking?.tier ?? tierFromAge;
   const levelBadge: { label: string; color: string; bg: string } = !active
     ? { label: 'Nessuno', color: 'text-muted', bg: 'bg-muted/10' }
     : tierLabel === 'embryo' || tierFromAge === 'embryo'
       ? { label: 'Embrione', color: 'text-muted', bg: 'bg-muted/10' }
-      : tierLabel === 'divine'
+      : tierLabel === 'eternal'
+        ? { label: 'Eterno', color: 'text-amber-300 animate-pulse', bg: 'bg-gradient-to-r from-amber-500/20 via-yellow-300/20 to-amber-500/20 border border-amber-300/50 shadow-[0_0_8px_rgba(252,211,77,0.3)]' }
+        : tierLabel === 'divine'
         ? { label: 'Divinità', color: 'badge-divine text-amber-400', bg: 'bg-amber-500/20 border border-amber-400/30' }
         : tierLabel === 'immortal'
           ? { label: 'Immortale', color: 'text-red-400', bg: 'bg-red-500/15' }

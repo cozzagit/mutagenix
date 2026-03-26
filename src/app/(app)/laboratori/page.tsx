@@ -51,6 +51,7 @@ function calculatePotenza(
 // ---------------------------------------------------------------------------
 
 function getLevelFromAge(ageDays: number): string {
+  if (ageDays >= 1000) return 'eternal';
   if (ageDays >= 500) return 'divine';
   if (ageDays >= 300) return 'immortal';
   if (ageDays > 150) return 'legend';

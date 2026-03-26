@@ -501,7 +501,8 @@ export default function GuidaPage() {
                   { name: 'Veterano', range: 'Giorno 101-150', color: '#b26eff', bg: '#b26eff', desc: null },
                   { name: 'Leggenda', range: 'Giorno 151-299', color: '#ffd600', bg: '#ffd600', desc: null },
                   { name: 'Immortale', range: 'Giorno 300-499', color: '#f87171', bg: '#f87171', desc: '+10% stats combattimento, +5 crediti bonus' },
-                  { name: 'Divinità', range: 'Giorno 500+', color: '#ec4899', bg: '#ec4899', desc: '+20% stats combattimento, +10 crediti bonus, immune al Trauma' },
+                  { name: 'Divinità', range: 'Giorno 500-999', color: '#ec4899', bg: '#ec4899', desc: '+20% stats combattimento, +10 crediti bonus, immune al Trauma' },
+                  { name: 'Eterno', range: 'Giorno 1000+', color: '#fcd34d', bg: '#fcd34d', desc: '+25% stats combattimento, +15 crediti bonus' },
                 ].map((tier) => (
                   <div
                     key={tier.name}
@@ -531,7 +532,7 @@ export default function GuidaPage() {
                 ))}
               </div>
               <p className="mt-3 text-[11px] italic text-muted">
-                Puoi sfidare avversari nella tua fascia o in quella adiacente. Le fasce elite (Immortale e Divinità) conferiscono vantaggi competitivi in battaglia.
+                Puoi sfidare avversari nella tua fascia o in quella adiacente. Le fasce elite (Immortale, Divinità e Eterno) conferiscono vantaggi competitivi in battaglia.
               </p>
             </div>
           </div>

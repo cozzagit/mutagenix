@@ -15,6 +15,7 @@ const TIER_STYLES: Record<string, { label: string; color: string; bg: string }> 
   legend: { label: "Leggenda", color: "text-warning", bg: "bg-warning/20" },
   immortal: { label: "Immortale", color: "text-red-400", bg: "bg-red-500/20" },
   divine: { label: "Divinità", color: "badge-divine text-amber-400", bg: "bg-amber-500/20 border border-amber-400/30" },
+  eternal: { label: "Eterno", color: "text-amber-300 animate-pulse", bg: "bg-gradient-to-r from-amber-500/20 via-yellow-300/20 to-amber-500/20 border border-amber-300/50 shadow-[0_0_8px_rgba(252,211,77,0.3)]" },
 };
 
 const AXP_TIER_STYLES: Record<string, { label: string; color: string; bg: string }> = {
