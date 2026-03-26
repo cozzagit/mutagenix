@@ -664,6 +664,146 @@ export function TournamentDetail({
         </div>
       </div>
 
+      {/* View tabs + bracket/matches — ABOVE participants when active/completed */}
+      {tournament.status !== "enrollment" && (
+        <>
+          {/* My playable matches */}
+          {myPlayableMatches.length > 0 && (
+            <div className="mb-4 rounded-xl border border-danger/30 bg-danger/5 p-4">
+              <h3 className="text-xs font-black text-danger uppercase tracking-wider mb-2">
+                I tuoi match da giocare
+              </h3>
+              <div className="flex flex-col gap-2">
+                {myPlayableMatches.map((m) => {
+                  const opponentId =
+                    m.participant1Id === myParticipantId
+                      ? m.participant2Id
+                      : m.participant1Id;
+                  const opponentName = nameMap.get(opponentId) ?? "???";
+
+                  return (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between rounded-lg bg-surface/80 border border-border/30 px-3 py-2"
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-foreground">
+                          Round {m.roundNumber} vs{" "}
+                          <span className="text-danger">{opponentName}</span>
+                        </p>
+                      </div>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handlePlayMatch(m.id)}
+                        loading={playingMatch === m.id}
+                        className="uppercase font-black tracking-wider text-[11px]"
+                      >
+                        COMBATTI
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* View tabs */}
+          <div className="flex gap-0 mb-4 border-b border-border/30">
+            {[
+              { id: "bracket" as const, label: isKnockout ? "TABELLONE" : "CLASSIFICA" },
+              { id: "standings" as const, label: "CLASSIFICA" },
+              { id: "matches" as const, label: "MATCH" },
+            ]
+              .filter((tab) => {
+                if (!isKnockout && tab.id === "bracket") return false;
+                if (isKnockout && tab.id === "standings") return false;
+                return true;
+              })
+              .map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveView(tab.id)}
+                  className={`shrink-0 px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+                    activeView === tab.id
+                      ? "text-danger border-danger"
+                      : "text-muted border-transparent hover:text-foreground"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+          </div>
+
+          {/* View content */}
+          {activeView === "bracket" && isKnockout && (
+            <TournamentBracket
+              matches={bracketMatches}
+              totalRounds={tournament.totalRounds ?? 1}
+              currentRound={tournament.currentRound}
+              myParticipantId={myParticipantId}
+            />
+          )}
+
+          {(activeView === "standings" || (activeView === "bracket" && !isKnockout)) && (
+            <StandingsTable standings={standings} myUserId={null} />
+          )}
+
+          {activeView === "matches" && (
+            <div>
+              {matches.length === 0 ? (
+                <p className="text-sm text-muted text-center py-4">
+                  Nessun match ancora disponibile.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {matches.map((m) => {
+                    const p1Name = nameMap.get(m.participant1Id) ?? "???";
+                    const p2Name = nameMap.get(m.participant2Id) ?? "???";
+                    const isCompleted = m.status === "completed";
+                    const p1Won = m.winnerId === m.participant1Id;
+                    const p2Won = m.winnerId === m.participant2Id;
+
+                    return (
+                      <div
+                        key={m.id}
+                        className="flex items-center gap-3 px-3 py-2 text-xs border-b border-border/10"
+                      >
+                        <span className="text-[10px] text-muted font-mono w-6">
+                          R{m.roundNumber}
+                        </span>
+                        <span
+                          className={`flex-1 truncate ${
+                            isCompleted && p1Won ? "text-accent font-bold" : "text-foreground"
+                          }`}
+                        >
+                          {p1Name}
+                        </span>
+                        <span className="text-[10px] text-muted">vs</span>
+                        <span
+                          className={`flex-1 truncate text-right ${
+                            isCompleted && p2Won ? "text-accent font-bold" : "text-foreground"
+                          }`}
+                        >
+                          {p2Name}
+                        </span>
+                        <span
+                          className={`text-[10px] w-16 text-right ${
+                            isCompleted ? "text-muted" : "text-warning font-bold"
+                          }`}
+                        >
+                          {isCompleted ? "Giocato" : "In attesa"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
       {/* Creature selector for enrollment (1v1) — only if slots available */}
       {tournament.status === "enrollment" && tournament.battleFormat === "1v1" && myCreatures.length > 0 && !(tournament.maxParticipants && participants.length >= tournament.maxParticipants) && (
         <div className="mb-4 rounded-xl border border-accent/20 bg-accent/5 p-3">
@@ -764,141 +904,48 @@ export function TournamentDetail({
         </div>
       )}
 
-      {/* My playable matches */}
-      {myPlayableMatches.length > 0 && (
-        <div className="mb-4 rounded-xl border border-danger/30 bg-danger/5 p-4">
-          <h3 className="text-xs font-black text-danger uppercase tracking-wider mb-2">
-            I tuoi match da giocare
-          </h3>
-          <div className="flex flex-col gap-2">
-            {myPlayableMatches.map((m) => {
-              const opponentId =
-                m.participant1Id === myParticipantId
-                  ? m.participant2Id
-                  : m.participant1Id;
-              const opponentName = nameMap.get(opponentId) ?? "???";
-
-              return (
-                <div
-                  key={m.id}
-                  className="flex items-center justify-between rounded-lg bg-surface/80 border border-border/30 px-3 py-2"
+      {/* View tabs/bracket/matches for enrollment-only (shown below participants) */}
+      {tournament.status === "enrollment" && (
+        <>
+          <div className="flex gap-0 mb-4 border-b border-border/30">
+            {[
+              { id: "bracket" as const, label: isKnockout ? "TABELLONE" : "CLASSIFICA" },
+              { id: "standings" as const, label: "CLASSIFICA" },
+              { id: "matches" as const, label: "MATCH" },
+            ]
+              .filter((tab) => {
+                if (!isKnockout && tab.id === "bracket") return false;
+                if (isKnockout && tab.id === "standings") return false;
+                return true;
+              })
+              .map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveView(tab.id)}
+                  className={`shrink-0 px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+                    activeView === tab.id
+                      ? "text-danger border-danger"
+                      : "text-muted border-transparent hover:text-foreground"
+                  }`}
                 >
-                  <div>
-                    <p className="text-xs font-bold text-foreground">
-                      Round {m.roundNumber} vs{" "}
-                      <span className="text-danger">{opponentName}</span>
-                    </p>
-                  </div>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handlePlayMatch(m.id)}
-                    loading={playingMatch === m.id}
-                    className="uppercase font-black tracking-wider text-[11px]"
-                  >
-                    COMBATTI
-                  </Button>
-                </div>
-              );
-            })}
+                  {tab.label}
+                </button>
+              ))}
           </div>
-        </div>
-      )}
 
-      {/* View tabs */}
-      <div className="flex gap-0 mb-4 border-b border-border/30">
-        {[
-          { id: "bracket" as const, label: isKnockout ? "TABELLONE" : "CLASSIFICA" },
-          { id: "standings" as const, label: "CLASSIFICA" },
-          { id: "matches" as const, label: "MATCH" },
-        ]
-          .filter((tab) => {
-            // For knockout, show bracket + matches
-            // For calendar, show standings + matches (no bracket tab duplication)
-            if (!isKnockout && tab.id === "bracket") return false;
-            if (isKnockout && tab.id === "standings") return false;
-            return true;
-          })
-          .map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveView(tab.id)}
-              className={`shrink-0 px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
-                activeView === tab.id
-                  ? "text-danger border-danger"
-                  : "text-muted border-transparent hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-      </div>
-
-      {/* View content */}
-      {activeView === "bracket" && isKnockout && (
-        <TournamentBracket
-          matches={bracketMatches}
-          totalRounds={tournament.totalRounds ?? 1}
-          currentRound={tournament.currentRound}
-          myParticipantId={myParticipantId}
-        />
-      )}
-
-      {(activeView === "standings" || (activeView === "bracket" && !isKnockout)) && (
-        <StandingsTable standings={standings} myUserId={null} />
-      )}
-
-      {activeView === "matches" && (
-        <div>
-          {matches.length === 0 ? (
-            <p className="text-sm text-muted text-center py-4">
-              Nessun match ancora disponibile.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {matches.map((m) => {
-                const p1Name = nameMap.get(m.participant1Id) ?? "???";
-                const p2Name = nameMap.get(m.participant2Id) ?? "???";
-                const isCompleted = m.status === "completed";
-                const p1Won = m.winnerId === m.participant1Id;
-                const p2Won = m.winnerId === m.participant2Id;
-
-                return (
-                  <div
-                    key={m.id}
-                    className="flex items-center gap-3 px-3 py-2 text-xs border-b border-border/10"
-                  >
-                    <span className="text-[10px] text-muted font-mono w-6">
-                      R{m.roundNumber}
-                    </span>
-                    <span
-                      className={`flex-1 truncate ${
-                        isCompleted && p1Won ? "text-accent font-bold" : "text-foreground"
-                      }`}
-                    >
-                      {p1Name}
-                    </span>
-                    <span className="text-[10px] text-muted">vs</span>
-                    <span
-                      className={`flex-1 truncate text-right ${
-                        isCompleted && p2Won ? "text-accent font-bold" : "text-foreground"
-                      }`}
-                    >
-                      {p2Name}
-                    </span>
-                    <span
-                      className={`text-[10px] w-16 text-right ${
-                        isCompleted ? "text-muted" : "text-warning font-bold"
-                      }`}
-                    >
-                      {isCompleted ? "Giocato" : "In attesa"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+          {activeView === "bracket" && isKnockout && (
+            <TournamentBracket
+              matches={bracketMatches}
+              totalRounds={tournament.totalRounds ?? 1}
+              currentRound={tournament.currentRound}
+              myParticipantId={myParticipantId}
+            />
           )}
-        </div>
+
+          {(activeView === "standings" || (activeView === "bracket" && !isKnockout)) && (
+            <StandingsTable standings={standings} myUserId={null} />
+          )}
+        </>
       )}
     </div>
   );
