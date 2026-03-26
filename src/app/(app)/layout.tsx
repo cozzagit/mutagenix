@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ToastProvider } from "@/components/ui/toast";
 import { BattleNotifier } from "@/components/pwa/battle-notifier";
+import { ChatBubble } from "@/components/chat/chat-bubble";
 
 // Increment this on breaking changes to force client refresh
 const APP_VERSION = 6;
@@ -331,6 +332,7 @@ export default function AppLayout({
       </main>
 
       <BattleNotifier />
+      <ChatBubble />
 
       {/* Mobile: "Altro" popup menu */}
       {moreMenuOpen && (

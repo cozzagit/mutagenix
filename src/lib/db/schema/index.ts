@@ -126,3 +126,9 @@ export {
   type ClanWarMatch,
   type NewClanWarMatch,
 } from './clan-war-matches';
+export {
+  chatMessages,
+  type ChatMessage,
+  type NewChatMessage,
+  type ChatMention,
+} from './chat-messages';

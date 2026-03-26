@@ -19,6 +19,7 @@ export const users = pgTable('users', {
   energy: integer('energy').notNull().default(100),
   maxCreatures: integer('max_creatures').notNull().default(1),
   lastArenaVisit: timestamp('last_arena_visit', { withTimezone: true }),
+  lastChatRead: timestamp('last_chat_read', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
