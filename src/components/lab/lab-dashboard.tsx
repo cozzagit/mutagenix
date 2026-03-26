@@ -895,7 +895,7 @@ export function LabDashboard({
                     </div>
                   )}
                   <Link
-                    href="/arena"
+                    href={`/arena?tournament=${activeTournament.id}`}
                     className="flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:brightness-110"
                     style={{
                       background: activeTournament.isEnrolled

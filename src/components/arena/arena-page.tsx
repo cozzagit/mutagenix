@@ -669,10 +669,11 @@ interface ArenaPageProps {
   warrior: WarriorData;
   unseenDefenderBattles?: number;
   hasSquad?: boolean;
+  initialTournamentId?: string | null;
 }
 
-export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false }: ArenaPageProps) {
-  const [activeZone, setActiveZone] = useState<Zone>("sfide");
+export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false, initialTournamentId }: ArenaPageProps) {
+  const [activeZone, setActiveZone] = useState<Zone>(initialTournamentId ? "tornei" : "sfide");
   const [sfideTab, setSfideTab] = useState<SfideTab>("ranked");
   const [showUnseenBanner, setShowUnseenBanner] = useState(unseenDefenderBattles > 0);
 
@@ -771,7 +772,7 @@ export function ArenaPage({ warrior, unseenDefenderBattles = 0, hasSquad = false
       {activeZone === "squadre" && <SquadManager />}
 
       {/* === ZONE: TORNEI === */}
-      {activeZone === "tornei" && <TournamentList />}
+      {activeZone === "tornei" && <TournamentList initialTournamentId={initialTournamentId} />}
     </div>
   );
 }

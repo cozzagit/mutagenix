@@ -218,6 +218,9 @@ export function TournamentDetail({
   const [enrolling, setEnrolling] = useState(false);
   const [playingMatch, setPlayingMatch] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"bracket" | "standings" | "matches">("bracket");
+  const [myCreatures, setMyCreatures] = useState<{id: string; name: string; ageDays: number}[]>([]);
+  const [selectedCreatureId, setSelectedCreatureId] = useState<string | null>(null);
+  const [enrolledCreatureIds, setEnrolledCreatureIds] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -234,6 +237,13 @@ export function TournamentDetail({
         setMatches(detailJson.data.matches);
         setIsEnrolled(detailJson.data.isEnrolled);
         setMyParticipantId(detailJson.data.myParticipantId);
+
+        // Track which creature IDs the user already enrolled
+        const enrolled = new Set<string>();
+        if (detailJson.data.myEnrolledCreatureIds) {
+          for (const cid of detailJson.data.myEnrolledCreatureIds) enrolled.add(cid);
+        }
+        setEnrolledCreatureIds(enrolled);
       }
 
       if (standingsRes.ok) {
@@ -251,12 +261,31 @@ export function TournamentDetail({
     fetchData();
   }, [fetchData]);
 
+  // Fetch user's warrior creatures for enrollment selector (1v1)
+  useEffect(() => {
+    async function fetchMyCreatures() {
+      try {
+        const res = await fetch('/api/creatures?warrior=true');
+        if (res.ok) {
+          const json = await res.json();
+          setMyCreatures(json.data ?? []);
+        }
+      } catch { /* ignore */ }
+    }
+    fetchMyCreatures();
+  }, []);
+
   const handleEnroll = useCallback(async () => {
     setEnrolling(true);
     try {
+      const body = selectedCreatureId ? JSON.stringify({ creatureId: selectedCreatureId }) : undefined;
       const res = await fetch(
         `/api/arena/tournaments/${tournamentId}/enroll`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: body ? { 'Content-Type': 'application/json' } : undefined,
+          body,
+        },
       );
       const json = await res.json();
       if (!res.ok) {
@@ -264,13 +293,14 @@ export function TournamentDetail({
         return;
       }
       toast("success", "Iscrizione completata!");
+      setSelectedCreatureId(null);
       fetchData();
     } catch {
       toast("error", "Errore di rete durante l'iscrizione.");
     } finally {
       setEnrolling(false);
     }
-  }, [tournamentId, fetchData, toast]);
+  }, [tournamentId, selectedCreatureId, fetchData, toast]);
 
   const handleWithdraw = useCallback(async () => {
     setWithdrawing(true);
@@ -422,7 +452,7 @@ export function TournamentDetail({
         </div>
 
         <div className="flex gap-2">
-          {tournament.status === "enrollment" && !isEnrolled && (
+          {tournament.status === "enrollment" && (
             <Button
               variant="accent"
               size="sm"
@@ -430,7 +460,7 @@ export function TournamentDetail({
               loading={enrolling}
               className="uppercase font-black tracking-wider text-[11px]"
             >
-              ISCRIVITI
+              {isEnrolled ? 'ISCRIVI ALTRA' : 'ISCRIVITI'}
             </Button>
           )}
           {tournament.status === "enrollment" && isEnrolled && (
@@ -446,6 +476,36 @@ export function TournamentDetail({
           )}
         </div>
       </div>
+
+      {/* Creature selector for enrollment (1v1) */}
+      {tournament.status === "enrollment" && tournament.battleFormat === "1v1" && myCreatures.length > 0 && (
+        <div className="mb-4 rounded-xl border border-accent/20 bg-accent/5 p-3">
+          <p className="text-[10px] font-bold text-accent uppercase tracking-wider mb-2">
+            Scegli creatura da iscrivere
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {myCreatures
+              .filter(c => !enrolledCreatureIds.has(c.id))
+              .map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCreatureId(selectedCreatureId === c.id ? null : c.id)}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                    selectedCreatureId === c.id
+                      ? 'border-accent bg-accent/20 text-accent'
+                      : 'border-border/30 bg-surface/60 text-foreground hover:border-accent/40'
+                  }`}
+                >
+                  {c.name}
+                  <span className="ml-1 text-[9px] text-muted font-normal">G{c.ageDays}</span>
+                </button>
+              ))}
+            {myCreatures.filter(c => !enrolledCreatureIds.has(c.id)).length === 0 && (
+              <p className="text-[10px] text-muted italic">Tutte le tue creature guerriero sono già iscritte.</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Enrolled participants — fighter cards */}
       {participants.length > 0 && (

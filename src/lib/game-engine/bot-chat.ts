@@ -319,7 +319,7 @@ export function generateBotResponse(
 /**
  * Check if a bot should respond to a message
  * - 80% chance if directly mentioned
- * - 30% chance for general chat
+ * - 8% chance for general chat (was 30% — too spammy with 5 bots)
  */
 export function shouldBotRespond(
   _bot: BotPersonality | Omit<BotPersonality, 'userId'>,
@@ -329,5 +329,5 @@ export function shouldBotRespond(
   if (isMentioned) {
     return Math.random() < 0.8;
   }
-  return Math.random() < 0.3;
+  return Math.random() < 0.08;
 }

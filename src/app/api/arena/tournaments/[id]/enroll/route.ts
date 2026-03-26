@@ -25,7 +25,7 @@ import { tournamentMatches } from '@/lib/db/schema';
 // ---------------------------------------------------------------------------
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   let session;
@@ -37,6 +37,17 @@ export async function POST(
 
   const { id } = await params;
   const now = new Date();
+
+  // Parse optional body — user can specify which creature to enroll (1v1)
+  let requestedCreatureId: string | null = null;
+  try {
+    const body = await request.json();
+    if (body?.creatureId && typeof body.creatureId === 'string') {
+      requestedCreatureId = body.creatureId;
+    }
+  } catch {
+    // No body or invalid JSON — that's fine, use default logic
+  }
 
   // Fetch tournament
   const [tournament] = await db
@@ -163,14 +174,7 @@ export async function POST(
   let squadSnapshot: { creatureIds: string[]; autoRotate: boolean };
 
   if (duelCount === 1) {
-    // 1v1: use active creature or first warrior
-    const [user] = await db
-      .select({ activeCreatureId: users.activeCreatureId })
-      .from(users)
-      .where(eq(users.id, session.userId));
-
-    const activeId = user?.activeCreatureId;
-    // Find a warrior creature not already enrolled in this tournament
+    // 1v1: use requested creature, active creature, or first available warrior
     const availableWarriors = warriorCreatures.filter(c => !myEnrolledCreatureIds.has(c.id));
     if (availableWarriors.length === 0) {
       return NextResponse.json(
@@ -178,9 +182,27 @@ export async function POST(
         { status: 422 },
       );
     }
-    // Prefer active creature if available, otherwise first available
-    const activeCreature = activeId ? availableWarriors.find(c => c.id === activeId) : null;
-    const selectedCreature = activeCreature ?? availableWarriors[0];
+
+    let selectedCreature;
+    if (requestedCreatureId) {
+      // User explicitly chose a creature
+      selectedCreature = availableWarriors.find(c => c.id === requestedCreatureId);
+      if (!selectedCreature) {
+        return NextResponse.json(
+          { error: { code: 'CREATURE_UNAVAILABLE', message: 'Questa creatura non è disponibile per l\'iscrizione (già iscritta, morta, o troppo giovane).' } },
+          { status: 422 },
+        );
+      }
+    } else {
+      // Fallback: prefer active creature, then first available
+      const [user] = await db
+        .select({ activeCreatureId: users.activeCreatureId })
+        .from(users)
+        .where(eq(users.id, session.userId));
+      const activeId = user?.activeCreatureId;
+      const activeCreature = activeId ? availableWarriors.find(c => c.id === activeId) : null;
+      selectedCreature = activeCreature ?? availableWarriors[0];
+    }
 
     squadSnapshot = {
       creatureIds: [selectedCreature.id],

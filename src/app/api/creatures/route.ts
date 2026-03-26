@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import {
   getRequiredSession,
   unauthorizedResponse,
@@ -9,7 +9,8 @@ import { eq, and } from 'drizzle-orm';
 import { mapTraitsToVisuals } from '@/lib/game-engine/visual-mapper';
 import type { ElementLevels, TraitValues } from '@/types/game';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const warriorOnly = request.nextUrl.searchParams.get('warrior') === 'true';
   let session;
   try {
     session = await getRequiredSession();
@@ -59,7 +60,11 @@ export async function GET() {
     }
   }
 
-  const results = userCreatures.map((c) => {
+  const filtered = warriorOnly
+    ? userCreatures.filter(c => !c.isDead && (c.ageDays ?? 0) >= 40)
+    : userCreatures;
+
+  const results = filtered.map((c) => {
     const traitValues = c.traitValues as unknown as TraitValues;
     const elementLevels = c.elementLevels as unknown as ElementLevels;
     const visualParams = mapTraitsToVisuals(

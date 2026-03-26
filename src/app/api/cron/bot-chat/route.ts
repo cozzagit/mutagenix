@@ -110,11 +110,16 @@ export async function GET(request: NextRequest) {
     .where(sql`${creatures.userId} IN (${sql.join(bots.map((b) => sql`${b.id}`), sql`, `)})`);
 
   let responsesPosted = 0;
+  let genericResponses = 0; // cap non-mention responses to avoid spam
+  const MAX_GENERIC_RESPONSES = 2;
+  const respondedBots = new Set<string>(); // max 1 response per bot per cycle
 
   for (const msg of humanMessages) {
     const contentLower = msg.content.toLowerCase();
 
     for (const bot of bots) {
+      if (respondedBots.has(bot.id)) continue; // already responded this cycle
+
       const personality = getBotPersonalityByUserId(bot.id);
       if (!personality) continue;
 
@@ -128,6 +133,9 @@ export async function GET(request: NextRequest) {
         contentLower.includes(botNameLower) ||
         botCreatureNames.some((name) => contentLower.includes(name)) ||
         (Array.isArray(msg.mentions) && (msg.mentions as { id: string }[]).some((m) => m.id === bot.id));
+
+      // Skip generic responses if we hit the cap
+      if (!isMentioned && genericResponses >= MAX_GENERIC_RESPONSES) continue;
 
       if (!shouldBotRespond(personality, msg.content, isMentioned)) continue;
 
@@ -151,6 +159,8 @@ export async function GET(request: NextRequest) {
 
       log.push(`[RISPOSTA] ${bot.displayName} → ${msg.displayName}: "${response}"`);
       responsesPosted++;
+      respondedBots.add(bot.id);
+      if (!isMentioned) genericResponses++;
     }
   }
 

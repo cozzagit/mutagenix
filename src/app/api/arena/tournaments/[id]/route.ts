@@ -118,9 +118,17 @@ export async function GET(
       sql`${tournamentMatches.roundNumber} ASC, ${tournamentMatches.createdAt} ASC`,
     );
 
-  // Check if user is enrolled
-  const isEnrolled = participantRows.some((p) => p.userId === session.userId);
-  const myParticipant = participantRows.find((p) => p.userId === session.userId);
+  // Check if user is enrolled + collect enrolled creature IDs
+  const myEntries = participantRows.filter((p) => p.userId === session.userId);
+  const isEnrolled = myEntries.length > 0;
+  const myParticipant = myEntries[0];
+
+  const myEnrolledCreatureIds: string[] = [];
+  for (const entry of myEntries) {
+    const snap = entry.squadSnapshot as { starters?: string[]; creatureIds?: string[] } | null;
+    const ids = snap?.starters ?? snap?.creatureIds ?? [];
+    myEnrolledCreatureIds.push(...ids);
+  }
 
   return NextResponse.json({
     data: {
@@ -129,6 +137,7 @@ export async function GET(
       matches: matchRows,
       isEnrolled,
       myParticipantId: myParticipant?.id ?? null,
+      myEnrolledCreatureIds,
     },
   });
 }

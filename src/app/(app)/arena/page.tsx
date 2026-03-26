@@ -48,7 +48,8 @@ function calculateMaxHp(bc: {
   );
 }
 
-export default async function ArenaMainPage() {
+export default async function ArenaMainPage({ searchParams }: { searchParams: Promise<{ tournament?: string }> }) {
+  const { tournament: initialTournamentId } = await searchParams;
   let session;
   try {
     session = await getRequiredSession();
@@ -215,5 +216,5 @@ export default async function ArenaMainPage() {
 
   // lastArenaVisit was already set to now() at the top of this function,
   // so there are no "unseen" battles by definition when viewing the arena.
-  return <ArenaPage warrior={warriorData} unseenDefenderBattles={0} hasSquad={hasSquad} />;
+  return <ArenaPage warrior={warriorData} unseenDefenderBattles={0} hasSquad={hasSquad} initialTournamentId={initialTournamentId} />;
 }

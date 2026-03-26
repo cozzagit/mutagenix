@@ -361,12 +361,16 @@ function TournamentCard({
 /* Main: TournamentList                                               */
 /* ------------------------------------------------------------------ */
 
-export function TournamentList() {
+interface TournamentListProps {
+  initialTournamentId?: string | null;
+}
+
+export function TournamentList({ initialTournamentId }: TournamentListProps = {}) {
   const { toast } = useToast();
   const [tournaments, setTournaments] = useState<TournamentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
-  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(initialTournamentId ?? null);
   const [statusFilter, setStatusFilter] = useState<string>("enrollment,active");
 
   const fetchTournaments = useCallback(async () => {
