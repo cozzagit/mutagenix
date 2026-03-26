@@ -184,7 +184,7 @@ export function LabDashboard({
   const [liveWellness, setLiveWellness] = useState(wellness);
 
   // --- Tournament enrollment banner ---
-  const [activeTournament, setActiveTournament] = useState<{id: string; name: string; startsAt: string; participantCount: number; status: string; isEnrolled?: boolean} | null>(null);
+  const [activeTournament, setActiveTournament] = useState<{id: string; name: string; startsAt: string; participantCount: number; maxParticipants: number | null; status: string; isEnrolled?: boolean} | null>(null);
   const [tournamentDismissed, setTournamentDismissed] = useState(false);
   const [tournamentCountdown, setTournamentCountdown] = useState('');
 
@@ -196,15 +196,8 @@ export function LabDashboard({
         const json = await res.json();
         const tournaments = json.data ?? [];
         if (tournaments.length > 0) {
-          const t = tournaments[0];
-          try {
-            const detailRes = await fetch('/api/arena/tournaments/' + t.id);
-            if (detailRes.ok) {
-              const dj = await detailRes.json();
-              t.isEnrolled = !!dj.data?.myParticipantId;
-            }
-          } catch { /* ignore */ }
-          setActiveTournament(t);
+          // The list API already returns isEnrolled and participantCount
+          setActiveTournament(tournaments[0]);
         }
       } catch { /* ignore */ }
     }
@@ -867,10 +860,15 @@ export function LabDashboard({
                       <p className="text-xs font-bold mt-0.5" style={{ color: '#ff9100' }}>
                         Iscrizioni aperte! Inizia il 26 Marzo alle 20:00
                       </p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[11px] text-muted">
-                          {activeTournament.participantCount} partecipanti iscritti
+                      <div className="flex items-center gap-3 mt-1 flex-wrap">
+                        <span className="text-[11px] text-foreground font-bold">
+                          {activeTournament.participantCount}{activeTournament.maxParticipants ? `/${activeTournament.maxParticipants}` : ''} iscritti
                         </span>
+                        {activeTournament.maxParticipants && activeTournament.participantCount < activeTournament.maxParticipants && (
+                          <span className="text-[11px] text-accent font-bold">
+                            {activeTournament.maxParticipants - activeTournament.participantCount} posti liberi
+                          </span>
+                        )}
                         {tournamentCountdown && (
                           <span className="text-[11px] font-mono font-bold" style={{ color: '#ff9100' }}>
                             Inizia tra {tournamentCountdown}
