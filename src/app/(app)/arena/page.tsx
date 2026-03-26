@@ -158,13 +158,20 @@ export default async function ArenaMainPage({ searchParams }: { searchParams: Pr
     ? ranking.recoveryUntil.getTime() - now.getTime()
     : 0;
 
-  let battlesToday = ranking.battlesToday;
-  if (
-    ranking.lastBattleAt &&
-    ranking.lastBattleAt.toDateString() !== now.toDateString()
-  ) {
-    battlesToday = 0;
-  }
+  // Count only ranked attacks today (exclude tournament/clan_war)
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const [rankedCount] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(battles)
+    .where(
+      and(
+        eq(battles.challengerCreatureId, creature.id),
+        eq(battles.battleType, 'ranked'),
+        sql`${battles.createdAt} >= ${todayStart.toISOString()}::timestamptz`,
+      ),
+    );
+  const battlesToday = rankedCount?.count ?? 0;
 
   const warriorData = {
     creatureId: creature.id,
