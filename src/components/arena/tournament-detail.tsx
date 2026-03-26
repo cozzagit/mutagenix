@@ -376,8 +376,8 @@ export function TournamentDetail({
     );
   }
 
-  // Build name map for bracket
-  const nameMap = new Map(participants.map((p) => [p.id, p.displayName]));
+  // Build name map for bracket — use creature name, not player name
+  const nameMap = new Map(participants.map((p) => [p.id, p.creatureName ?? p.displayName]));
 
   const bracketMatches = matches.map((m) => ({
     ...m,
