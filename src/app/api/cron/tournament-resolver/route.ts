@@ -92,7 +92,8 @@ export async function GET(request: NextRequest) {
     for (const standing of standings) {
       const participant = participants.find((p) => p.id === standing.participantId)!;
       const accDamage = (participant.accumulatedDamage ?? {}) as AccumulatedDamage;
-      const snap = participant.squadSnapshot as { creatureIds: string[] };
+      const rawSnap = participant.squadSnapshot as { creatureIds?: string[]; starters?: string[] } | null;
+      const snap = { creatureIds: rawSnap?.creatureIds ?? rawSnap?.starters ?? [] };
 
       // Load creatures from snapshot
       const creatureRows =
@@ -152,7 +153,8 @@ export async function GET(request: NextRequest) {
         0,
       );
 
-      const snap = participant.squadSnapshot as { creatureIds: string[] };
+      const rawSnap = participant.squadSnapshot as { creatureIds?: string[]; starters?: string[] } | null;
+      const snap = { creatureIds: rawSnap?.creatureIds ?? rawSnap?.starters ?? [] };
       const deaths = deathVerdicts
         .filter((v) => snap.creatureIds.includes(v.creatureId))
         .map((v) => ({
