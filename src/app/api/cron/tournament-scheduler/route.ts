@@ -19,6 +19,9 @@ import {
 import { eq, and, sql, lte } from 'drizzle-orm';
 import {
   advanceKnockoutRound,
+  generateKnockoutBracket,
+  generateCalendarSchedule,
+  calculateKnockoutRounds,
 } from '@/lib/game-engine/tournament-engine';
 
 const CRON_SECRET = 'mutagenix-bot-secret-2026';
@@ -412,6 +415,97 @@ export async function GET(request: NextRequest) {
 
     if (added > 0) {
       results.push(`${t.name}: ${added} bot(s) auto-enrolled (${hoursUntilStart.toFixed(1)}h until start)`);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 6. Auto-start enrollment tournaments that are full
+  // -----------------------------------------------------------------------
+
+  const enrollmentTournamentsForStart = await db
+    .select()
+    .from(tournaments)
+    .where(eq(tournaments.status, 'enrollment'));
+
+  for (const t of enrollmentTournamentsForStart) {
+    if (!t.maxParticipants) continue;
+
+    const [pCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.tournamentId, t.id));
+
+    const currentCount = pCount?.count ?? 0;
+    if (currentCount < t.maxParticipants) continue;
+    if (currentCount < (t.minParticipants ?? 4)) continue;
+
+    // Tournament is full — generate bracket and start!
+    const participants = await db
+      .select({ id: tournamentParticipants.id, seed: tournamentParticipants.seed })
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.tournamentId, t.id));
+
+    // Re-seed by ELO
+    const seeded = participants
+      .sort((a, b) => (b.seed ?? 1000) - (a.seed ?? 1000))
+      .map((p, i) => ({ ...p, newSeed: i + 1 }));
+
+    for (const p of seeded) {
+      await db.update(tournamentParticipants)
+        .set({ seed: p.newSeed })
+        .where(eq(tournamentParticipants.id, p.id));
+    }
+
+    if (t.tournamentType === 'knockout' || t.tournamentType === 'random') {
+      const bracketParticipants = seeded.map(p => ({ id: p.id, eloRating: p.seed ?? 1000 }));
+      const matches = generateKnockoutBracket(bracketParticipants);
+      const totalRounds = calculateKnockoutRounds(seeded.length);
+
+      for (const match of matches) {
+        if (match.isBye) continue;
+        await db.insert(tournamentMatches).values({
+          tournamentId: t.id,
+          roundNumber: match.roundNumber,
+          participant1Id: match.participant1Id,
+          participant2Id: match.participant2Id,
+          status: 'pending',
+        });
+      }
+
+      await db.update(tournaments).set({
+        status: 'active',
+        currentRound: 1,
+        totalRounds,
+        startsAt: now,
+        updatedAt: now,
+      }).where(eq(tournaments.id, t.id));
+
+      results.push(`${t.name}: FULL (${currentCount}/${t.maxParticipants}) — bracket generated, tournament started!`);
+    } else if (t.tournamentType === 'calendar') {
+      const calendarParticipants = seeded.map(p => ({ id: p.id }));
+      const matchesPerDay = Math.max(1, Math.floor(seeded.length / 2));
+      const matches = generateCalendarSchedule(calendarParticipants, matchesPerDay);
+      const totalRounds = matches.length > 0 ? Math.max(...matches.map(m => m.roundNumber)) : 0;
+
+      for (const match of matches) {
+        await db.insert(tournamentMatches).values({
+          tournamentId: t.id,
+          roundNumber: match.roundNumber,
+          participant1Id: match.participant1Id,
+          participant2Id: match.participant2Id,
+          status: 'pending',
+        });
+      }
+
+      await db.update(tournaments).set({
+        status: 'active',
+        currentRound: 1,
+        totalRounds,
+        startsAt: now,
+        updatedAt: now,
+      }).where(eq(tournaments.id, t.id));
+
+      results.push(`${t.name}: FULL — schedule generated, tournament started!`);
     }
   }
 

@@ -452,7 +452,7 @@ export function TournamentDetail({
         </div>
 
         <div className="flex gap-2">
-          {tournament.status === "enrollment" && (
+          {tournament.status === "enrollment" && !(tournament.maxParticipants && participants.length >= tournament.maxParticipants) && (
             <Button
               variant="accent"
               size="sm"
@@ -463,7 +463,7 @@ export function TournamentDetail({
               {isEnrolled ? 'ISCRIVI ALTRA' : 'ISCRIVITI'}
             </Button>
           )}
-          {tournament.status === "enrollment" && isEnrolled && (
+          {tournament.status === "enrollment" && isEnrolled && !(tournament.maxParticipants && participants.length >= tournament.maxParticipants) && (
             <Button
               variant="danger"
               size="sm"
@@ -474,11 +474,16 @@ export function TournamentDetail({
               RITIRATI
             </Button>
           )}
+          {tournament.status === "enrollment" && tournament.maxParticipants && participants.length >= tournament.maxParticipants && (
+            <span className="text-[11px] font-bold text-accent uppercase tracking-wider flex items-center gap-1">
+              {'\u2705'} Tabellone completo
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Creature selector for enrollment (1v1) */}
-      {tournament.status === "enrollment" && tournament.battleFormat === "1v1" && myCreatures.length > 0 && (
+      {/* Creature selector for enrollment (1v1) — only if slots available */}
+      {tournament.status === "enrollment" && tournament.battleFormat === "1v1" && myCreatures.length > 0 && !(tournament.maxParticipants && participants.length >= tournament.maxParticipants) && (
         <div className="mb-4 rounded-xl border border-accent/20 bg-accent/5 p-3">
           <p className="text-[10px] font-bold text-accent uppercase tracking-wider mb-2">
             Scegli creatura da iscrivere
