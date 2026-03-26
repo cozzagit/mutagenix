@@ -372,22 +372,37 @@ export async function GET(request: NextRequest) {
       ),
     );
 
+    // Get already enrolled creature IDs to avoid duplicates
+    const enrolledSnaps = await db
+      .select({ squadSnapshot: tournamentParticipants.squadSnapshot })
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.tournamentId, t.id));
+    const enrolledCreatureIds = new Set<string>();
+    for (const s of enrolledSnaps) {
+      const snap = s.squadSnapshot as { starters?: string[]; creatureIds?: string[] } | null;
+      const ids = snap?.starters ?? snap?.creatureIds ?? [];
+      for (const id of ids) enrolledCreatureIds.add(id);
+    }
+
+    // For bots, allow MULTIPLE entries per user (different creatures)
+    // Remove the unique(tournamentId, userId) constraint check for bots
     const sortedEligible = eligibleBots
-      .filter(c => botUserIds.has(c.userId) && !enrolledUserIds.has(c.userId))
+      .filter(c => botUserIds.has(c.userId) && !enrolledCreatureIds.has(c.id))
       .sort((a, b) => (b.ageDays ?? 0) - (a.ageDays ?? 0));
 
     let added = 0;
     for (const creature of sortedEligible) {
       if (added >= slotsToFill) break;
-      if (enrolledUserIds.has(creature.userId)) continue;
 
       try {
+        // Use a unique nonce so the same bot user can have multiple entries
+        // by inserting with different participant IDs
         await db.insert(tournamentParticipants).values({
           tournamentId: t.id,
           userId: creature.userId,
           squadSnapshot: { starters: [creature.id], reserves: [] },
         });
-        enrolledUserIds.add(creature.userId);
+        enrolledCreatureIds.add(creature.id);
         added++;
         results.push(`Auto-fill: ${creature.name} added to ${t.name}`);
       } catch {
