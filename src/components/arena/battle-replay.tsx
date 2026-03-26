@@ -59,42 +59,68 @@ function HpBar({ label, percent, color }: { label: string; percent: number; colo
 /* Event flash overlays                                               */
 /* ------------------------------------------------------------------ */
 
-function FlashOverlay({ type, visible }: { type: string; visible: boolean }) {
+function FlashOverlay({ type, visible, damage }: { type: string; visible: boolean; damage?: number }) {
   if (!visible) return null;
 
-  let className = "absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-300";
+  // Intensity based on damage (0-100 scale, clamped)
+  const intensity = Math.min(1, Math.max(0.2, (damage ?? 5) / 20));
   let content: React.ReactNode = null;
+  let boxShadow = '';
+  let bg = '';
 
   switch (type) {
-    case "attack_hit":
-      className += " bg-danger/20";
+    case "attack_hit": {
+      bg = `rgba(255, 68, 102, ${0.1 + intensity * 0.25})`;
+      boxShadow = `inset 0 0 ${20 + intensity * 40}px rgba(255, 68, 102, ${intensity * 0.6}), 0 0 ${10 + intensity * 30}px rgba(255, 68, 102, ${intensity * 0.4})`;
+      if (damage && damage > 8) {
+        content = (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-lg font-black text-danger" style={{ textShadow: `0 0 ${intensity * 20}px rgba(255,68,102,0.8)` }}>
+              -{Math.round(damage)}
+            </span>
+          </div>
+        );
+      }
       break;
+    }
     case "dodge":
+      boxShadow = '0 0 20px rgba(0, 229, 230, 0.3)';
       content = (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm font-black text-bio-cyan glow-cyan animate-bounce">SCHIVATA!</span>
+          <span className="text-sm font-black text-bio-cyan animate-bounce" style={{ textShadow: '0 0 12px rgba(0,229,230,0.8)' }}>SCHIVATA!</span>
         </div>
       );
       break;
     case "special":
-      className += " bg-bio-purple/20";
+      bg = `rgba(168, 85, 247, ${0.15 + intensity * 0.2})`;
+      boxShadow = `inset 0 0 ${30 + intensity * 40}px rgba(168, 85, 247, ${intensity * 0.5}), 0 0 ${20 + intensity * 30}px rgba(168, 85, 247, ${intensity * 0.4})`;
       content = (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm font-black text-bio-purple glow-purple animate-pulse">SPECIALE!</span>
+          <span className="text-sm font-black text-bio-purple animate-pulse" style={{ textShadow: '0 0 16px rgba(168,85,247,0.9)' }}>SPECIALE!</span>
         </div>
       );
       break;
     case "poison":
-      className += " bg-bio-green/10";
+      bg = 'rgba(0, 200, 83, 0.1)';
+      boxShadow = '0 0 15px rgba(0, 200, 83, 0.25)';
       break;
     case "regen":
-      className += " bg-accent/10";
-      break;
-    case "critical":
-      className += " bg-danger/30";
+      bg = 'rgba(0, 229, 160, 0.1)';
+      boxShadow = '0 0 15px rgba(0, 229, 160, 0.3)';
       content = (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm font-black text-danger glow-red">CRITICO!</span>
+          <span className="text-sm font-black text-accent" style={{ textShadow: '0 0 10px rgba(0,229,160,0.8)' }}>+REGEN</span>
+        </div>
+      );
+      break;
+    case "critical":
+      bg = `rgba(255, 68, 102, ${0.2 + intensity * 0.3})`;
+      boxShadow = `inset 0 0 ${40 + intensity * 50}px rgba(255, 68, 102, ${0.4 + intensity * 0.4}), 0 0 ${30 + intensity * 40}px rgba(255, 68, 102, ${0.3 + intensity * 0.4})`;
+      content = (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-lg font-black text-danger animate-pulse" style={{ textShadow: '0 0 20px rgba(255,68,102,1)' }}>
+            CRITICO! -{Math.round(damage ?? 0)}
+          </span>
         </div>
       );
       break;
@@ -103,7 +129,10 @@ function FlashOverlay({ type, visible }: { type: string; visible: boolean }) {
   }
 
   return (
-    <div className={className}>
+    <div
+      className="absolute inset-0 rounded-xl pointer-events-none transition-all duration-300"
+      style={{ backgroundColor: bg, boxShadow }}
+    >
       {content}
     </div>
   );
@@ -113,14 +142,14 @@ function FlashOverlay({ type, visible }: { type: string; visible: boolean }) {
 /* Main BattleReplay                                                  */
 /* ------------------------------------------------------------------ */
 
-export function BattleReplay({ battle }: { battle: BattleReplayData }) {
+export function BattleReplay({ battle, tournamentId }: { battle: BattleReplayData; tournamentId?: string | null }) {
   const router = useRouter();
   const [currentRound, setCurrentRound] = useState(0);
   const [autoPlaying, setAutoPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showResult, setShowResult] = useState(false);
-  const [challengerFlash, setChallengerFlash] = useState<string | null>(null);
-  const [defenderFlash, setDefenderFlash] = useState<string | null>(null);
+  const [challengerFlash, setChallengerFlash] = useState<{ type: string; damage: number } | null>(null);
+  const [defenderFlash, setDefenderFlash] = useState<{ type: string; damage: number } | null>(null);
   const autoPlayRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -176,42 +205,43 @@ export function BattleReplay({ battle }: { battle: BattleReplayData }) {
 
     for (const ev of roundEvents) {
       const isAttackerChallenger = ev.attackerId === battle.challenger.creatureId;
+      const dmg = ev.damage ?? 0;
 
       if (ev.type === "dodge") {
         if (isAttackerChallenger) {
-          setDefenderFlash("dodge");
+          setDefenderFlash({ type: "dodge", damage: 0 });
         } else {
-          setChallengerFlash("dodge");
+          setChallengerFlash({ type: "dodge", damage: 0 });
         }
       } else if (ev.type === "special") {
         if (isAttackerChallenger) {
-          setDefenderFlash("special");
+          setDefenderFlash({ type: "special", damage: dmg });
         } else {
-          setChallengerFlash("special");
+          setChallengerFlash({ type: "special", damage: dmg });
         }
       } else if (ev.type === "poison_tick") {
         if (isAttackerChallenger) {
-          setDefenderFlash("poison");
+          setDefenderFlash({ type: "poison", damage: dmg });
         } else {
-          setChallengerFlash("poison");
+          setChallengerFlash({ type: "poison", damage: dmg });
         }
       } else if (ev.type === "regen") {
         if (isAttackerChallenger) {
-          setChallengerFlash("regen");
+          setChallengerFlash({ type: "regen", damage: dmg });
         } else {
-          setDefenderFlash("regen");
+          setDefenderFlash({ type: "regen", damage: dmg });
         }
       } else if (ev.isCritical) {
         if (isAttackerChallenger) {
-          setDefenderFlash("critical");
+          setDefenderFlash({ type: "critical", damage: dmg });
         } else {
-          setChallengerFlash("critical");
+          setChallengerFlash({ type: "critical", damage: dmg });
         }
-      } else if (ev.damage > 0) {
+      } else if (dmg > 0) {
         if (isAttackerChallenger) {
-          setDefenderFlash("attack_hit");
+          setDefenderFlash({ type: "attack_hit", damage: dmg });
         } else {
-          setChallengerFlash("attack_hit");
+          setChallengerFlash({ type: "attack_hit", damage: dmg });
         }
       }
     }
@@ -276,13 +306,13 @@ export function BattleReplay({ battle }: { battle: BattleReplayData }) {
     <div className="mx-auto max-w-3xl px-4 py-6">
       {/* Back button */}
       <button
-        onClick={() => router.push("/arena")}
+        onClick={() => router.push(tournamentId ? `/arena?tournament=${tournamentId}` : "/arena")}
         className="flex items-center gap-1 text-xs text-muted hover:text-foreground transition-colors mb-4"
       >
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
           <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
         </svg>
-        Torna all&apos;Arena
+        {tournamentId ? 'Torna al Torneo' : 'Torna all\u0027Arena'}
       </button>
 
       {/* Battle arena */}
@@ -293,7 +323,7 @@ export function BattleReplay({ battle }: { battle: BattleReplayData }) {
           <div className="flex-1 text-center relative">
             <div className="relative inline-block">
               <CreatureRenderer params={challengerVp} size={160} animated />
-              <FlashOverlay type={challengerFlash ?? ""} visible={!!challengerFlash} />
+              <FlashOverlay type={challengerFlash?.type ?? ""} visible={!!challengerFlash} damage={challengerFlash?.damage} />
             </div>
             <p className="text-sm font-bold text-foreground mt-1 truncate">{battle.challenger.name}</p>
             <p className="text-[10px] text-muted">Sfidante</p>
@@ -308,7 +338,7 @@ export function BattleReplay({ battle }: { battle: BattleReplayData }) {
           <div className="flex-1 text-center relative">
             <div className="relative inline-block" style={{ transform: "scaleX(-1)" }}>
               <CreatureRenderer params={defenderVp} size={160} animated />
-              <FlashOverlay type={defenderFlash ?? ""} visible={!!defenderFlash} />
+              <FlashOverlay type={defenderFlash?.type ?? ""} visible={!!defenderFlash} damage={defenderFlash?.damage} />
             </div>
             <p className="text-sm font-bold text-foreground mt-1 truncate">{battle.defender.name}</p>
             <p className="text-[10px] text-muted">Difensore</p>
@@ -463,8 +493,8 @@ export function BattleReplay({ battle }: { battle: BattleReplayData }) {
           </div>
 
           <div className="flex gap-3 justify-center mt-6">
-            <Button variant="secondary" size="sm" onClick={() => router.push("/arena")}>
-              TORNA ALL&apos;ARENA
+            <Button variant="secondary" size="sm" onClick={() => router.push(tournamentId ? `/arena?tournament=${tournamentId}` : "/arena")}>
+              {tournamentId ? 'TORNA AL TORNEO' : 'TORNA ALL\u0027ARENA'}
             </Button>
           </div>
         </div>

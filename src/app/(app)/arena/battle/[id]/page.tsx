@@ -36,8 +36,10 @@ export default async function BattleReplayPage({
     notFound();
   }
 
-  // Must be a participant
+  // Must be a participant or a tournament battle (public)
+  const isTournamentBattle = battle.battleType === 'tournament';
   if (
+    !isTournamentBattle &&
     battle.challengerUserId !== session.userId &&
     battle.defenderUserId !== session.userId
   ) {
@@ -119,5 +121,14 @@ export default async function BattleReplayPage({
     createdAt: battle.createdAt.toISOString(),
   };
 
-  return <BattleReplay battle={battleData} />;
+  // If tournament battle, find the tournament ID for the "back" link
+  let tournamentId: string | null = null;
+  if (battle.tournamentMatchId) {
+    const { tournamentMatches } = await import('@/lib/db/schema');
+    const [tm] = await db.select({ tournamentId: tournamentMatches.tournamentId })
+      .from(tournamentMatches).where(eq(tournamentMatches.id, battle.tournamentMatchId));
+    tournamentId = tm?.tournamentId ?? null;
+  }
+
+  return <BattleReplay battle={battleData} tournamentId={tournamentId} />;
 }
