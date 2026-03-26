@@ -1155,160 +1155,144 @@ function FamilyCreatureCard({
 /*     |    [GrandChild]                                               */
 /* ------------------------------------------------------------------ */
 
-function BreedingBranch({
-  parent,
+/**
+ * A single breeding column: shows partner, then offspring below.
+ * The "parent" creature is NOT re-rendered — it's already visible above.
+ * Lines connect FROM the parent (above) TO the partner and offspring.
+ */
+function BreedingColumn({
   event,
+  parentGen,
   depth,
 }: {
-  parent: TreeCreature;
   event: BreedingEvent;
+  parentGen: number;
   depth: number;
 }) {
-  const genC = getGenColor(parent.familyGeneration);
-  const childGenC = getGenColor(parent.familyGeneration + 1);
+  const childGenC = getGenColor(parentGen + 1);
   const offspring = [event.myOffspring, event.partnerOffspring].filter(Boolean) as TreeCreature[];
-  const branchWidth = Math.max(offspring.length, 1);
 
   return (
     <div className="flex flex-col items-center">
-      {/* Partner row: parent ── heart ── partner */}
-      <div className="flex items-center gap-0">
-        {/* My parent (left) */}
-        <FamilyCreatureCard creature={parent} role="mine" size={depth === 0 ? 65 : 55} />
-
-        {/* Curved connector with heart */}
-        <svg width="50" height="20" viewBox="0 0 50 20" fill="none" className="shrink-0 mx-1">
-          <path d="M 2 10 C 12 10, 15 6, 25 10 C 35 14, 38 10, 48 10" stroke={genC.color} strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-          <text x="25" y="14" textAnchor="middle" fontSize="9" fill="#ec4899" opacity="0.7">{'\u2764'}</text>
-        </svg>
-
-        {/* Partner (right) */}
-        <FamilyCreatureCard creature={event.partnerParent} role="partner" size={depth === 0 ? 65 : 55} />
+      {/* Partner (the only new creature at this level) */}
+      <div className="relative">
+        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[8px] text-pink-400/60">{'\u2764'}</span>
+        <FamilyCreatureCard creature={event.partnerParent} role="partner" size={depth === 0 ? 60 : 52} />
       </div>
 
-      {/* SVG curve down to offspring */}
+      {/* Curved SVG lines down to each offspring */}
       {offspring.length > 0 && (
-        <svg
-          width={branchWidth * 160}
-          height="40"
-          viewBox={`0 0 ${branchWidth * 160} 40`}
-          fill="none"
-          className="shrink-0"
-        >
-          <defs>
-            <linearGradient id={`branch-${event.breedingId}`} x1="0.5" y1="0" x2="0.5" y2="1">
-              <stop offset="0%" stopColor={genC.color} stopOpacity="0.5" />
-              <stop offset="100%" stopColor={childGenC.color} stopOpacity="0.7" />
-            </linearGradient>
-            <filter id="brGlow">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-          {/* Junction dot */}
-          <circle cx={branchWidth * 80} cy={4} r={3} fill={genC.color} opacity={0.5} />
+        <>
+          <svg width={offspring.length * 150} height="32" viewBox={`0 0 ${offspring.length * 150} 32`} fill="none" className="shrink-0">
+            <defs>
+              <filter id={`cGlow-${event.breedingId}`}>
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
+            {/* Junction dot */}
+            <circle cx={offspring.length * 75} cy={3} r={2.5} fill={childGenC.color} opacity={0.5} />
+            {offspring.map((child, i) => {
+              const midX = offspring.length * 75;
+              const childX = offspring.length === 1 ? midX : 75 + i * 150;
+              return (
+                <path
+                  key={child.creatureId}
+                  d={`M ${midX} 3 C ${midX} 16, ${childX} 14, ${childX} 30`}
+                  stroke={child.isMine ? childGenC.color : "rgba(255,255,255,0.15)"}
+                  strokeWidth={child.isMine ? 2 : 1.5}
+                  strokeLinecap="round"
+                  strokeDasharray={child.isMine ? "none" : "4 3"}
+                  opacity={child.isMine ? 0.7 : 0.4}
+                  filter={child.isMine ? `url(#cGlow-${event.breedingId})` : undefined}
+                />
+              );
+            })}
+          </svg>
 
-          {offspring.map((child, i) => {
-            const childX = branchWidth === 1
-              ? branchWidth * 80
-              : 80 + i * 160;
-            const isMine = child.isMine;
-            return (
-              <path
-                key={child.creatureId}
-                d={`M ${branchWidth * 80} 4 C ${branchWidth * 80} 22, ${childX} 18, ${childX} 38`}
-                stroke={isMine ? `url(#branch-${event.breedingId})` : "rgba(255,255,255,0.15)"}
-                strokeWidth={isMine ? 2 : 1.5}
-                strokeLinecap="round"
-                strokeDasharray={isMine ? "none" : "4 3"}
-                filter={isMine ? "url(#brGlow)" : undefined}
-              />
-            );
-          })}
-        </svg>
-      )}
+          {/* Offspring row */}
+          <div className="flex items-start gap-3">
+            {offspring.map((child) => (
+              <div key={child.creatureId} className="flex flex-col items-center">
+                <span className="text-[7px] font-bold uppercase tracking-wider mb-0.5"
+                  style={{ color: child.isMine ? childGenC.color : 'rgba(255,255,255,0.25)' }}>
+                  {child.isMine ? 'Tuo' : 'Partner'}
+                </span>
+                <FamilyCreatureCard creature={child} role={child.isMine ? "mine" : "partner"} size={depth === 0 ? 52 : 45} />
 
-      {/* Offspring row */}
-      {offspring.length > 0 && (
-        <div className="flex items-start justify-center gap-4">
-          {offspring.map((child) => (
-            <div key={child.creatureId} className="flex flex-col items-center">
-              {/* Label */}
-              <span
-                className="text-[7px] font-bold uppercase tracking-wider mb-1"
-                style={{ color: child.isMine ? childGenC.color : 'rgba(255,255,255,0.3)' }}
-              >
-                {child.isMine ? 'Tuo' : 'Partner'}
-              </span>
+                {/* If this child has breedings, show them directly below (no re-rendering the child) */}
+                {child.creatureId === event.myOffspring?.creatureId && event.childBreedings.length > 0 && (
+                  <div className="flex flex-col items-center mt-1">
+                    {/* Vertical connector from offspring down to their breeding columns */}
+                    <svg width="2" height="16" viewBox="0 0 2 16" fill="none">
+                      <line x1="1" y1="0" x2="1" y2="16" stroke={childGenC.color} strokeWidth="1.5" opacity="0.4" />
+                    </svg>
 
-              <FamilyCreatureCard creature={child} role={child.isMine ? "mine" : "partner"} size={depth === 0 ? 55 : 48} />
-
-              {/* If this child has its own breedings, recurse */}
-              {event.childBreedings.length > 0 && child.creatureId === event.myOffspring?.creatureId && (
-                <div className="flex flex-col items-center mt-2 gap-4">
-                  {/* Vertical line down */}
-                  <svg width="2" height="20" viewBox="0 0 2 20" fill="none">
-                    <line x1="1" y1="0" x2="1" y2="20" stroke={childGenC.color} strokeWidth="2" opacity="0.4" />
-                  </svg>
-                  {event.childBreedings.map((childEvent) => (
-                    <BreedingBranch
-                      key={childEvent.breedingId}
-                      parent={child}
-                      event={childEvent}
-                      depth={depth + 1}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                    {/* Sub-breedings side by side */}
+                    <div className="flex items-start gap-4">
+                      {event.childBreedings.map((childEvent) => (
+                        <BreedingColumn
+                          key={childEvent.breedingId}
+                          event={childEvent}
+                          parentGen={child.familyGeneration}
+                          depth={depth + 1}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
+/**
+ * Full family tree: root on top, breeding columns below.
+ * Each creature appears exactly ONCE.
+ */
 function FamilyTreeLayout({ root, breedings }: { root: TreeCreature; breedings: BreedingEvent[] }) {
   const genC = getGenColor(root.familyGeneration);
   const numBreedings = breedings.length;
 
   return (
     <div className="flex flex-col items-center">
-      {/* Root creature — the patriarch */}
-      <FamilyCreatureCard creature={root} role="mine" size={80} />
+      {/* Root creature — shown ONCE at the top */}
+      <FamilyCreatureCard creature={root} role="mine" size={75} />
 
-      {/* SVG: trunk from root branching to each breeding */}
+      {/* SVG trunk: curved lines from root down to each partner column */}
       {numBreedings > 0 && (
         <svg
-          width={Math.max(numBreedings * 280, 300)}
-          height="45"
-          viewBox={`0 0 ${Math.max(numBreedings * 280, 300)} 45`}
+          width={Math.max(numBreedings * 200, 200)}
+          height="36"
+          viewBox={`0 0 ${Math.max(numBreedings * 200, 200)} 36`}
           fill="none"
           className="shrink-0"
         >
           <defs>
             <filter id="trunkGlow">
-              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feGaussianBlur stdDeviation="2" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
           {(() => {
-            const totalW = Math.max(numBreedings * 280, 300);
+            const totalW = Math.max(numBreedings * 200, 200);
             const midX = totalW / 2;
-
             return breedings.map((b, i) => {
               const branchX = numBreedings === 1
                 ? midX
                 : (totalW * (i + 1)) / (numBreedings + 1);
-
               return (
                 <path
                   key={b.breedingId}
-                  d={`M ${midX} 2 C ${midX} 20, ${branchX} 15, ${branchX} 43`}
+                  d={`M ${midX} 2 C ${midX} 18, ${branchX} 14, ${branchX} 34`}
                   stroke={genC.color}
                   strokeWidth="2"
                   strokeLinecap="round"
-                  opacity="0.5"
+                  opacity="0.45"
                   filter="url(#trunkGlow)"
                 />
               );
@@ -1317,14 +1301,14 @@ function FamilyTreeLayout({ root, breedings }: { root: TreeCreature; breedings: 
         </svg>
       )}
 
-      {/* Breeding branches side by side */}
+      {/* Breeding columns side by side — each shows ONLY the partner + offspring */}
       {numBreedings > 0 && (
-        <div className="flex items-start justify-center gap-6 md:gap-10 flex-wrap">
+        <div className="flex items-start justify-center gap-6 md:gap-8 flex-wrap">
           {breedings.map((event) => (
-            <BreedingBranch
+            <BreedingColumn
               key={event.breedingId}
-              parent={root}
               event={event}
+              parentGen={root.familyGeneration}
               depth={0}
             />
           ))}
