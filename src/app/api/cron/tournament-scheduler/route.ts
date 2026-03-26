@@ -306,6 +306,100 @@ export async function GET(request: NextRequest) {
     results.push(`${t.name}: enrollment opened`);
   }
 
+  // -----------------------------------------------------------------------
+  // 5. Auto-fill enrollment tournaments with bots as deadline approaches
+  // -----------------------------------------------------------------------
+
+  const enrollingTournaments = await db
+    .select()
+    .from(tournaments)
+    .where(eq(tournaments.status, 'enrollment'));
+
+  for (const t of enrollingTournaments) {
+    if (!t.startsAt) continue;
+    const msUntilStart = t.startsAt.getTime() - now.getTime();
+    const hoursUntilStart = msUntilStart / (1000 * 60 * 60);
+    const maxSlots = t.maxParticipants ?? 16;
+
+    // Count current participants
+    const [pCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.tournamentId, t.id));
+    const currentCount = pCount?.count ?? 0;
+    const emptySlots = maxSlots - currentCount;
+
+    if (emptySlots <= 0) continue;
+
+    // Gradually fill: more aggressive as start approaches
+    // > 6h: fill 1 slot per cycle
+    // 3-6h: fill 2 slots per cycle
+    // 1-3h: fill 3 slots per cycle
+    // < 1h: fill ALL remaining slots
+    let slotsToFill = 0;
+    if (hoursUntilStart <= 0) {
+      slotsToFill = emptySlots; // past deadline, fill all
+    } else if (hoursUntilStart <= 1) {
+      slotsToFill = emptySlots; // last hour, fill all
+    } else if (hoursUntilStart <= 3) {
+      slotsToFill = Math.min(3, emptySlots);
+    } else if (hoursUntilStart <= 6) {
+      slotsToFill = Math.min(2, emptySlots);
+    } else {
+      slotsToFill = Math.min(1, emptySlots);
+    }
+
+    if (slotsToFill <= 0) continue;
+
+    // Get enrolled user IDs
+    const enrolledRows = await db
+      .select({ userId: tournamentParticipants.userId })
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.tournamentId, t.id));
+    const enrolledUserIds = new Set(enrolledRows.map(r => r.userId));
+
+    // Find bot creatures not enrolled, sorted strongest first
+    const { users: usersTable } = await import('@/lib/db/schema');
+    const botUsers = await db.select().from(usersTable).where(sql`${usersTable.email} LIKE '%@mutagenix.io'`);
+    const botUserIds = new Set(botUsers.map(b => b.id));
+
+    const { creatures: creaturesTable } = await import('@/lib/db/schema');
+    const eligibleBots = await db.select().from(creaturesTable).where(
+      and(
+        eq(creaturesTable.isArchived, false),
+        eq(creaturesTable.isDead, false),
+        sql`${creaturesTable.ageDays} >= 40`,
+      ),
+    );
+
+    const sortedEligible = eligibleBots
+      .filter(c => botUserIds.has(c.userId) && !enrolledUserIds.has(c.userId))
+      .sort((a, b) => (b.ageDays ?? 0) - (a.ageDays ?? 0));
+
+    let added = 0;
+    for (const creature of sortedEligible) {
+      if (added >= slotsToFill) break;
+      if (enrolledUserIds.has(creature.userId)) continue;
+
+      try {
+        await db.insert(tournamentParticipants).values({
+          tournamentId: t.id,
+          userId: creature.userId,
+          squadSnapshot: { starters: [creature.id], reserves: [] },
+        });
+        enrolledUserIds.add(creature.userId);
+        added++;
+        results.push(`Auto-fill: ${creature.name} added to ${t.name}`);
+      } catch {
+        // duplicate or constraint error, skip
+      }
+    }
+
+    if (added > 0) {
+      results.push(`${t.name}: ${added} bot(s) auto-enrolled (${hoursUntilStart.toFixed(1)}h until start)`);
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     processed: results.length,
