@@ -67,9 +67,10 @@ export async function POST(
     );
   }
 
-  // Check not already enrolled
-  const [existing] = await db
-    .select({ id: tournamentParticipants.id })
+  // Check this specific creature is not already enrolled
+  // (same user CAN enroll multiple different creatures)
+  const allMyEntries = await db
+    .select({ squadSnapshot: tournamentParticipants.squadSnapshot })
     .from(tournamentParticipants)
     .where(
       and(
@@ -78,11 +79,12 @@ export async function POST(
       ),
     );
 
-  if (existing) {
-    return NextResponse.json(
-      { error: { code: 'ALREADY_ENROLLED', message: 'Sei già iscritto a questo torneo.' } },
-      { status: 422 },
-    );
+  // Extract enrolled creature IDs from snapshots
+  const myEnrolledCreatureIds = new Set<string>();
+  for (const entry of allMyEntries) {
+    const snap = entry.squadSnapshot as { starters?: string[]; creatureIds?: string[] } | null;
+    const ids = snap?.starters ?? snap?.creatureIds ?? [];
+    for (const cid of ids) myEnrolledCreatureIds.add(cid);
   }
 
   // Check max participants
@@ -168,12 +170,20 @@ export async function POST(
       .where(eq(users.id, session.userId));
 
     const activeId = user?.activeCreatureId;
-    const activeCreature = activeId
-      ? warriorCreatures.find((c) => c.id === activeId)
-      : null;
+    // Find a warrior creature not already enrolled in this tournament
+    const availableWarriors = warriorCreatures.filter(c => !myEnrolledCreatureIds.has(c.id));
+    if (availableWarriors.length === 0) {
+      return NextResponse.json(
+        { error: { code: 'ALL_ENROLLED', message: 'Tutte le tue creature guerriero sono già iscritte a questo torneo.' } },
+        { status: 422 },
+      );
+    }
+    // Prefer active creature if available, otherwise first available
+    const activeCreature = activeId ? availableWarriors.find(c => c.id === activeId) : null;
+    const selectedCreature = activeCreature ?? availableWarriors[0];
 
     squadSnapshot = {
-      creatureIds: [activeCreature?.id ?? warriorCreatures[0].id],
+      creatureIds: [selectedCreature.id],
       autoRotate: false,
     };
   } else {
