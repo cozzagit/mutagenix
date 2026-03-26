@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
   for (const t of knockoutTournaments) {
     const currentRound = t.currentRound;
 
-    // Get all matches in current round
+    // Get all matches in current round — ORDER BY created_at to preserve bracket position
     const roundMatches = await db
       .select()
       .from(tournamentMatches)
@@ -171,7 +171,8 @@ export async function GET(request: NextRequest) {
           eq(tournamentMatches.tournamentId, t.id),
           eq(tournamentMatches.roundNumber, currentRound),
         ),
-      );
+      )
+      .orderBy(sql`${tournamentMatches.createdAt} ASC`);
 
     const allCompleted = roundMatches.length > 0 &&
       roundMatches.every((m) => m.status === 'completed');
@@ -832,7 +833,8 @@ export async function GET(request: NextRequest) {
           eq(tournamentMatches.tournamentId, t.id),
           eq(tournamentMatches.roundNumber, t.currentRound),
         ),
-      );
+      )
+      .orderBy(sql`${tournamentMatches.createdAt} ASC`);
 
     const allNowCompleted =
       updatedRoundMatches.length > 0 &&
