@@ -40,36 +40,58 @@ function relativeTime(iso: string): string {
 // ---------------------------------------------------------------------------
 
 function renderContent(content: string, mentions: ChatMention[]) {
-  if (!mentions || mentions.length === 0) {
+  // If we have structured mentions, use them (startIndex/endIndex-based)
+  if (mentions && mentions.length > 0) {
+    const sorted = [...mentions].sort((a, b) => a.startIndex - b.startIndex);
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    for (let i = 0; i < sorted.length; i++) {
+      const m = sorted[i];
+      if (m.startIndex > lastIndex) {
+        parts.push(<span key={`t-${i}`}>{content.slice(lastIndex, m.startIndex)}</span>);
+      }
+      const mentionClass =
+        m.type === 'player'
+          ? 'text-primary font-semibold'
+          : 'text-bio-purple font-semibold';
+      const prefix = m.type === 'player' ? '@' : '#';
+      parts.push(
+        <span key={`m-${i}`} className={mentionClass}>
+          {prefix}{m.name}
+        </span>,
+      );
+      lastIndex = m.endIndex;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(<span key="tail">{content.slice(lastIndex)}</span>);
+    }
+
+    return <>{parts}</>;
+  }
+
+  // Fallback: detect @Player and #Creature inline (for bot messages without structured mentions)
+  const tagRegex = /([@#][A-Za-zÀ-ÿ0-9_.]+(?:\s[A-ZÀ-Ÿ][a-zà-ÿ0-9.]*)?)(?=[,.:;!?\s]|$)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<span key={`t-${lastIndex}`}>{content.slice(lastIndex, match.index)}</span>);
+    }
+    const tag = match[1];
+    const isPlayer = tag.startsWith('@');
+    const cls = isPlayer ? 'text-primary font-semibold' : 'text-bio-purple font-semibold';
+    parts.push(<span key={`m-${match.index}`} className={cls}>{tag}</span>);
+    lastIndex = match.index + tag.length;
+  }
+
+  if (parts.length === 0) {
     return <span>{content}</span>;
   }
 
-  // Sort mentions by startIndex
-  const sorted = [...mentions].sort((a, b) => a.startIndex - b.startIndex);
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  for (let i = 0; i < sorted.length; i++) {
-    const m = sorted[i];
-    // Add text before this mention
-    if (m.startIndex > lastIndex) {
-      parts.push(<span key={`t-${i}`}>{content.slice(lastIndex, m.startIndex)}</span>);
-    }
-    // Add highlighted mention
-    const mentionClass =
-      m.type === 'player'
-        ? 'text-primary font-semibold'
-        : 'text-bio-purple font-semibold';
-    const prefix = m.type === 'player' ? '@' : '#';
-    parts.push(
-      <span key={`m-${i}`} className={mentionClass}>
-        {prefix}{m.name}
-      </span>,
-    );
-    lastIndex = m.endIndex;
-  }
-
-  // Add remaining text
   if (lastIndex < content.length) {
     parts.push(<span key="tail">{content.slice(lastIndex)}</span>);
   }
