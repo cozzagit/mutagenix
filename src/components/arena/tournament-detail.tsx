@@ -194,7 +194,156 @@ function StandingsTable({
 }
 
 /* ------------------------------------------------------------------ */
-/* Main: TournamentDetail                                             */
+/* Types: Match Result                                                */
+/* ------------------------------------------------------------------ */
+
+interface DuelResult {
+  duelIndex: number;
+  creature1Id: string;
+  creature2Id: string;
+  winnerId: string | null;
+  rounds: number;
+  hpPercent1: number;
+  hpPercent2: number;
+}
+
+interface MatchResult {
+  result: string;
+  winnerParticipantId: string | null;
+  duels: DuelResult[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Sub: MatchResultOverlay                                            */
+/* ------------------------------------------------------------------ */
+
+function MatchResultOverlay({
+  matchResult,
+  myParticipantId,
+  creatureNames,
+  onClose,
+}: {
+  matchResult: MatchResult;
+  myParticipantId: string | null;
+  creatureNames: Record<string, string>;
+  onClose: () => void;
+}) {
+  const isVictory = matchResult.winnerParticipantId === myParticipantId;
+  const isDraw = matchResult.winnerParticipantId === null;
+
+  const outcomeLabel = isDraw ? "PAREGGIO!" : isVictory ? "VITTORIA!" : "SCONFITTA.";
+  const outcomeColor = isDraw ? "#ffd600" : isVictory ? "#00e5a0" : "#ff4466";
+  const outcomeBg = isDraw
+    ? "rgba(255,214,0,0.06)"
+    : isVictory
+      ? "rgba(0,229,160,0.06)"
+      : "rgba(255,68,102,0.06)";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+        style={{ backgroundColor: "#0e0f14", borderColor: outcomeColor + "44", background: outcomeBg + ", #0e0f14" }}
+      >
+        {/* Outcome headline */}
+        <p
+          className="text-center font-black tracking-widest mb-1"
+          style={{ color: outcomeColor, fontSize: "2rem", textShadow: `0 0 24px ${outcomeColor}88` }}
+        >
+          {outcomeLabel}
+        </p>
+        <p className="text-center text-[10px] text-muted uppercase tracking-wider mb-5">
+          {matchResult.duels.length === 1 ? "Duello" : `${matchResult.duels.length} duelli`}
+        </p>
+
+        {/* Duel breakdown */}
+        <div className="flex flex-col gap-2 mb-6">
+          {matchResult.duels.map((duel, i) => {
+            const name1 = creatureNames[duel.creature1Id] ?? `C.${duel.creature1Id.slice(0, 6)}`;
+            const name2 = creatureNames[duel.creature2Id] ?? `C.${duel.creature2Id.slice(0, 6)}`;
+            const c1Won = duel.winnerId === duel.creature1Id;
+            const c2Won = duel.winnerId === duel.creature2Id;
+            const duelDraw = duel.winnerId === null;
+
+            return (
+              <div
+                key={i}
+                className="rounded-xl border border-border/20 bg-surface/40 px-4 py-3"
+              >
+                {/* Duel index */}
+                <p className="text-[9px] text-muted uppercase tracking-widest mb-2">
+                  Duello {i + 1} · {duel.rounds} round{duel.rounds !== 1 ? "i" : ""}
+                </p>
+
+                {/* Fighters row */}
+                <div className="flex items-center gap-2">
+                  {/* Creature 1 */}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-xs font-black truncate"
+                      style={{ color: c1Won ? "#00e5a0" : duelDraw ? "#ffd600" : "#ff4466" }}
+                    >
+                      {name1}
+                      {c1Won && <span className="ml-1 text-[9px]">WIN</span>}
+                    </p>
+                    <div className="mt-1 h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${duel.hpPercent1}%`,
+                          backgroundColor: c1Won ? "#00e5a0" : "#ff4466",
+                        }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-muted mt-0.5">{Math.round(duel.hpPercent1)}% HP</p>
+                  </div>
+
+                  {/* VS divider */}
+                  <span className="shrink-0 text-[10px] font-bold text-muted/50">vs</span>
+
+                  {/* Creature 2 */}
+                  <div className="flex-1 min-w-0 text-right">
+                    <p
+                      className="text-xs font-black truncate"
+                      style={{ color: c2Won ? "#00e5a0" : duelDraw ? "#ffd600" : "#ff4466" }}
+                    >
+                      {c2Won && <span className="mr-1 text-[9px]">WIN</span>}
+                      {name2}
+                    </p>
+                    <div className="mt-1 h-1.5 rounded-full bg-surface-2 overflow-hidden flex justify-end">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${duel.hpPercent2}%`,
+                          backgroundColor: c2Won ? "#00e5a0" : "#ff4466",
+                        }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-muted mt-0.5">{Math.round(duel.hpPercent2)}% HP</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="w-full rounded-xl py-2.5 text-sm font-black uppercase tracking-widest transition-all hover:opacity-80"
+          style={{ backgroundColor: outcomeColor + "22", color: outcomeColor, border: `1px solid ${outcomeColor}44` }}
+        >
+          CHIUDI
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 
 interface TournamentDetailProps {
@@ -221,6 +370,8 @@ export function TournamentDetail({
   const [myCreatures, setMyCreatures] = useState<{id: string; name: string; ageDays: number}[]>([]);
   const [selectedCreatureId, setSelectedCreatureId] = useState<string | null>(null);
   const [enrolledCreatureIds, setEnrolledCreatureIds] = useState<Set<string>>(new Set());
+  const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
+  const [creatureNames, setCreatureNames] = useState<Record<string, string>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -244,6 +395,11 @@ export function TournamentDetail({
           for (const cid of detailJson.data.myEnrolledCreatureIds) enrolled.add(cid);
         }
         setEnrolledCreatureIds(enrolled);
+
+        // Creature names map for battle result overlay
+        if (detailJson.data.creatureNames) {
+          setCreatureNames(detailJson.data.creatureNames);
+        }
       }
 
       if (standingsRes.ok) {
@@ -337,7 +493,21 @@ export function TournamentDetail({
           return;
         }
 
-        const result = json.data;
+        const result = json.data as MatchResult & {
+          team1Wins: number;
+          team2Wins: number;
+          team1TotalHpPercent: number;
+          team2TotalHpPercent: number;
+        };
+
+        // Show the result overlay
+        setMatchResult({
+          result: result.result,
+          winnerParticipantId: result.winnerParticipantId,
+          duels: result.duels,
+        });
+
+        // Backup toast for accessibility / quick feedback
         if (result.winnerParticipantId === myParticipantId) {
           toast("success", "Vittoria!");
         } else if (result.winnerParticipantId === null) {
@@ -400,6 +570,18 @@ export function TournamentDetail({
 
   return (
     <div>
+      {/* Match result overlay */}
+      {matchResult && (
+        <MatchResultOverlay
+          matchResult={matchResult}
+          myParticipantId={myParticipantId}
+          creatureNames={creatureNames}
+          onClose={() => {
+            setMatchResult(null);
+          }}
+        />
+      )}
+
       {/* Back + Header */}
       <div className="flex items-center gap-3 mb-4">
         <button

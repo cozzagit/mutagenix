@@ -130,6 +130,12 @@ export async function GET(
     myEnrolledCreatureIds.push(...ids);
   }
 
+  // Build flat creatureId → name map for the client (used by battle result overlay)
+  const creatureNames: Record<string, string> = {};
+  for (const [cid, cd] of creatureDataMap.entries()) {
+    creatureNames[cid] = cd.name;
+  }
+
   return NextResponse.json({
     data: {
       tournament,
@@ -138,6 +144,7 @@ export async function GET(
       isEnrolled,
       myParticipantId: myParticipant?.id ?? null,
       myEnrolledCreatureIds,
+      creatureNames,
     },
   });
 }

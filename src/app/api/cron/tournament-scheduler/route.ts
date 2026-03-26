@@ -15,6 +15,9 @@ import {
   tournaments,
   tournamentMatches,
   tournamentParticipants,
+  creatures,
+  creatureRankings,
+  battles,
 } from '@/lib/db/schema';
 import { eq, and, sql, lte } from 'drizzle-orm';
 import {
@@ -22,7 +25,23 @@ import {
   generateKnockoutBracket,
   generateCalendarSchedule,
   calculateKnockoutRounds,
+  CALENDAR_POINTS,
+  KNOCKOUT_POINTS,
 } from '@/lib/game-engine/tournament-engine';
+import {
+  executeSquadBattle,
+  type SquadSide,
+  type BattleFormat,
+} from '@/lib/game-engine/squad-battle-engine';
+import { creatureToBattleCreature } from '@/lib/game-engine/battle-helpers';
+import { loadWellnessInput } from '@/lib/game-engine/wellness-loader';
+import { calculateWellness } from '@/lib/game-engine/wellness';
+import { getCreatureCariche } from '@/lib/game-engine/cariche-loader';
+import type { CreatureAncestry } from '@/lib/game-engine/kinship-engine';
+import type { Creature } from '@/lib/db/schema/creatures';
+import type { BattleCreature } from '@/types/battle';
+
+type AccumulatedDamage = Record<string, { damageTaken: number; hpPercent: number }>;
 
 const CRON_SECRET = 'mutagenix-bot-secret-2026';
 
@@ -506,6 +525,393 @@ export async function GET(request: NextRequest) {
       }).where(eq(tournaments.id, t.id));
 
       results.push(`${t.name}: FULL — schedule generated, tournament started!`);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 7. Auto-execute all pending matches in active knockout/calendar tournaments
+  // -----------------------------------------------------------------------
+
+  const autoExecTournaments = await db
+    .select()
+    .from(tournaments)
+    .where(
+      and(
+        eq(tournaments.status, 'active'),
+        sql`${tournaments.tournamentType} IN ('knockout', 'random', 'calendar')`,
+      ),
+    );
+
+  // Load full ancestry table once for kinship calculations
+  const allCreaturesForAncestry = await db
+    .select({
+      id: creatures.id,
+      parentACreatureId: creatures.parentACreatureId,
+      parentBCreatureId: creatures.parentBCreatureId,
+    })
+    .from(creatures);
+
+  const ancestry: CreatureAncestry[] = allCreaturesForAncestry.map((c) => ({
+    id: c.id,
+    parentAId: c.parentACreatureId,
+    parentBId: c.parentBCreatureId,
+  }));
+
+  for (const t of autoExecTournaments) {
+    const pendingMatches = await db
+      .select()
+      .from(tournamentMatches)
+      .where(
+        and(
+          eq(tournamentMatches.tournamentId, t.id),
+          eq(tournamentMatches.roundNumber, t.currentRound),
+          sql`${tournamentMatches.status} IN ('pending', 'scheduled')`,
+        ),
+      );
+
+    if (pendingMatches.length === 0) continue;
+
+    const format = (t.battleFormat ?? '3v3') as BattleFormat;
+    const duelCount = format === '1v1' ? 1 : format === '2v2' ? 2 : 3;
+    const isKnockout = t.tournamentType === 'knockout' || t.tournamentType === 'random';
+
+    let matchesExecuted = 0;
+
+    for (const match of pendingMatches) {
+      try {
+        // Load both participants
+        const [participant1] = await db
+          .select()
+          .from(tournamentParticipants)
+          .where(eq(tournamentParticipants.id, match.participant1Id));
+
+        const [participant2] = await db
+          .select()
+          .from(tournamentParticipants)
+          .where(eq(tournamentParticipants.id, match.participant2Id));
+
+        if (!participant1 || !participant2) {
+          results.push(`[7] ${t.name} match ${match.id}: missing participant, skipped`);
+          continue;
+        }
+
+        // Extract creature IDs — handle both {creatureIds:[]} and {starters:[]} formats
+        const raw1 = participant1.squadSnapshot as { creatureIds?: string[]; starters?: string[]; autoRotate?: boolean } | null;
+        const raw2 = participant2.squadSnapshot as { creatureIds?: string[]; starters?: string[]; autoRotate?: boolean } | null;
+        const snap1Ids = raw1?.creatureIds ?? raw1?.starters ?? [];
+        const snap2Ids = raw2?.creatureIds ?? raw2?.starters ?? [];
+
+        const accDamage1 = (participant1.accumulatedDamage ?? {}) as AccumulatedDamage;
+        const accDamage2 = (participant2.accumulatedDamage ?? {}) as AccumulatedDamage;
+
+        // Load creatures for a participant, filtering dead/archived, up to duelCount
+        async function loadSnapCreatures(creatureIds: string[]): Promise<Creature[]> {
+          if (creatureIds.length === 0) return [];
+          const rows = await db
+            .select()
+            .from(creatures)
+            .where(
+              sql`${creatures.id} IN (${sql.join(creatureIds.map((cid) => sql`${cid}`), sql`, `)})`,
+            );
+          return rows.filter((c) => !c.isDead && !c.isArchived).slice(0, duelCount);
+        }
+
+        const team1Creatures = await loadSnapCreatures(snap1Ids);
+        const team2Creatures = await loadSnapCreatures(snap2Ids);
+
+        if (team1Creatures.length < duelCount || team2Creatures.length < duelCount) {
+          results.push(
+            `[7] ${t.name} match ${match.id}: not enough creatures (${team1Creatures.length}v${team2Creatures.length}), skipped`,
+          );
+          continue;
+        }
+
+        // Build a SquadSide from a list of creatures
+        async function buildSquadSide(
+          userId: string,
+          sideCreatures: Creature[],
+          accDamage: AccumulatedDamage,
+        ): Promise<SquadSide> {
+          const battleCreatures: BattleCreature[] = await Promise.all(
+            sideCreatures.map(async (c) => {
+              const wellnessInput = await loadWellnessInput(c.id);
+              const wellness = calculateWellness(wellnessInput);
+              const caricheIds = await getCreatureCariche(c.id);
+
+              let [ranking] = await db
+                .select()
+                .from(creatureRankings)
+                .where(eq(creatureRankings.creatureId, c.id));
+
+              if (!ranking) {
+                [ranking] = await db
+                  .insert(creatureRankings)
+                  .values({
+                    creatureId: c.id,
+                    userId,
+                    eloRating: 1000,
+                    eloPeak: 1000,
+                    rankTier: 'novice',
+                  })
+                  .returning();
+              }
+
+              const bc = creatureToBattleCreature(c, ranking, wellness, caricheIds);
+
+              // Apply persistent damage: scale stamina by hpPercent
+              const hpPercent = accDamage[c.id]?.hpPercent ?? 100;
+              const hpFactor = hpPercent / 100;
+              return { ...bc, stamina: bc.stamina * hpFactor };
+            }),
+          );
+
+          return { userId, creatures: battleCreatures, ancestry };
+        }
+
+        const team1 = await buildSquadSide(participant1.userId, team1Creatures, accDamage1);
+        const team2 = await buildSquadSide(participant2.userId, team2Creatures, accDamage2);
+
+        // Execute the battle
+        const seed = `cron-tournament-${t.id}-${match.id}-${Date.now()}`;
+        const result = executeSquadBattle(team1, team2, format, 'tournament', seed);
+
+        // Determine winner
+        const participant1Won = result.winnerUserId === participant1.userId;
+        const participant2Won = result.winnerUserId === participant2.userId;
+        const isDraw = result.winnerUserId === null;
+        const winnerParticipantId = participant1Won
+          ? participant1.id
+          : participant2Won
+          ? participant2.id
+          : null;
+
+        // Update accumulated damage
+        const newAccDamage1 = { ...accDamage1 };
+        const newAccDamage2 = { ...accDamage2 };
+
+        for (const duel of result.duels) {
+          const prevHp1 = newAccDamage1[duel.creature1Id]?.hpPercent ?? 100;
+          newAccDamage1[duel.creature1Id] = {
+            damageTaken: (newAccDamage1[duel.creature1Id]?.damageTaken ?? 0) + (100 - duel.hpPercent1),
+            hpPercent: Math.max(20, prevHp1 * (duel.hpPercent1 / 100)),
+          };
+
+          const prevHp2 = newAccDamage2[duel.creature2Id]?.hpPercent ?? 100;
+          newAccDamage2[duel.creature2Id] = {
+            damageTaken: (newAccDamage2[duel.creature2Id]?.damageTaken ?? 0) + (100 - duel.hpPercent2),
+            hpPercent: Math.max(20, prevHp2 * (duel.hpPercent2 / 100)),
+          };
+        }
+
+        // Points
+        const points1 = isKnockout
+          ? (participant1Won ? KNOCKOUT_POINTS.WIN : KNOCKOUT_POINTS.LOSS)
+          : (participant1Won ? CALENDAR_POINTS.WIN : isDraw ? CALENDAR_POINTS.DRAW : CALENDAR_POINTS.LOSS);
+        const points2 = isKnockout
+          ? (participant2Won ? KNOCKOUT_POINTS.WIN : KNOCKOUT_POINTS.LOSS)
+          : (participant2Won ? CALENDAR_POINTS.WIN : isDraw ? CALENDAR_POINTS.DRAW : CALENDAR_POINTS.LOSS);
+
+        // Update match record
+        await db
+          .update(tournamentMatches)
+          .set({
+            status: 'completed',
+            winnerId: winnerParticipantId,
+            completedAt: now,
+            duelResults: result.duels.map((d, i) => ({
+              duelIndex: i,
+              creature1Id: d.creature1Id,
+              creature2Id: d.creature2Id,
+              winnerId: d.winnerId,
+              hpPercent1: Math.round(d.hpPercent1 * 10) / 10,
+              hpPercent2: Math.round(d.hpPercent2 * 10) / 10,
+              rounds: d.battleResult.rounds,
+              kinshipMalus: d.kinshipMalus,
+            })),
+            participant1Damage: newAccDamage1,
+            participant2Damage: newAccDamage2,
+            kinshipData: result.duels.map((d) => ({
+              creature1Id: d.creature1Id,
+              creature2Id: d.creature2Id,
+              malus: d.kinshipMalus,
+              teamBonus1: d.teamBonus1,
+              teamBonus2: d.teamBonus2,
+            })),
+          })
+          .where(eq(tournamentMatches.id, match.id));
+
+        // Update participant 1 stats
+        await db
+          .update(tournamentParticipants)
+          .set({
+            matchesPlayed: sql`${tournamentParticipants.matchesPlayed} + 1`,
+            matchesWon: participant1Won
+              ? sql`${tournamentParticipants.matchesWon} + 1`
+              : tournamentParticipants.matchesWon,
+            matchesLost: participant2Won
+              ? sql`${tournamentParticipants.matchesLost} + 1`
+              : tournamentParticipants.matchesLost,
+            matchesDrawn: isDraw
+              ? sql`${tournamentParticipants.matchesDrawn} + 1`
+              : tournamentParticipants.matchesDrawn,
+            points: sql`${tournamentParticipants.points} + ${points1}`,
+            accumulatedDamage: newAccDamage1,
+            isEliminated: isKnockout && !participant1Won ? true : undefined,
+          })
+          .where(eq(tournamentParticipants.id, participant1.id));
+
+        // Update participant 2 stats
+        await db
+          .update(tournamentParticipants)
+          .set({
+            matchesPlayed: sql`${tournamentParticipants.matchesPlayed} + 1`,
+            matchesWon: participant2Won
+              ? sql`${tournamentParticipants.matchesWon} + 1`
+              : tournamentParticipants.matchesWon,
+            matchesLost: participant1Won
+              ? sql`${tournamentParticipants.matchesLost} + 1`
+              : tournamentParticipants.matchesLost,
+            matchesDrawn: isDraw
+              ? sql`${tournamentParticipants.matchesDrawn} + 1`
+              : tournamentParticipants.matchesDrawn,
+            points: sql`${tournamentParticipants.points} + ${points2}`,
+            accumulatedDamage: newAccDamage2,
+            isEliminated: isKnockout && !participant2Won ? true : undefined,
+          })
+          .where(eq(tournamentParticipants.id, participant2.id));
+
+        // Save individual battle records
+        const squadBattleId = crypto.randomUUID();
+
+        for (let i = 0; i < result.duels.length; i++) {
+          const duel = result.duels[i];
+          await db.insert(battles).values({
+            challengerCreatureId: duel.creature1Id,
+            defenderCreatureId: duel.creature2Id,
+            challengerUserId: participant1.userId,
+            defenderUserId: participant2.userId,
+            battleType: 'tournament',
+            battleMode: 'tournament',
+            winnerCreatureId: duel.winnerId,
+            roundsPlayed: duel.battleResult.rounds,
+            battleLog: duel.battleResult.events,
+            squadBattleId,
+            duelIndex: i,
+            tournamentMatchId: match.id,
+            kinshipMalus: duel.kinshipMalus,
+            teamBonus: duel.teamBonus1,
+            challengerEloBefore: 0,
+            defenderEloBefore: 0,
+            challengerEloAfter: 0,
+            defenderEloAfter: 0,
+            challengerHpPercent: duel.hpPercent1,
+            defenderHpPercent: duel.hpPercent2,
+          });
+        }
+
+        matchesExecuted++;
+        results.push(
+          `[7] ${t.name} match ${match.id}: ${participant1Won ? 'p1 wins' : participant2Won ? 'p2 wins' : 'draw'} (${result.team1Wins}-${result.team2Wins})`,
+        );
+      } catch (err) {
+        results.push(
+          `[7] ${t.name} match ${match.id}: ERROR — ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+
+    if (matchesExecuted === 0) continue;
+
+    // After executing matches, check if the round is now fully complete
+    // and advance inline (mirrors sections 1 & 2 logic)
+    const updatedRoundMatches = await db
+      .select()
+      .from(tournamentMatches)
+      .where(
+        and(
+          eq(tournamentMatches.tournamentId, t.id),
+          eq(tournamentMatches.roundNumber, t.currentRound),
+        ),
+      );
+
+    const allNowCompleted =
+      updatedRoundMatches.length > 0 &&
+      updatedRoundMatches.every((m) => m.status === 'completed');
+
+    if (!allNowCompleted) continue;
+
+    if (isKnockout) {
+      // Final round (1 match) → resolving
+      if (updatedRoundMatches.length === 1) {
+        await db
+          .update(tournaments)
+          .set({ status: 'resolving', updatedAt: now })
+          .where(eq(tournaments.id, t.id));
+        results.push(`[7] ${t.name}: final completed, transitioning to resolving`);
+        continue;
+      }
+
+      // Generate next round
+      const completedForAdvance = updatedRoundMatches.map((m) => ({
+        participant1Id: m.participant1Id,
+        participant2Id: m.participant2Id,
+        winnerId: m.winnerId,
+      }));
+      const nextMatches = advanceKnockoutRound(t.currentRound, completedForAdvance);
+
+      if (nextMatches.length === 0) {
+        await db
+          .update(tournaments)
+          .set({ status: 'resolving', updatedAt: now })
+          .where(eq(tournaments.id, t.id));
+        results.push(`[7] ${t.name}: no more knockout matches, transitioning to resolving`);
+        continue;
+      }
+
+      for (const m of nextMatches) {
+        await db.insert(tournamentMatches).values({
+          tournamentId: t.id,
+          roundNumber: m.roundNumber,
+          participant1Id: m.participant1Id,
+          participant2Id: m.participant2Id,
+          status: 'pending',
+        });
+      }
+
+      await db
+        .update(tournaments)
+        .set({ currentRound: t.currentRound + 1, updatedAt: now })
+        .where(eq(tournaments.id, t.id));
+
+      results.push(
+        `[7] ${t.name}: round complete, advanced to round ${t.currentRound + 1} with ${nextMatches.length} matches`,
+      );
+    } else {
+      // Calendar: advance to next round if one exists
+      const nextRound = t.currentRound + 1;
+      const [nextRoundCount] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(tournamentMatches)
+        .where(
+          and(
+            eq(tournamentMatches.tournamentId, t.id),
+            eq(tournamentMatches.roundNumber, nextRound),
+          ),
+        );
+
+      if ((nextRoundCount?.count ?? 0) > 0) {
+        await db
+          .update(tournaments)
+          .set({ currentRound: nextRound, updatedAt: now })
+          .where(eq(tournaments.id, t.id));
+        results.push(`[7] ${t.name}: calendar round complete, advanced to round ${nextRound}`);
+      } else {
+        await db
+          .update(tournaments)
+          .set({ status: 'resolving', updatedAt: now })
+          .where(eq(tournaments.id, t.id));
+        results.push(`[7] ${t.name}: all calendar rounds complete, transitioning to resolving`);
+      }
     }
   }
 
