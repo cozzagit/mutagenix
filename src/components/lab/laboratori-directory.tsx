@@ -805,21 +805,24 @@ export function LaboratoriDirectory({ creatures }: LaboratoriDirectoryProps) {
         }}
       />
 
-      {/* Header — Il Vetrino */}
+      {/* Header — Biosfera */}
       <div className="relative z-10 mb-5">
         <div className="flex items-center gap-3">
-          {/* Microscope icon */}
+          {/* Globe icon */}
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#8a9a70]/20 bg-[#8a9a70]/10">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5 text-[#8a9a70]">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+              <circle cx="12" cy="12" r="9" />
+              <path strokeLinecap="round" d="M3 12h18" />
+              <path strokeLinecap="round" d="M12 3c-2.5 3-4 6.5-4 9s1.5 6 4 9" />
+              <path strokeLinecap="round" d="M12 3c2.5 3 4 6.5 4 9s-1.5 6-4 9" />
             </svg>
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">
-              Il Vetrino
+              Biosfera
             </h1>
             <p className="text-[11px] text-muted/70">
-              Osserva tutte le creature del laboratorio sotto il microscopio
+              Tutte le creature del laboratorio
             </p>
           </div>
 
