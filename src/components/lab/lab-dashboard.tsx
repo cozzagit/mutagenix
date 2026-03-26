@@ -191,13 +191,15 @@ export function LabDashboard({
   useEffect(() => {
     async function checkTournament() {
       try {
-        const res = await fetch('/api/arena/tournaments?status=enrollment,active');
+        const res = await fetch('/api/arena/tournaments?status=enrollment,active,resolving,completed');
         if (!res.ok) return;
         const json = await res.json();
-        const tournaments = json.data ?? [];
+        const tournaments = (json.data ?? []) as typeof activeTournament[];
         if (tournaments.length > 0) {
-          // The list API already returns isEnrolled and participantCount
-          setActiveTournament(tournaments[0]);
+          // Prioritize: active > enrollment > resolving > completed
+          const priority: Record<string, number> = { active: 0, enrollment: 1, resolving: 2, completed: 3 };
+          const sorted = [...tournaments].sort((a, b) => (priority[a!.status] ?? 9) - (priority[b!.status] ?? 9));
+          setActiveTournament(sorted[0]);
         }
       } catch { /* ignore */ }
     }
@@ -876,41 +878,52 @@ export function LabDashboard({
                         )}
                       </div>
                     </>
+                  ) : activeTournament.status === 'active' ? (
+                    <p className="text-xs font-bold mt-0.5 animate-pulse" style={{ color: '#3d5afe' }}>
+                      {'\u{1F534}'} Torneo in corso! LIVE
+                    </p>
                   ) : (
-                    <p className="text-xs font-bold mt-0.5" style={{ color: '#3d5afe' }}>
-                      Torneo in corso!
+                    <p className="text-xs font-bold mt-0.5" style={{ color: '#ffd600' }}>
+                      Torneo concluso — guarda i risultati!
                     </p>
                   )}
                 </div>
               </div>
 
-              {activeTournament.status === 'enrollment' && (
-                <div className="mt-2.5 flex flex-col gap-1.5">
-                  {activeTournament.isEnrolled && activeTournament.enrolledCreatureNames && activeTournament.enrolledCreatureNames.length > 0 && (
-                    <div className="flex items-center justify-center gap-1.5 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1.5">
-                      <span className="text-accent text-xs">{'\u2705'}</span>
-                      <span className="text-[10px] text-accent">
-                        Iscritto con: <strong>{activeTournament.enrolledCreatureNames.join(', ')}</strong>
-                      </span>
-                    </div>
-                  )}
-                  <Link
-                    href={`/arena?tournament=${activeTournament.id}`}
-                    className="flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:brightness-110"
-                    style={{
-                      background: activeTournament.isEnrolled
+              <div className="mt-2.5 flex flex-col gap-1.5">
+                {activeTournament.status === 'enrollment' && activeTournament.isEnrolled && activeTournament.enrolledCreatureNames && activeTournament.enrolledCreatureNames.length > 0 && (
+                  <div className="flex items-center justify-center gap-1.5 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1.5">
+                    <span className="text-accent text-xs">{'\u2705'}</span>
+                    <span className="text-[10px] text-accent">
+                      Iscritto con: <strong>{activeTournament.enrolledCreatureNames.join(', ')}</strong>
+                    </span>
+                  </div>
+                )}
+                <Link
+                  href={`/arena?tournament=${activeTournament.id}`}
+                  className="flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:brightness-110"
+                  style={{
+                    background: activeTournament.status === 'active'
+                      ? 'linear-gradient(135deg, #3d5afe, #ff4466)'
+                      : activeTournament.status === 'enrollment' && activeTournament.isEnrolled
                         ? 'linear-gradient(135deg, #3d5afe, #00e5a0)'
-                        : 'linear-gradient(135deg, #ff6b00, #ff3d3d)',
-                      boxShadow: activeTournament.isEnrolled
-                        ? '0 0 12px rgba(0, 229, 160, 0.2)'
-                        : '0 0 12px rgba(255, 107, 0, 0.3)',
-                    }}
-                  >
-                    <span>{'\u2694\uFE0F'}</span>
-                    {activeTournament.isEnrolled ? 'ISCRIVI ALTRA CREATURA' : 'ISCRIVITI ORA'}
-                  </Link>
-                </div>
-              )}
+                        : activeTournament.status === 'enrollment'
+                          ? 'linear-gradient(135deg, #ff6b00, #ff3d3d)'
+                          : 'linear-gradient(135deg, #ffd600, #ff9100)',
+                    boxShadow: activeTournament.status === 'active'
+                      ? '0 0 16px rgba(61, 90, 254, 0.3)'
+                      : '0 0 12px rgba(255, 107, 0, 0.3)',
+                    animation: activeTournament.status === 'active' ? 'tournament-glow 1.5s ease-in-out infinite alternate' : undefined,
+                  }}
+                >
+                  <span>{activeTournament.status === 'active' ? '\u{1F525}' : activeTournament.status === 'enrollment' ? '\u2694\uFE0F' : '\u{1F3C6}'}</span>
+                  {activeTournament.status === 'active'
+                    ? 'SEGUI IL TORNEO LIVE'
+                    : activeTournament.status === 'enrollment'
+                      ? (activeTournament.isEnrolled ? 'ISCRIVI ALTRA CREATURA' : 'ISCRIVITI ORA')
+                      : 'GUARDA I RISULTATI'}
+                </Link>
+              </div>
             </div>
           </div>
         )}
