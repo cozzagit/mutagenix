@@ -76,11 +76,14 @@ export async function GET(request: NextRequest) {
     participantCounts.map((pc) => [pc.tournamentId, pc.count]),
   );
 
-  // Check which tournaments the user is enrolled in
+  // Check which tournaments the user is enrolled in + which creatures
   const userEnrollments =
     tournamentIds.length > 0
       ? await db
-          .select({ tournamentId: tournamentParticipants.tournamentId })
+          .select({
+            tournamentId: tournamentParticipants.tournamentId,
+            squadSnapshot: tournamentParticipants.squadSnapshot,
+          })
           .from(tournamentParticipants)
           .where(
             and(
@@ -91,6 +94,27 @@ export async function GET(request: NextRequest) {
       : [];
 
   const enrolledSet = new Set(userEnrollments.map((e) => e.tournamentId));
+
+  // Build map: tournamentId -> enrolled creature IDs
+  const enrolledCreaturesMap = new Map<string, string[]>();
+  for (const e of userEnrollments) {
+    const snap = e.squadSnapshot as { starters?: string[]; creatureIds?: string[] } | null;
+    const ids = snap?.starters ?? snap?.creatureIds ?? [];
+    const arr = enrolledCreaturesMap.get(e.tournamentId) ?? [];
+    arr.push(...ids);
+    enrolledCreaturesMap.set(e.tournamentId, arr);
+  }
+
+  // Fetch creature names for enrolled creatures
+  const allEnrolledIds = [...new Set([...enrolledCreaturesMap.values()].flat())];
+  const enrolledCreatureNames = new Map<string, string>();
+  if (allEnrolledIds.length > 0) {
+    const { creatures } = await import('@/lib/db/schema');
+    const rows = await db.select({ id: creatures.id, name: creatures.name })
+      .from(creatures)
+      .where(inArray(creatures.id, allEnrolledIds));
+    for (const r of rows) enrolledCreatureNames.set(r.id, r.name);
+  }
 
   const data = tournamentRows.map((t) => ({
     id: t.id,
@@ -109,6 +133,7 @@ export async function GET(request: NextRequest) {
     startsAt: t.startsAt,
     endsAt: t.endsAt,
     isEnrolled: enrolledSet.has(t.id),
+    enrolledCreatureNames: (enrolledCreaturesMap.get(t.id) ?? []).map(id => enrolledCreatureNames.get(id) ?? '???'),
     createdAt: t.createdAt,
   }));
 

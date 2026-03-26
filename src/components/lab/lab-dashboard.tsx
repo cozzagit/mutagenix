@@ -184,7 +184,7 @@ export function LabDashboard({
   const [liveWellness, setLiveWellness] = useState(wellness);
 
   // --- Tournament enrollment banner ---
-  const [activeTournament, setActiveTournament] = useState<{id: string; name: string; startsAt: string; participantCount: number; maxParticipants: number | null; status: string; isEnrolled?: boolean} | null>(null);
+  const [activeTournament, setActiveTournament] = useState<{id: string; name: string; startsAt: string; participantCount: number; maxParticipants: number | null; status: string; isEnrolled?: boolean; enrolledCreatureNames?: string[]} | null>(null);
   const [tournamentDismissed, setTournamentDismissed] = useState(false);
   const [tournamentCountdown, setTournamentCountdown] = useState('');
 
@@ -884,22 +884,31 @@ export function LabDashboard({
                 </div>
               </div>
 
-              {activeTournament.status === 'enrollment' && !activeTournament.isEnrolled && (
-                <Link
-                  href="/arena"
-                  className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:brightness-110"
-                  style={{
-                    background: 'linear-gradient(135deg, #ff6b00, #ff3d3d)',
-                    boxShadow: '0 0 12px rgba(255, 107, 0, 0.3)',
-                  }}
-                >
-                  <span>{'\u2694\uFE0F'}</span> ISCRIVITI ORA
-                </Link>
-              )}
-              {activeTournament.status === 'enrollment' && activeTournament.isEnrolled && (
-                <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg bg-accent/15 border border-accent/30 px-4 py-2">
-                  <span className="text-accent text-sm">{'\u2705'}</span>
-                  <span className="text-[11px] font-bold text-accent">Sei iscritto! Preparati per la battaglia.</span>
+              {activeTournament.status === 'enrollment' && (
+                <div className="mt-2.5 flex flex-col gap-1.5">
+                  {activeTournament.isEnrolled && activeTournament.enrolledCreatureNames && activeTournament.enrolledCreatureNames.length > 0 && (
+                    <div className="flex items-center justify-center gap-1.5 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1.5">
+                      <span className="text-accent text-xs">{'\u2705'}</span>
+                      <span className="text-[10px] text-accent">
+                        Iscritto con: <strong>{activeTournament.enrolledCreatureNames.join(', ')}</strong>
+                      </span>
+                    </div>
+                  )}
+                  <Link
+                    href="/arena"
+                    className="flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:brightness-110"
+                    style={{
+                      background: activeTournament.isEnrolled
+                        ? 'linear-gradient(135deg, #3d5afe, #00e5a0)'
+                        : 'linear-gradient(135deg, #ff6b00, #ff3d3d)',
+                      boxShadow: activeTournament.isEnrolled
+                        ? '0 0 12px rgba(0, 229, 160, 0.2)'
+                        : '0 0 12px rgba(255, 107, 0, 0.3)',
+                    }}
+                  >
+                    <span>{'\u2694\uFE0F'}</span>
+                    {activeTournament.isEnrolled ? 'ISCRIVI ALTRA CREATURA' : 'ISCRIVITI ORA'}
+                  </Link>
                 </div>
               )}
             </div>
