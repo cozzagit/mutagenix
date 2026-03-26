@@ -164,16 +164,12 @@ export const GAME_CONFIG = {
   IMMORTAL_CREDIT_BONUS: 5,
   /** Bonus credits per injection for Divinità tier */
   DIVINE_CREDIT_BONUS: 10,
-  /** Day when Eterno tier starts */
+  /** Day when Eterno tier starts (same bonuses as divine — no extra advantage) */
   ETERNAL_TIER_START: 1000,
-  /** Bonus credits per injection for Eterno tier */
-  ETERNAL_CREDIT_BONUS: 15,
   /** Combat stat multiplier for Immortale tier */
   IMMORTAL_COMBAT_BONUS: 0.10,
   /** Combat stat multiplier for Divinità tier */
   DIVINE_COMBAT_BONUS: 0.20,
-  /** Combat stat multiplier for Eterno tier */
-  ETERNAL_COMBAT_BONUS: 0.25,
   // --- Overdose System (Sovradosaggio) ---
   /** Element dominance threshold: element / total > this → saturation begins */
   OVERDOSE_MILD_THRESHOLD: 0.25,

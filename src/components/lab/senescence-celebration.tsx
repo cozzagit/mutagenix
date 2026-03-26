@@ -143,9 +143,9 @@ export function SenescenceCelebration({ creatureName, onClose }: SenescenceCeleb
             Benvenuto nel tier ETERNO.
           </p>
           <p className="mb-4">
-            Le tue statistiche di combattimento ricevono un bonus permanente del <strong className="text-amber-200">+25%</strong>.
-            Ricevi <strong className="text-amber-200">+15 crediti bonus</strong> per ogni iniezione.
-            Sei al vertice assoluto della catena evolutiva.
+            Mille giorni. Mille iniezioni. {creatureName} ha sfidato il tempo, la chimica
+            e la logica. Ha combattuto, ha vinto, ha perso. Ha mutato in modi che la scienza
+            non credeva possibili. Sei al vertice assoluto della catena evolutiva.
           </p>
 
           {/* The twist */}

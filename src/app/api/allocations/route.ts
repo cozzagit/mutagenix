@@ -118,15 +118,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Tier-based credit bonus (Immortale +5, Divinità +10, Eterno +15)
+  // Tier-based credit bonus (Immortale +5, Divinità/Eterno +10)
   const creatureTier = getRankTier(creature.ageDays ?? 0);
-  const bonusCredits = creatureTier === 'eternal'
-    ? GAME_CONFIG.ETERNAL_CREDIT_BONUS
-    : creatureTier === 'divine'
-      ? GAME_CONFIG.DIVINE_CREDIT_BONUS
-      : creatureTier === 'immortal'
-        ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
-        : 0;
+  const bonusCredits = (creatureTier === 'eternal' || creatureTier === 'divine')
+    ? GAME_CONFIG.DIVINE_CREDIT_BONUS
+    : creatureTier === 'immortal'
+      ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
+      : 0;
 
   // Alchimista Supremo bonus: +5 crediti
   const creatureCariche = await getCreatureCariche(creatureId);

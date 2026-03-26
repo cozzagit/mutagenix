@@ -397,13 +397,11 @@ export function LabDashboard({
 
   // --- Tier bonus credits ---
   const creatureTier = getRankTier(ageDays);
-  const bonusCredits = creatureTier === 'eternal'
-    ? GAME_CONFIG.ETERNAL_CREDIT_BONUS
-    : creatureTier === 'divine'
-      ? GAME_CONFIG.DIVINE_CREDIT_BONUS
-      : creatureTier === 'immortal'
-        ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
-        : 0;
+  const bonusCredits = (creatureTier === 'eternal' || creatureTier === 'divine')
+    ? GAME_CONFIG.DIVINE_CREDIT_BONUS
+    : creatureTier === 'immortal'
+      ? GAME_CONFIG.IMMORTAL_CREDIT_BONUS
+      : 0;
 
   // --- Warrior phase detection ---
   const isWarrior = ageDays >= GAME_CONFIG.WARRIOR_PHASE_START;
