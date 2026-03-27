@@ -241,3 +241,166 @@ export const KNOCKOUT_POINTS = {
   WIN: 1,
   LOSS: 0,
 } as const;
+
+// ---------------------------------------------------------------------------
+// Swiss Tournament
+// ---------------------------------------------------------------------------
+
+/**
+ * Points system for Swiss tournaments.
+ */
+export const SWISS_POINTS = {
+  WIN: 3,
+  DRAW: 1,
+  LOSS: 0,
+} as const;
+
+/**
+ * Calculate the number of rounds for a Swiss tournament.
+ * Formula: ceil(log2(n)), clamped to [3, 8].
+ */
+export function calculateSwissRounds(participantCount: number): number {
+  if (participantCount < 2) return 3;
+  const rounds = Math.ceil(Math.log2(participantCount));
+  return Math.max(3, Math.min(8, rounds));
+}
+
+/**
+ * Generate pairings for a single Swiss tournament round.
+ *
+ * Round 1: sort by seed, pair top-half vs bottom-half (1v(n/2+1), 2v(n/2+2), …).
+ * Round 2+: sort by points DESC then seed ASC, pair adjacent players. If two
+ *   adjacent players have already faced each other, slide the second candidate
+ *   down the list until a valid opponent is found.
+ *
+ * Odd participant count: before pairing, grant a BYE to the lowest-ranked
+ *   player who has not yet received one. A BYE match has isBye=true and uses
+ *   the same id for both participant slots.
+ *
+ * @param participants    Current standings — each entry needs id, points, seed.
+ * @param roundNumber     1-based round index.
+ * @param previousMatches All matches played so far (used to avoid rematches).
+ * @param byeRecipients   Set of participant ids that have already received a BYE.
+ */
+export function generateSwissPairings(
+  participants: Array<{ id: string; points: number; seed: number }>,
+  roundNumber: number,
+  previousMatches: Array<{ participant1Id: string; participant2Id: string }>,
+  byeRecipients: Set<string>,
+): BracketMatch[] {
+  // --- Build a lookup set of already-played pairs --------------------------
+  // Key format: "${smallerId}_${largerId}" — order-independent.
+  const playedPairs = new Set<string>(
+    previousMatches.map(({ participant1Id, participant2Id }) => {
+      const a = participant1Id < participant2Id ? participant1Id : participant2Id;
+      const b = participant1Id < participant2Id ? participant2Id : participant1Id;
+      return `${a}_${b}`;
+    }),
+  );
+
+  const pairKey = (a: string, b: string): string => {
+    return a < b ? `${a}_${b}` : `${b}_${a}`;
+  };
+
+  // --- Sort participants for this round -------------------------------------
+  let sorted: Array<{ id: string; points: number; seed: number }>;
+
+  if (roundNumber === 1) {
+    // Round 1: sort purely by seed (lower seed = better)
+    sorted = [...participants].sort((a, b) => a.seed - b.seed);
+  } else {
+    // Round 2+: sort by points DESC, break ties by seed ASC
+    sorted = [...participants].sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return a.seed - b.seed;
+    });
+  }
+
+  const matches: BracketMatch[] = [];
+
+  // --- Handle odd participant count with a BYE ------------------------------
+  if (sorted.length % 2 !== 0) {
+    // Find the lowest-ranked player (last in sorted list) without a prior BYE
+    let byeIndex = sorted.length - 1;
+    while (byeIndex > 0 && byeRecipients.has(sorted[byeIndex].id)) {
+      byeIndex--;
+    }
+
+    const byePlayer = sorted[byeIndex];
+    sorted.splice(byeIndex, 1); // remove from pairing pool
+
+    matches.push({
+      roundNumber,
+      participant1Id: byePlayer.id,
+      participant2Id: byePlayer.id, // same id signals a BYE
+      isBye: true,
+    });
+  }
+
+  // --- Pair participants ----------------------------------------------------
+
+  if (roundNumber === 1) {
+    // Round 1: top-half vs bottom-half (1 vs n/2+1, 2 vs n/2+2, …)
+    const half = sorted.length / 2;
+    for (let i = 0; i < half; i++) {
+      matches.push({
+        roundNumber,
+        participant1Id: sorted[i].id,
+        participant2Id: sorted[i + half].id,
+        isBye: false,
+      });
+    }
+  } else {
+    // Round 2+: pair adjacent, sliding when a rematch would occur
+    const pool = [...sorted]; // mutable working copy
+    const paired = new Set<string>(); // ids already assigned a match this round
+
+    for (let i = 0; i < pool.length; i++) {
+      const p1 = pool[i];
+      if (paired.has(p1.id)) continue;
+
+      // Find the next unpaired opponent that p1 hasn't already faced
+      let matched = false;
+      for (let j = i + 1; j < pool.length; j++) {
+        const p2 = pool[j];
+        if (paired.has(p2.id)) continue;
+        if (playedPairs.has(pairKey(p1.id, p2.id))) continue;
+
+        // Valid opponent found
+        matches.push({
+          roundNumber,
+          participant1Id: p1.id,
+          participant2Id: p2.id,
+          isBye: false,
+        });
+
+        paired.add(p1.id);
+        paired.add(p2.id);
+        matched = true;
+        break;
+      }
+
+      // Fallback: if every remaining opponent has already been faced, take the
+      // closest unpaired one anyway (avoids deadlock in small fields).
+      if (!matched) {
+        for (let j = i + 1; j < pool.length; j++) {
+          const p2 = pool[j];
+          if (paired.has(p2.id)) continue;
+
+          matches.push({
+            roundNumber,
+            participant1Id: p1.id,
+            participant2Id: p2.id,
+            isBye: false,
+          });
+
+          paired.add(p1.id);
+          paired.add(p2.id);
+          break;
+        }
+      }
+    }
+  }
+
+  return matches;
+}

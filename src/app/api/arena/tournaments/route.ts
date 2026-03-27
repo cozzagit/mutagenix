@@ -194,11 +194,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const validTypes = ['calendar', 'knockout', 'random'];
+  const validTypes = ['calendar', 'knockout', 'random', 'swiss'];
   const tournamentType = body.tournamentType ?? 'knockout';
   if (!validTypes.includes(tournamentType)) {
     return NextResponse.json(
-      { error: { code: 'VALIDATION_ERROR', message: 'Tipo di torneo non valido. Usa: calendar, knockout, random.' } },
+      { error: { code: 'VALIDATION_ERROR', message: 'Tipo di torneo non valido. Usa: calendar, knockout, random, swiss.' } },
       { status: 400 },
     );
   }

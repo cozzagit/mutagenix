@@ -25,8 +25,11 @@ import {
   generateKnockoutBracket,
   generateCalendarSchedule,
   calculateKnockoutRounds,
+  generateSwissPairings,
+  calculateSwissRounds,
   CALENDAR_POINTS,
   KNOCKOUT_POINTS,
+  SWISS_POINTS,
 } from '@/lib/game-engine/tournament-engine';
 import {
   executeSquadBattle,
@@ -526,6 +529,42 @@ export async function GET(request: NextRequest) {
       }).where(eq(tournaments.id, t.id));
 
       results.push(`${t.name}: FULL — schedule generated, tournament started!`);
+    } else if (t.tournamentType === 'swiss') {
+      const totalRounds = calculateSwissRounds(seeded.length);
+      const round1Participants = seeded.map(p => ({ id: p.id, points: 0, seed: p.newSeed }));
+      const round1Pairings = generateSwissPairings(round1Participants, 1, [], new Set());
+
+      for (const match of round1Pairings) {
+        if (match.isBye) {
+          // Auto-award BYE points; no match record needed
+          await db
+            .update(tournamentParticipants)
+            .set({
+              points: sql`${tournamentParticipants.points} + ${SWISS_POINTS.WIN}`,
+              matchesWon: sql`${tournamentParticipants.matchesWon} + 1`,
+              matchesPlayed: sql`${tournamentParticipants.matchesPlayed} + 1`,
+            })
+            .where(eq(tournamentParticipants.id, match.participant1Id));
+          continue;
+        }
+        await db.insert(tournamentMatches).values({
+          tournamentId: t.id,
+          roundNumber: match.roundNumber,
+          participant1Id: match.participant1Id,
+          participant2Id: match.participant2Id,
+          status: 'pending',
+        });
+      }
+
+      await db.update(tournaments).set({
+        status: 'active',
+        currentRound: 1,
+        totalRounds,
+        startsAt: now,
+        updatedAt: now,
+      }).where(eq(tournaments.id, t.id));
+
+      results.push(`${t.name}: FULL — swiss round 1 generated (${totalRounds} rounds total), tournament started!`);
     }
   }
 
@@ -539,7 +578,7 @@ export async function GET(request: NextRequest) {
     .where(
       and(
         eq(tournaments.status, 'active'),
-        sql`${tournaments.tournamentType} IN ('knockout', 'random', 'calendar')`,
+        sql`${tournaments.tournamentType} IN ('knockout', 'random', 'calendar', 'swiss')`,
       ),
     );
 
@@ -575,6 +614,7 @@ export async function GET(request: NextRequest) {
     const format = (t.battleFormat ?? '3v3') as BattleFormat;
     const duelCount = format === '1v1' ? 1 : format === '2v2' ? 2 : 3;
     const isKnockout = t.tournamentType === 'knockout' || t.tournamentType === 'random';
+    const isSwiss = t.tournamentType === 'swiss';
 
     let matchesExecuted = 0;
 
@@ -707,9 +747,13 @@ export async function GET(request: NextRequest) {
         // Points
         const points1 = isKnockout
           ? (participant1Won ? KNOCKOUT_POINTS.WIN : KNOCKOUT_POINTS.LOSS)
+          : isSwiss
+          ? (participant1Won ? SWISS_POINTS.WIN : isDraw ? SWISS_POINTS.DRAW : SWISS_POINTS.LOSS)
           : (participant1Won ? CALENDAR_POINTS.WIN : isDraw ? CALENDAR_POINTS.DRAW : CALENDAR_POINTS.LOSS);
         const points2 = isKnockout
           ? (participant2Won ? KNOCKOUT_POINTS.WIN : KNOCKOUT_POINTS.LOSS)
+          : isSwiss
+          ? (participant2Won ? SWISS_POINTS.WIN : isDraw ? SWISS_POINTS.DRAW : SWISS_POINTS.LOSS)
           : (participant2Won ? CALENDAR_POINTS.WIN : isDraw ? CALENDAR_POINTS.DRAW : CALENDAR_POINTS.LOSS);
 
         // Update match record
@@ -777,7 +821,7 @@ export async function GET(request: NextRequest) {
               : tournamentParticipants.matchesDrawn,
             points: sql`${tournamentParticipants.points} + ${points2}`,
             accumulatedDamage: newAccDamage2,
-            isEliminated: isKnockout ? !participant2Won : false,
+            isEliminated: isKnockout ? !participant2Won : false, // swiss: no elimination
           })
           .where(eq(tournamentParticipants.id, participant2.id));
 
@@ -888,6 +932,96 @@ export async function GET(request: NextRequest) {
       results.push(
         `[7] ${t.name}: round complete, advanced to round ${t.currentRound + 1} with ${nextMatches.length} matches`,
       );
+    } else if (isSwiss) {
+      // Swiss: generate next round pairings or transition to resolving
+      const nextRound = t.currentRound + 1;
+
+      if (t.currentRound >= (t.totalRounds ?? 0)) {
+        // All rounds complete
+        await db
+          .update(tournaments)
+          .set({ status: 'resolving', updatedAt: now })
+          .where(eq(tournaments.id, t.id));
+        results.push(`[7] ${t.name}: all swiss rounds complete, transitioning to resolving`);
+      } else {
+        // Load current standings
+        const swissParticipants = await db
+          .select({
+            id: tournamentParticipants.id,
+            points: tournamentParticipants.points,
+            seed: tournamentParticipants.seed,
+          })
+          .from(tournamentParticipants)
+          .where(eq(tournamentParticipants.tournamentId, t.id));
+
+        // Load all completed match pairs to avoid rematches
+        const completedMatchPairs = await db
+          .select({
+            participant1Id: tournamentMatches.participant1Id,
+            participant2Id: tournamentMatches.participant2Id,
+          })
+          .from(tournamentMatches)
+          .where(
+            and(
+              eq(tournamentMatches.tournamentId, t.id),
+              eq(tournamentMatches.status, 'completed'),
+            ),
+          );
+
+        // Identify BYE recipients: participants whose matchesPlayed > actual match count
+        // (they received a BYE auto-award). We track this via participants who appear
+        // in no match record as either participant1 or participant2 in a given round.
+        const matchParticipantIds = new Set<string>(
+          completedMatchPairs.flatMap(m => [m.participant1Id, m.participant2Id]),
+        );
+        const byeRecipients = new Set<string>(
+          swissParticipants
+            .filter(p => !matchParticipantIds.has(p.id) && (p.points ?? 0) > 0)
+            .map(p => p.id),
+        );
+
+        const standingsInput = swissParticipants.map(p => ({
+          id: p.id,
+          points: p.points ?? 0,
+          seed: p.seed ?? 999,
+        }));
+
+        const nextPairings = generateSwissPairings(
+          standingsInput,
+          nextRound,
+          completedMatchPairs,
+          byeRecipients,
+        );
+
+        for (const match of nextPairings) {
+          if (match.isBye) {
+            // Auto-award BYE
+            await db
+              .update(tournamentParticipants)
+              .set({
+                points: sql`${tournamentParticipants.points} + ${SWISS_POINTS.WIN}`,
+                matchesWon: sql`${tournamentParticipants.matchesWon} + 1`,
+                matchesPlayed: sql`${tournamentParticipants.matchesPlayed} + 1`,
+              })
+              .where(eq(tournamentParticipants.id, match.participant1Id));
+            continue;
+          }
+          await db.insert(tournamentMatches).values({
+            tournamentId: t.id,
+            roundNumber: match.roundNumber,
+            participant1Id: match.participant1Id,
+            participant2Id: match.participant2Id,
+            status: 'pending',
+          });
+        }
+
+        await db
+          .update(tournaments)
+          .set({ currentRound: nextRound, updatedAt: now })
+          .where(eq(tournaments.id, t.id));
+
+        results.push(`[7] ${t.name}: swiss round complete, advanced to round ${nextRound} with ${nextPairings.filter(m => !m.isBye).length} matches`);
+      }
     } else {
       // Calendar: advance to next round if one exists
       const nextRound = t.currentRound + 1;

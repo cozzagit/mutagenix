@@ -38,6 +38,7 @@ function TypeBadge({ type }: { type: string }) {
     knockout: { label: "ELIMINAZIONE", color: "#ff4466", bg: "rgba(255,68,102,0.12)" },
     calendar: { label: "CAMPIONATO", color: "#3d5afe", bg: "rgba(61,90,254,0.12)" },
     random: { label: "RANDOM", color: "#ffd600", bg: "rgba(255,214,0,0.12)" },
+    swiss: { label: "SVIZZERO", color: "#9c27b0", bg: "rgba(156,39,176,0.12)" },
   };
 
   const c = config[type] ?? config.knockout;
