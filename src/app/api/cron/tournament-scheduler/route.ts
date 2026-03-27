@@ -609,14 +609,17 @@ export async function GET(request: NextRequest) {
         ),
       );
 
-    if (pendingMatches.length === 0) continue;
-
     const format = (t.battleFormat ?? '3v3') as BattleFormat;
     const duelCount = format === '1v1' ? 1 : format === '2v2' ? 2 : 3;
     const isKnockout = t.tournamentType === 'knockout' || t.tournamentType === 'random';
     const isSwiss = t.tournamentType === 'swiss';
 
     let matchesExecuted = 0;
+
+    if (pendingMatches.length === 0) {
+      // No pending matches — skip execution, but still check advancement below
+      matchesExecuted = -1; // signal: didn't execute, but check completion
+    }
 
     for (const match of pendingMatches) {
       try {
@@ -884,7 +887,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (matchesExecuted === 0) continue;
+    if (matchesExecuted === 0 && pendingMatches.length > 0) continue; // executed 0 out of N pending = something wrong, skip
 
     // After executing matches, check if the round is now fully complete
     // and advance inline (mirrors sections 1 & 2 logic)
