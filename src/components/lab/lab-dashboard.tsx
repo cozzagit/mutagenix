@@ -191,7 +191,7 @@ export function LabDashboard({
   useEffect(() => {
     async function checkTournament() {
       try {
-        const res = await fetch('/api/arena/tournaments?status=enrollment,active,resolving,completed');
+        const res = await fetch('/api/arena/tournaments?status=enrollment,active');
         if (!res.ok) return;
         const json = await res.json();
         const tournaments = (json.data ?? []) as typeof activeTournament[];
