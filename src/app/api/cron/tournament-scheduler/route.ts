@@ -661,9 +661,28 @@ export async function GET(request: NextRequest) {
         const team2Creatures = await loadSnapCreatures(snap2Ids);
 
         if (team1Creatures.length < duelCount || team2Creatures.length < duelCount) {
-          results.push(
-            `[7] ${t.name} match ${match.id}: not enough creatures (${team1Creatures.length}v${team2Creatures.length}), skipped`,
-          );
+          // Auto-forfeit: whoever has creatures wins
+          const forfeitWinnerId = team1Creatures.length >= duelCount ? participant1.id
+            : team2Creatures.length >= duelCount ? participant2.id : null;
+
+          await db.update(tournamentMatches).set({
+            status: 'completed', winnerId: forfeitWinnerId, completedAt: now,
+          }).where(eq(tournamentMatches.id, match.id));
+
+          const usePoints = isSwiss ? SWISS_POINTS : isKnockout ? KNOCKOUT_POINTS : CALENDAR_POINTS;
+          for (const p of [participant1, participant2]) {
+            const won = p.id === forfeitWinnerId;
+            await db.update(tournamentParticipants).set({
+              matchesPlayed: sql`${tournamentParticipants.matchesPlayed} + 1`,
+              matchesWon: won ? sql`${tournamentParticipants.matchesWon} + 1` : tournamentParticipants.matchesWon,
+              matchesLost: !won ? sql`${tournamentParticipants.matchesLost} + 1` : tournamentParticipants.matchesLost,
+              points: sql`${tournamentParticipants.points} + ${won ? usePoints.WIN : usePoints.LOSS}`,
+              isEliminated: isKnockout ? !won : false,
+            }).where(eq(tournamentParticipants.id, p.id));
+          }
+
+          matchesExecuted++;
+          results.push(`[7] ${t.name}: forfeit (dead creature), winner assigned`);
           continue;
         }
 
