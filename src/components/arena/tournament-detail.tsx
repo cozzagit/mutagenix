@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { TournamentBracket } from "./tournament-bracket";
+import Link from "next/link";
 import { CreatureRenderer, DEFAULT_VISUAL_PARAMS } from "@/components/creature/creature-renderer";
 import type { VisualParams } from "@/lib/game-engine/visual-mapper";
 
@@ -348,6 +349,211 @@ function MatchResultOverlay({
 
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* Sub: SwissRoundView — round-by-round experience                    */
+/* ------------------------------------------------------------------ */
+
+function SwissRoundView({
+  matches,
+  standings,
+  totalRounds,
+  currentRound,
+  myParticipantId,
+  tournamentStatus,
+}: {
+  matches: Array<{
+    id: string;
+    roundNumber: number;
+    participant1Id: string;
+    participant2Id: string;
+    participant1Name: string;
+    participant2Name: string;
+    winnerId: string | null;
+    status: string;
+    battleId?: string | null;
+  }>;
+  standings: StandingData[];
+  totalRounds: number;
+  currentRound: number;
+  myParticipantId: string | null;
+  tournamentStatus: string;
+}) {
+  const [viewingRound, setViewingRound] = useState(
+    tournamentStatus === "completed" ? totalRounds : currentRound,
+  );
+
+  // Group matches by round
+  const matchesByRound = new Map<number, typeof matches>();
+  for (const m of matches) {
+    const arr = matchesByRound.get(m.roundNumber) ?? [];
+    arr.push(m);
+    matchesByRound.set(m.roundNumber, arr);
+  }
+
+  const roundMatches = matchesByRound.get(viewingRound) ?? [];
+  const roundComplete = roundMatches.length > 0 && roundMatches.every(m => m.status === "completed");
+
+  // Build standings snapshot up to this round
+  const standingsUpToRound = standings
+    .map(s => {
+      // Count points from matches up to viewingRound
+      let pts = 0;
+      let w = 0;
+      let l = 0;
+      for (let r = 1; r <= viewingRound; r++) {
+        const rm = matchesByRound.get(r) ?? [];
+        for (const m of rm) {
+          if (m.status !== "completed") continue;
+          if (m.participant1Id === s.participantId) {
+            if (m.winnerId === s.participantId) { pts += 3; w++; }
+            else if (m.winnerId) { l++; }
+            else { pts += 1; }
+          } else if (m.participant2Id === s.participantId) {
+            if (m.winnerId === s.participantId) { pts += 3; w++; }
+            else if (m.winnerId) { l++; }
+            else { pts += 1; }
+          }
+        }
+      }
+      return { ...s, roundPoints: pts, roundWins: w, roundLosses: l };
+    })
+    .sort((a, b) => b.roundPoints - a.roundPoints || b.roundWins - a.roundWins);
+
+  return (
+    <div>
+      {/* Round selector */}
+      <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-1">
+        {Array.from({ length: totalRounds }).map((_, i) => {
+          const rn = i + 1;
+          const hasMatches = matchesByRound.has(rn);
+          const allDone = hasMatches && (matchesByRound.get(rn) ?? []).every(m => m.status === "completed");
+          return (
+            <button
+              key={rn}
+              onClick={() => setViewingRound(rn)}
+              className={`shrink-0 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all ${
+                viewingRound === rn
+                  ? "bg-[#9c27b0]/20 text-[#9c27b0] ring-1 ring-[#9c27b0]/30"
+                  : hasMatches
+                    ? "bg-surface-2 text-foreground hover:bg-surface-2/80"
+                    : "bg-surface-2/30 text-muted/40"
+              }`}
+              disabled={!hasMatches}
+            >
+              R{rn}
+              {allDone && <span className="ml-1 text-accent">{'\u2713'}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Round matches */}
+      <div className="rounded-xl border border-border/30 bg-surface/40 overflow-hidden mb-4">
+        <div className="px-3 py-2 border-b border-border/20 flex items-center justify-between">
+          <span className="text-[11px] font-black text-[#9c27b0] uppercase tracking-wider">
+            Round {viewingRound}
+          </span>
+          <span className={`text-[10px] font-bold ${roundComplete ? "text-accent" : "text-warning"}`}>
+            {roundComplete ? "Completato" : "In corso"}
+          </span>
+        </div>
+
+        {roundMatches.length === 0 ? (
+          <div className="p-6 text-center">
+            <p className="text-sm text-muted">Round non ancora generato.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/10">
+            {roundMatches.map((m) => {
+              const isCompleted = m.status === "completed";
+              const p1Won = m.winnerId === m.participant1Id;
+              const p2Won = m.winnerId === m.participant2Id;
+              const isMyMatch = m.participant1Id === myParticipantId || m.participant2Id === myParticipantId;
+
+              return (
+                <div
+                  key={m.id}
+                  className={`flex items-center gap-2 px-3 py-2.5 ${
+                    isMyMatch ? "bg-danger/5 border-l-2 border-l-danger" : ""
+                  }`}
+                >
+                  <div className="flex-1 flex items-center gap-2 min-w-0">
+                    <span
+                      className={`text-xs truncate flex-1 text-right ${
+                        isCompleted && p1Won ? "text-accent font-bold" : isCompleted && !p1Won ? "text-muted" : "text-foreground"
+                      }`}
+                    >
+                      {m.participant1Name}
+                    </span>
+
+                    {isCompleted ? (
+                      <span className="shrink-0 rounded bg-surface-2 px-2 py-0.5 text-[10px] font-mono font-bold text-foreground">
+                        {p1Won ? "3" : m.winnerId ? "0" : "1"} - {p2Won ? "3" : m.winnerId ? "0" : "1"}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[10px] text-muted font-bold px-2">vs</span>
+                    )}
+
+                    <span
+                      className={`text-xs truncate flex-1 ${
+                        isCompleted && p2Won ? "text-accent font-bold" : isCompleted && !p2Won ? "text-muted" : "text-foreground"
+                      }`}
+                    >
+                      {m.participant2Name}
+                    </span>
+                  </div>
+
+                  {/* Replay link */}
+                  {isCompleted && m.battleId && (
+                    <Link
+                      href={`/arena/battle/${m.battleId}`}
+                      className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold text-primary hover:text-foreground bg-primary/5 hover:bg-primary/10 transition-colors"
+                    >
+                      {'\u25B6'}
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Standings snapshot at this round */}
+      <div className="rounded-xl border border-border/30 bg-surface/40 overflow-hidden">
+        <div className="px-3 py-2 border-b border-border/20">
+          <span className="text-[11px] font-black text-muted uppercase tracking-wider">
+            Classifica dopo Round {viewingRound}
+          </span>
+        </div>
+        <div className="divide-y divide-border/10">
+          {standingsUpToRound.map((s, i) => {
+            const isMe = s.participantId === myParticipantId;
+            return (
+              <div
+                key={s.participantId}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs ${
+                  isMe ? "bg-danger/5 border-l-2 border-l-danger" : ""
+                }`}
+              >
+                <span className="w-5 text-muted font-mono text-[10px]">{i + 1}.</span>
+                <span className="flex-1 font-bold text-foreground truncate">{s.displayName}</span>
+                <span className="text-accent font-bold">{s.roundWins}V</span>
+                <span className="text-danger">{s.roundLosses}S</span>
+                <span className="font-black text-foreground w-8 text-right">{s.roundPoints}pt</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Main: TournamentDetail                                             */
+/* ------------------------------------------------------------------ */
+
 interface TournamentDetailProps {
   tournamentId: string;
   onBack: () => void;
@@ -561,6 +767,7 @@ export function TournamentDetail({
   const isKnockout =
     tournament.tournamentType === "knockout" ||
     tournament.tournamentType === "random";
+  const isSwiss = tournament.tournamentType === "swiss";
 
   // Find my playable matches
   const myPlayableMatches = matches.filter(
@@ -713,13 +920,13 @@ export function TournamentDetail({
           {/* View tabs */}
           <div className="flex gap-0 mb-4 border-b border-border/30">
             {[
-              { id: "bracket" as const, label: isKnockout ? "TABELLONE" : "CLASSIFICA" },
+              { id: "bracket" as const, label: isKnockout ? "TABELLONE" : isSwiss ? "ROUND" : "CLASSIFICA" },
               { id: "standings" as const, label: "CLASSIFICA" },
               { id: "matches" as const, label: "MATCH" },
             ]
               .filter((tab) => {
-                if (!isKnockout && tab.id === "bracket") return false;
-                if (isKnockout && tab.id === "standings") return false;
+                if (!isKnockout && !isSwiss && tab.id === "bracket") return false;
+                if ((isKnockout || isSwiss) && tab.id === "standings") return false;
                 return true;
               })
               .map((tab) => (
@@ -747,7 +954,18 @@ export function TournamentDetail({
             />
           )}
 
-          {(activeView === "standings" || (activeView === "bracket" && !isKnockout)) && (
+          {activeView === "bracket" && isSwiss && (
+            <SwissRoundView
+              matches={bracketMatches}
+              standings={standings}
+              totalRounds={tournament.totalRounds ?? 1}
+              currentRound={tournament.currentRound}
+              myParticipantId={myParticipantId}
+              tournamentStatus={tournament.status}
+            />
+          )}
+
+          {(activeView === "standings" || (activeView === "bracket" && !isKnockout && !isSwiss)) && (
             <StandingsTable standings={standings} myUserId={null} />
           )}
 
